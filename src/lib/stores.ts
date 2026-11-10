@@ -467,14 +467,14 @@ export function updateCharacter(id: string, fields: Partial<Character>) {
   });
 }
 
-export function addCharacter(): string {
+export function addCharacter(name?: string): string {
   const id = uid("char");
   project.update((proj) => {
     if (!proj) return proj;
     touch();
     const character: Character = {
       id,
-      name: "New Character",
+      name: name?.trim() || "New Character",
       aliases: [],
       description: "",
       role: "",
@@ -516,14 +516,14 @@ export function updatePlace(id: string, fields: Partial<Place>) {
   });
 }
 
-export function addPlace(): string {
+export function addPlace(name?: string): string {
   const id = uid("place");
   project.update((proj) => {
     if (!proj) return proj;
     touch();
     const place: Place = {
       id,
-      name: "New Place",
+      name: name?.trim() || "New Place",
       aliases: [],
       description: "",
       location: "",

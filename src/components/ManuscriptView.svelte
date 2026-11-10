@@ -14,6 +14,8 @@
     linkPlaceToScene,
     unlinkPlaceFromScene,
     moveScene,
+    addCharacter,
+    addPlace,
   } from "../lib/stores";
   import type { Scene, Character, Place } from "../lib/types";
   import { readingOrder, chapterNumber, sceneDropTarget } from "../lib/model";
@@ -425,6 +427,8 @@
             {entities}
             {describeMention}
             {highlightTerms}
+            onPickMention={(type, id) => acceptSuggestion($selectedScene.id, { type, id, name: "" })}
+            onCreateMention={(type, name) => (type === "character" ? addCharacter(name) : addPlace(name))}
           />
         </div>
       {/key}
