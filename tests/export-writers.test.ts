@@ -6,6 +6,10 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { exportProject, DEFAULT_OPTIONS, exportPreview } from "../src/lib/export/index.ts";
 import type { Project } from "../src/lib/types.ts";
+import { hasTool } from "./tools.ts";
+
+const docxTools = hasTool("python3", ["-c", "import docx"]) && hasTool("soffice") && hasTool("cat");
+const epubTools = hasTool("unzip", ["-v"]) && hasTool("xmllint") && hasTool("pandoc");
 
 const sc = (id: string, ch: string, order: number, title: string, content: string) => ({
   id, title, summary: "", content, chapter_id: ch, order, plotline_id: "pl", character_ids: [], place_ids: [], tags: [],
@@ -61,7 +65,7 @@ test("markdown/text options: scene titles replace breaks; no chapter headings", 
   assert.ok(!tx.includes("* * *"));
 });
 
-test("docx: opens in python-docx and LibreOffice, content intact", () => {
+test("docx: opens in python-docx and LibreOffice, content intact", { skip: !docxTools && "needs python-docx + LibreOffice" }, () => {
   const r = exportProject(project, opts({ format: "docx" }));
   const f = write("t.docx", r.bytes);
   const py = run("python3", ["-c", `
@@ -86,7 +90,7 @@ s=d.sections[0]; print(s.page_width.twips,s.page_height.twips)
   assert.match(run("cat", [join(dir, "t.txt")]), /Second \*star\* _under_\./);
 });
 
-test("epub: valid zip layout, well-formed XML, pandoc reads it", () => {
+test("epub: valid zip layout, well-formed XML, pandoc reads it", { skip: !epubTools && "needs unzip + xmllint + pandoc" }, () => {
   const r = exportProject(project, opts({ format: "epub" }));
   const f = write("t.epub", r.bytes);
   assert.equal(run("unzip", ["-Z1", f]).split("\n")[0], "mimetype");
