@@ -156,6 +156,7 @@ export function appearanceReport(
   }
 
   const last = appearances[appearances.length - 1] ?? null;
+
   return {
     type,
     id,
@@ -194,5 +195,75 @@ export function castGrid(project: Project): CastGrid {
       ...project.characters.map((c) => row("character", c.id, c.name)),
       ...project.places.map((p) => row("place", p.id, p.name)),
     ],
+  };
+}
+
+// ─── per-scene continuity ────────────────────────────────────
+
+export type ContinuityItem = {
+  type: EntityType;
+  id: string;
+  name: string;
+  /** How many times the scene text names them (0 = never). */
+  mentions: number;
+  linked: boolean;
+};
+
+export type SceneContinuity = {
+  /** Linked and named — everything lines up. */
+  matched: ContinuityItem[];
+  /** On the cast / setting list, but the prose never names them. */
+  linkedNotNamed: ContinuityItem[];
+  /** Named in the prose, but not linked to this scene. */
+  namedNotLinked: ContinuityItem[];
+  /** linkedNotNamed + namedNotLinked. */
+  issueCount: number;
+};
+
+/**
+ * Continuity for one scene while writing: who is on the cast vs who the
+ * text actually names. Reuses the same mention rules as appearanceReport.
+ */
+export function sceneContinuity(
+  project: Project,
+  scene: Scene
+): SceneContinuity {
+  const entities = entitiesOf(project);
+  const signature = entitiesSignature(entities);
+  const counts = sceneCounts(scene, entities, signature);
+
+  const matched: ContinuityItem[] = [];
+  const linkedNotNamed: ContinuityItem[] = [];
+  const namedNotLinked: ContinuityItem[] = [];
+
+  const seen = new Set<string>();
+
+  const push = (type: EntityType, id: string, name: string) => {
+    const k = keyOf(type, id);
+    if (seen.has(k)) return;
+    seen.add(k);
+    const linked = isLinked(scene, type, id);
+    const mentions = counts.get(k) ?? 0;
+    if (!linked && mentions === 0) return;
+    const item: ContinuityItem = { type, id, name, mentions, linked };
+    if (linked && mentions > 0) matched.push(item);
+    else if (linked) linkedNotNamed.push(item);
+    else namedNotLinked.push(item);
+  };
+
+  for (const c of project.characters) push("character", c.id, c.name);
+  for (const p of project.places) push("place", p.id, p.name);
+
+  // Named entities not in project.characters order path already covered;
+  // counts may include only entitiesOf results, so also walk counts for safety.
+  for (const e of entities) {
+    push(e.type, e.id, e.name);
+  }
+
+  return {
+    matched,
+    linkedNotNamed,
+    namedNotLinked,
+    issueCount: linkedNotNamed.length + namedNotLinked.length,
   };
 }
