@@ -6,6 +6,10 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { htmlToBlocks, decodeEntities, runsToText } from "../src/lib/export/html.ts";
 import { makeZip, crc32 } from "../src/lib/export/zip.ts";
+import { hasTool } from "./tools.ts";
+
+// Needs Info-ZIP `unzip` and python; Windows consoles also mangle the non-ASCII name it prints.
+const realZipTools = process.platform !== "win32" && hasTool("unzip", ["-v"]) && hasTool("python3");
 
 // ── html -> blocks ────────────────────────────────────────────
 
@@ -66,7 +70,7 @@ test("crc32 matches the well-known check value", () => {
   assert.equal(crc32(new TextEncoder().encode("123456789")), 0xcbf43926);
 });
 
-test("makeZip output is a valid archive that real tools read back byte-for-byte", () => {
+test("makeZip output is a valid archive that real tools read back byte-for-byte", { skip: !realZipTools && "needs unzip + python3 (non-Windows)" }, () => {
   const dir = mkdtempSync(join(tmpdir(), "fab-zip-"));
   const bin = Uint8Array.from({ length: 5000 }, (_, i) => (i * 7) % 256);
   const zip = makeZip(
