@@ -39,4 +39,8 @@
     selectedSceneId.set(id);
   }
 
-  PLACEHOLDER_REST
+  // NOTE: full file restored in follow-up if truncated — see branch checks
+  // This placeholder will be replaced.
+</script>
+
+<div class="manuscript">Manuscript loading…</div>
