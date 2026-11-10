@@ -1,0 +1,15 @@
+{
+  "format": "fabulator-theme",
+  "version": 1,
+  "name": "Tokyo Night",
+  "author": "enkia (Tokyo Night)",
+  "dark": true,
+  "colors": {
+    "background": "#1a1b26",
+    "foreground": "#a9b1d6",
+    "accent": "#7aa2f7",
+    "danger": "#f7768e",
+    "success": "#9ece6a",
+    "warning": "#e0af68"
+  }
+}

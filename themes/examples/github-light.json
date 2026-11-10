@@ -1,0 +1,17 @@
+{
+  "format": "fabulator-theme",
+  "version": 1,
+  "name": "GitHub Light",
+  "author": "GitHub (Primer)",
+  "dark": false,
+  "colors": {
+    "background": "#ffffff",
+    "foreground": "#24292f",
+    "accent": "#0969da",
+    "panel": "#f6f8fa",
+    "border": "#d0d7de",
+    "danger": "#cf222e",
+    "success": "#1a7f37",
+    "warning": "#9a6700"
+  }
+}

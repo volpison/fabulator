@@ -1,0 +1,38 @@
+# Builds the Windows installer when you push a tag like v0.2.0,
+# and attaches it to a DRAFT release on GitHub (you review and publish it).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Fabulator ${{ github.ref_name }}"
+          releaseBody: "Windows installer. See the README for what is new."
+          releaseDraft: true
+          prerelease: false

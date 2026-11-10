@@ -1,0 +1,22 @@
+{
+  // An original example in the VS Code theme format (comments and trailing commas are fine).
+  "name": "Midnight Orchard",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#1b1f2a",
+    "editor.foreground": "#d9dce6",
+    "sideBar.background": "#161a23",
+    "editorWidget.background": "#232938",
+    "panel.border": "#2e3547",
+    "descriptionForeground": "#8d94aa",
+    "button.background": "#e0884a",
+    "editorError.foreground": "#f0616d",
+    "editorWarning.foreground": "#e6c15a",
+    "terminal.ansiGreen": "#7fc98a",
+    "editor.findMatchHighlightBackground": "#e6c15a55", // translucent: blended over the background
+  },
+  "tokenColors": [
+    { "scope": ["entity.name.function", "entity.name.type"], "settings": { "foreground": "#8cb8f0" } },
+    { "scope": "string", "settings": { "foreground": "#a6d08a" } },
+  ],
+}

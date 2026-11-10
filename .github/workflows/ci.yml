@@ -1,0 +1,41 @@
+# Runs on every push and pull request: the JS tests, the front-end build,
+# and the Rust build + tests (on Windows, the platform Fabulator targets).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install JS dependencies
+        run: npm install
+
+      - name: JS tests
+        run: npm test
+
+      - name: Build the front end
+        run: npm run build
+
+      - name: Rust tests (compiles the whole Tauri backend)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # Informational for now: shows Svelte/TypeScript warnings without failing the build.
+      - name: Svelte type check
+        run: npm run check
+        continue-on-error: true

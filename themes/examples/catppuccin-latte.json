@@ -1,0 +1,16 @@
+{
+  "format": "fabulator-theme",
+  "version": 1,
+  "name": "Catppuccin Latte",
+  "author": "Catppuccin",
+  "dark": false,
+  "colors": {
+    "background": "#eff1f5",
+    "foreground": "#4c4f69",
+    "accent": "#8839ef",
+    "panel": "#e6e9ef",
+    "danger": "#d20f39",
+    "success": "#40a02b",
+    "warning": "#df8e1d"
+  }
+}
