@@ -5,6 +5,8 @@
   import Placeholder from "@tiptap/extension-placeholder";
   import { MentionHighlight, mentionKey } from "../lib/mentionExtension";
   import { SearchHighlight, searchKey } from "../lib/searchExtension";
+  import { AtMention, type AtState } from "../lib/atMentionExtension";
+  import { buildOptions, tidyNewName, type PickOption } from "../lib/atMention";
   import type { Entity, EntityType, MentionInfo } from "../lib/mentions";
 
   interface Props {
@@ -17,6 +19,10 @@
     describeMention?: (type: EntityType, id: string) => MentionInfo | null;
     /** Words to underline (from a search). The first hit is scrolled into view. */
     highlightTerms?: string[];
+    /** A character/place was chosen with "@": link it to the scene. */
+    onPickMention?: (type: EntityType, id: string) => void;
+    /** "@" + a new name: create the character/place and return its id. */
+    onCreateMention?: (type: EntityType, name: string) => string;
   }
 
   let {
@@ -26,6 +32,8 @@
     entities = [],
     describeMention,
     highlightTerms = [],
+    onPickMention,
+    onCreateMention,
   }: Props = $props();
 
   let element: HTMLDivElement;
@@ -44,6 +52,65 @@
   const hoverInfo = $derived(
     hover && describeMention ? describeMention(hover.type, hover.id) : null
   );
+  // "@" picker
+  let at = $state<AtState | null>(null);
+  let atIndex = $state(0);
+  let atDismissedFrom = -1;
+  let atLastQuery = "";
+  const atOptions = $derived<PickOption[]>(at ? buildOptions(at.query, entities) : []);
+
+  function onAtState(state: AtState | null) {
+    if (!state) atDismissedFrom = -1; // the cursor left the "@"
+    else if (state.from === atDismissedFrom) state = null; // Escape was pressed for this "@"
+    if (state && state.query !== atLastQuery) atIndex = 0;
+    atLastQuery = state?.query ?? "";
+    const base = root?.getBoundingClientRect();
+    at =
+      state && base
+        ? { ...state, left: Math.max(8, Math.min(state.left - base.left, base.width - 268)), bottom: state.bottom - base.top }
+        : null;
+  }
+
+  function onAtKey(e: KeyboardEvent): boolean {
+    if (!at) return false;
+    if (e.key === "Escape") {
+      atDismissedFrom = at.from;
+      at = null;
+      return true;
+    }
+    if (atOptions.length === 0) return false;
+    if (e.key === "ArrowDown") {
+      atIndex = (atIndex + 1) % atOptions.length;
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      atIndex = (atIndex - 1 + atOptions.length) % atOptions.length;
+      return true;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      pickAt(atOptions[Math.min(atIndex, atOptions.length - 1)]);
+      return true;
+    }
+    return false;
+  }
+
+  function pickAt(option: PickOption | undefined) {
+    if (!option || !at || !editor) return;
+    const range = { from: at.from, to: at.to };
+    let name: string, id: string;
+    if (option.kind === "existing") {
+      name = option.name;
+      id = option.id;
+    } else {
+      name = tidyNewName(option.name);
+      id = onCreateMention?.(option.type, name) ?? "";
+      if (!id) return;
+    }
+    at = null;
+    editor.chain().focus().insertContentAt(range, name).run();
+    onPickMention?.(option.type, id);
+  }
+
   let lastMentionKey = "";
   let lastTermsKey = "";
 
@@ -117,6 +184,7 @@
         SearchHighlight.configure({
           getTerms: () => highlightTerms,
         }),
+        AtMention.configure({ onState: onAtState, onKey: onAtKey }),
       ],
       content: toEditorContent(content),
       editorProps: {
@@ -309,6 +377,34 @@
     on:scroll={() => (hover = null)}
   ></div>
 
+  {#if at && atOptions.length > 0}
+    <div class="at-picker" role="listbox" aria-label="Characters and places" style="left: {at.left}px; top: {at.bottom + 4}px">
+      {#each atOptions as option, i}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="at-option"
+          class:selected={i === atIndex}
+          role="option"
+          aria-selected={i === atIndex}
+          tabindex="-1"
+          on:mousedown|preventDefault={() => pickAt(option)}
+          on:mousemove={() => (atIndex = i)}
+        >
+          {#if option.kind === "existing"}
+            <span class="at-dot at-{option.type}"></span>
+            <span class="at-name">{option.name}</span>
+            {#if option.via}<span class="at-via">as “{option.via}”</span>{/if}
+            <span class="at-kind">{option.type}</span>
+          {:else}
+            <span class="at-plus">＋</span>
+            <span class="at-name">New {option.type} “{tidyNewName(option.name)}”</span>
+          {/if}
+        </div>
+      {/each}
+      <div class="at-hint">↑↓ choose · Enter insert &amp; link to scene · Esc close</div>
+    </div>
+  {/if}
+
   {#if hover && hoverInfo}
     <div class="mention-card" style="left: {hover.left}px; top: {hover.top}px">
       <div class="mc-title">{hoverInfo.title}</div>
@@ -422,6 +518,37 @@
     padding: 0.15em 0 0.15em 1em;
     color: var(--text-muted);
   }
+
+  .at-picker {
+    position: absolute;
+    z-index: 30;
+    width: 260px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    font-size: 0.85rem;
+  }
+  .at-option {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .at-option.selected {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .at-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .at-character { background: var(--char); }
+  .at-place { background: var(--place, var(--accent)); }
+  .at-plus { color: var(--accent); flex-shrink: 0; }
+  .at-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .at-via, .at-kind { font-size: 0.7rem; color: var(--text-muted); }
+  .at-hint { padding: 4px 8px 2px; font-size: 0.68rem; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 3px; }
 
   .editor-wrap :global(.mention) {
     border-bottom: 1.5px solid;

@@ -215,6 +215,10 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 
 Click **+ Plotline** under the lanes to add one (it gets the next free colour). On a lane's label: click the coloured dot to pick a colour (palette or any custom colour), double-click the name to rename it, and use the ▲ ▼ ✕ buttons (shown on hover) to reorder or delete it. Deleting a plotline moves its scenes to another one; the last plotline can't be deleted.
 
+## `@` mentions in the editor
+
+While writing, type `@` at the start of a word (not inside an e-mail address) and a small list of your characters and places appears. Keep typing to narrow it (accents and capitals don't matter; aliases count). **↑ ↓** choose, **Enter** or **Tab** inserts the name and links it to the scene, **Esc** closes the list. If nothing has exactly that name, the list also offers **＋ New character "…"** or **＋ New place "…"**, which creates it (fill in the details later in the side panel) and links it at once.
+
 ## Reordering scenes from the Manuscript list
 
 Drag a scene in the left-hand list and drop it on the top or bottom half of another scene; a line shows where it will land. Dropping onto a scene in another chapter moves it to that chapter (it keeps its plotline). Keyboard: focus a scene and press **Alt+↑ / Alt+↓** to move it one step in reading order (past a chapter boundary it moves into the neighbouring chapter). The Timeline reflects the change immediately.
