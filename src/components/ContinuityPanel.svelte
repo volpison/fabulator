@@ -28,8 +28,8 @@
       {#each unnamed as item (item.type + item.id)}
         <span class="chip {item.type}">
           {item.name}
-          <button type="button" title="Take them off this scene's cast" on:click={() => unlink(item)}>Unlink</button>
-          <button type="button" title="Keep them (e.g. mentioned by pronoun) and hide this notice" on:click={() => dismiss(item)}>×</button>
+          <button type="button" title="Take them off this scene's cast" aria-label="Unlink {item.name} from this scene" on:click={() => unlink(item)}>Unlink</button>
+          <button type="button" title="Keep them (e.g. mentioned by pronoun) and hide this notice" aria-label="Keep {item.name} and hide this notice" on:click={() => dismiss(item)}>×</button>
         </span>
       {/each}
     {:else}
