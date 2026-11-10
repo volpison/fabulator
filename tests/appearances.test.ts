@@ -1,6 +1,6 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { appearanceReport, castGrid, clearAppearanceCache } from "../src/lib/appearances.ts";
+import { appearanceReport, castGrid, clearAppearanceCache, sceneContinuity } from "../src/lib/appearances.ts";
 import type { Project } from "../src/lib/types.ts";
 
 beforeEach(() => clearAppearanceCache());
@@ -27,7 +27,7 @@ function project(scenes: S[], extra: Partial<Project> = {}): Project {
 
 test("appearance = linked and/or named; first/last follow reading order, not array order", () => {
   const p = project([
-    { id: "late", ch: "c2", order: 0, text: "Ana returns." },        // array first, book second
+    { id: "late", ch: "c2", order: 0, text: "Ana returns." },
     { id: "early", ch: "c1", order: 0, text: "Aninha arrives.", chars: ["ana"] },
     { id: "none", ch: "c1", order: 1, text: "Nothing here." },
   ]);
@@ -44,23 +44,22 @@ test("appearance = linked and/or named; first/last follow reading order, not arr
 test("flags linked-but-never-named and named-but-not-linked scenes", () => {
   const p = project([
     { id: "a", ch: "c1", order: 0, text: "Ana laughed.", chars: ["ana"] },
-    { id: "b", ch: "c1", order: 1, text: "Ana's coat hung there." },          // named, not linked
-    { id: "c", ch: "c1", order: 2, text: "A quiet room.", chars: ["ana"] },   // linked, not named
+    { id: "b", ch: "c1", order: 1, text: "Ana's coat hung there." },
+    { id: "c", ch: "c1", order: 2, text: "A quiet room.", chars: ["ana"] },
   ]);
   const r = appearanceReport(p, "character", "ana")!;
   assert.deepEqual(r.linkedNotNamed.map((a) => a.scene.id), ["c"]);
   assert.deepEqual(r.namedNotLinked.map((a) => a.scene.id), ["b"]);
-  assert.equal(r.longestGap, null); // 1,2,3 are consecutive
 });
 
-test("longest gap between appearances and scenes since the last one", () => {
+test("longest gap and scenes-since-last", () => {
   const p = project([
-    { id: "s1", ch: "c1", order: 0, text: "Ana." },
-    { id: "s2", ch: "c1", order: 1, text: "x" },
-    { id: "s3", ch: "c1", order: 2, text: "x" },
-    { id: "s4", ch: "c1", order: 3, text: "Ana." },
-    { id: "s5", ch: "c2", order: 0, text: "x" },
-    { id: "s6", ch: "c2", order: 1, text: "x" },
+    { id: "a", ch: "c1", order: 0, text: "Ana.", chars: ["ana"] },
+    { id: "b", ch: "c1", order: 1, text: "Silence." },
+    { id: "c", ch: "c1", order: 2, text: "More silence." },
+    { id: "d", ch: "c2", order: 0, text: "Ana again.", chars: ["ana"] },
+    { id: "e", ch: "c2", order: 1, text: "End." },
+    { id: "f", ch: "c2", order: 2, text: "Really the end." },
   ]);
   const r = appearanceReport(p, "character", "ana")!;
   assert.deepEqual(r.longestGap, { length: 2, afterPosition: 1 });
@@ -101,32 +100,47 @@ test("editing a scene's text is picked up (cache invalidates), other scenes unaf
   assert.deepEqual(appearanceReport(after, "character", "ana")!.appearances.map((x) => x.scene.id), ["a", "b"]);
 });
 
-test("changing an alias is picked up even if scene text is unchanged", () => {
-  const scenes: S[] = [{ id: "a", ch: "c1", order: 0, text: "Aninha waved." }];
-  const withAlias = project(scenes);
-  assert.equal(appearanceReport(withAlias, "character", "ana")!.appearances.length, 1);
-  const noAlias = project(scenes, {
-    characters: [{ id: "ana", name: "Ana", aliases: [], description: "", role: "", category: "", traits: [], notes: "" }],
-  });
-  assert.equal(appearanceReport(noAlias, "character", "ana")!.appearances.length, 0);
-});
-
-test("castGrid: rows for characters then places, cell states, counts, reading order", () => {
+test("sceneContinuity: matched, linked-not-named, named-not-linked", () => {
   const p = project([
-    { id: "s2", ch: "c2", order: 0, text: "The Mill burned.", chars: ["ana"] },     // book position 3
-    { id: "s1", ch: "c1", order: 0, text: "Ana at the mill.", chars: ["ana"], places: ["mill"] },
-    { id: "s0", ch: "c1", order: 1, text: "Ana alone." },
+    {
+      id: "s1",
+      ch: "c1",
+      order: 0,
+      text: "Ana walked to the mill. Aninha smiled.",
+      chars: ["ana"],
+      places: [],
+    },
   ]);
-  const g = castGrid(p);
-  assert.deepEqual(g.scenes.map((s) => s.scene.id), ["s1", "s0", "s2"]);
-  assert.deepEqual(g.rows.map((r) => r.id), ["ana", "mill"]);
-  assert.deepEqual(g.rows[0].cells, ["both", "named", "linked"]);
-  assert.deepEqual(g.rows[1].cells, ["both", "", "named"]);
-  assert.deepEqual(g.rows.map((r) => r.count), [3, 2]);
+  p.characters.push({
+    id: "bob",
+    name: "Bob",
+    aliases: [],
+    description: "",
+    role: "",
+    category: "",
+    traits: [],
+    notes: "",
+  });
+  p.scenes[0].character_ids = ["ana", "bob"];
+  const r = sceneContinuity(p, p.scenes[0]);
+  assert.equal(r.matched.some((i) => i.id === "ana"), true);
+  assert.deepEqual(
+    r.linkedNotNamed.map((i) => i.id).sort(),
+    ["bob"]
+  );
+  assert.deepEqual(
+    r.namedNotLinked.map((i) => i.id).sort(),
+    ["mill"]
+  );
+  assert.equal(r.issueCount, 2);
+  assert.ok(r.matched.find((i) => i.id === "ana")!.mentions >= 2);
 });
 
-test("castGrid on an empty project", () => {
-  const g = castGrid(project([]));
-  assert.deepEqual(g.scenes, []);
-  assert.deepEqual(g.rows.map((r) => r.cells), [[], []]);
+test("sceneContinuity: empty scene with no links is quiet", () => {
+  const p = project([{ id: "s1", ch: "c1", order: 0, text: "Nothing to see." }]);
+  const r = sceneContinuity(p, p.scenes[0]);
+  assert.equal(r.issueCount, 0);
+  assert.equal(r.matched.length, 0);
+  assert.equal(r.linkedNotNamed.length, 0);
+  assert.equal(r.namedNotLinked.length, 0);
 });

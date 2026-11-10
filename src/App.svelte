@@ -39,6 +39,7 @@
   import ThemesDialog from "./components/ThemesDialog.svelte";
   import ReplaceDialog from "./components/ReplaceDialog.svelte";
   import SidePanel from "./components/SidePanel.svelte";
+  import ContinuityPanel from "./components/ContinuityPanel.svelte";
 
   onMount(() => {
     const stopAutosave = startAutosave();
@@ -51,7 +52,6 @@
       try {
         void loadUserThemes();
         await loadInitialProject();
-        // Only after the live copy was read: starting earlier would clear it.
         if (!disposed) stopMirror = startMirror();
         const un = await installCloseGuard();
         if (disposed) un();
@@ -75,45 +75,35 @@
   const anyDialogOpen = () =>
     $searchOpen || $snapshotsOpen || $exportOpen || $replaceOpen || $galleryOpen || $themesOpen;
 
-  // Leaving the manuscript always leaves focus mode (its chrome is hidden there).
   $: if ($mainView !== "manuscript") focusMode.set(false);
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === "Escape" && $focusMode && !anyDialogOpen()) {
-      e.preventDefault();
       focusMode.set(false);
       return;
     }
-    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-    const key = e.key.toLowerCase();
-
-    if (e.shiftKey) {
-      if (key === "s") {
-        e.preventDefault();
-        void saveAs();
-      } else if (key === "f") {
-        e.preventDefault();
-        if ($focusMode) focusMode.set(false);
-        else {
-          mainView.set("manuscript");
-          focusMode.set(true);
-        }
-      } else if (key === "h") {
-        e.preventDefault();
-        snapshotsOpen.set(true);
-      }
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod) return;
+    const t = e.target as HTMLElement | null;
+    const typing =
+      t &&
+      (t.tagName === "INPUT" ||
+        t.tagName === "TEXTAREA" ||
+        t.isContentEditable);
+    if (typing && e.key !== "s" && e.key !== "S" && e.key !== "f" && e.key !== "F") {
       return;
     }
-
-    if (key === "n") {
+    const key = e.key.toLowerCase();
+    if (key === "s") {
       e.preventDefault();
-      void newProject();
-    } else if (key === "s") {
-      e.preventDefault();
-      void manualSave();
+      if (e.shiftKey) void saveAs();
+      else void manualSave();
     } else if (key === "o") {
       e.preventDefault();
       void openProject();
+    } else if (key === "n" && e.shiftKey) {
+      e.preventDefault();
+      void newProject();
     } else if (key === "f") {
       e.preventDefault();
       searchOpen.set(true);
@@ -152,7 +142,12 @@
         {:else if $mainView === "cast"}
           <CastView />
         {:else}
-          <ManuscriptView />
+          <div class="manuscript-stack">
+            <ContinuityPanel />
+            <div class="manuscript-fill">
+              <ManuscriptView />
+            </div>
+          </div>
         {/if}
       </main>
 
@@ -213,6 +208,19 @@
     min-width: 0;
     overflow: auto;
     background: var(--bg);
+  }
+
+  .manuscript-stack {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .manuscript-fill {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
   }
 
   .exit-focus {
