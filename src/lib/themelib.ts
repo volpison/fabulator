@@ -122,10 +122,10 @@ export function collectionsOf(list: ThemeInfo[], builtIns: ReadonlySet<string>):
     .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 }
 
-/** Last path part of a picked folder, usable as a collection name. */
-export function collectionNameFromPath(path: string): string {
-  const parts = path.replace(/[\\/]+$/, "").split(/[\\/]/);
-  return (parts.pop() || "Imported").trim().slice(0, 60) || "Imported";
+/** The display name of a picked folder (from the platform), made usable as a collection name. */
+export function collectionNameFromFolder(displayName: string): string {
+  const name = displayName.replace(/^[\\/]+|[\\/]+$/g, "").trim().slice(0, 60);
+  return name || "Imported";
 }
 
 export { baseName as themeFileBaseName };

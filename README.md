@@ -238,9 +238,13 @@ The Timeline toolbar switches between **Book order** (the chapters × plotlines 
 
 ## Architecture: the Platform layer
 
-The app never calls Tauri or the operating system directly. Everything that needs the machine (file dialogs, reading and writing project files, recovery copies, the live mirror, imported themes, message boxes, the window's close button) goes through one interface, `Platform` (`src/lib/platform/types.ts`). The desktop implementation (`src/lib/platform/tauri.ts`) is the **only** file with Tauri `invoke`/dialog calls; `main.ts` installs it at start-up.
+The app never calls Tauri or the operating system directly. Everything that needs the machine (file dialogs, reading and writing project files, recovery copies, the live mirror, imported themes, message boxes, the window's close button) goes through one interface, `Platform` (`src/lib/platform/types.ts`). The desktop implementation (`src/lib/platform/tauri.ts`) is the **only** file with Tauri `invoke`/dialog calls; `main.ts` installs it at start-up. Files and folders are identified by an opaque **`Location`** (a path on desktop; it could be a content URI on Android). App code never parses one: it asks the platform for a `displayName` (status bar, lists) or `describe` (tooltips), and the compiler enforces this with a branded type.
 
 Why: a different backend (Android with content URIs, or Rust owning the whole project model) means writing another implementation of the same interface, not changing the editor, Timeline or save logic. It also makes the save/open/recovery logic testable: `tests/fakePlatform.ts` is an in-memory pretend disk with scripted dialog answers, and `tests/persistence.test.ts` checks flows such as start-up, Start fresh, reload recovery, Save, New story and opening old files against it.
+
+## Open recent (File → *Open recent*)
+
+The File menu lists the last ten project files you opened or saved (newest first; same-named files show their full location). Choosing one opens it with the usual unsaved-changes protection. A file that is gone (moved, deleted, drive unplugged) is reported and removed from the list; **Clear list** empties it. The list is remembered between sessions.
 
 ## Reordering scenes from the Manuscript list
 

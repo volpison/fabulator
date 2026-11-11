@@ -4,6 +4,7 @@
  * app imports Tauri.
  */
 import type { Platform } from "./types";
+export { toLocation } from "./types";
 
 export type {
   Platform,

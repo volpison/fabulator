@@ -9,6 +9,7 @@ import {
   type SceneTarget,
 } from "./model";
 import type { SearchHit } from "./search";
+import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
 import {
   applyRestore,
@@ -32,7 +33,7 @@ export const loading = writable(true);
 export const error = writable<string | null>(null);
 
 /** Absolute path of the file currently open, or null if unsaved sample. */
-export const currentPath = writable<string | null>(null);
+export const currentPath = writable<Location | null>(null);
 
 /** True when in-memory project differs from last save (simple flag). */
 export const isDirty = writable(false);

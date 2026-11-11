@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  planFolderImport, filterThemes, collectionsOf, countByMode, collectionNameFromPath,
+  planFolderImport, filterThemes, collectionsOf, countByMode, collectionNameFromFolder,
   BUILT_IN, IMPORTED, MAX_FOLDER_THEMES,
 } from "../src/lib/themelib.ts";
 import { importThemeText, specToTheme, serializeSpec, cleanCollection } from "../src/lib/theme-file.ts";
@@ -146,9 +146,9 @@ test("counts and collections", () => {
 });
 
 test("collection name from a folder path", () => {
-  assert.equal(collectionNameFromPath("C:\\Users\\me\\schemes\\base16\\"), "base16");
-  assert.equal(collectionNameFromPath("/home/me/themes/Tinted Pack"), "Tinted Pack");
-  assert.equal(collectionNameFromPath("/"), "Imported");
+  assert.equal(collectionNameFromFolder("base16"), "base16");
+  assert.equal(collectionNameFromFolder("Tinted Pack"), "Tinted Pack");
+  assert.equal(collectionNameFromFolder("/"), "Imported");
 });
 
 import { readFileSync, readdirSync } from "node:fs";

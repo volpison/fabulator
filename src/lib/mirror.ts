@@ -3,6 +3,7 @@
  * the latest unsaved copy so a WebView reload or crash cannot lose it.
  */
 import type { Project } from "./types";
+import { toLocation, type Location } from "./platform/types";
 import { migrateProject } from "./migrate";
 
 /** How long after the last edit the project is sent to Rust. */
@@ -11,7 +12,7 @@ export const MIRROR_DEBOUNCE_MS = 500;
 export type LiveCopy = {
   project: Project;
   /** The file the project belongs to, or null if it has none yet. */
-  path: string | null;
+  path: Location | null;
   /** "memory": the web view was reloaded; "disk": the app was restarted. */
   source: "memory" | "disk";
 };
@@ -25,7 +26,7 @@ export function parseLive(raw: unknown): LiveCopy | null {
     const { project } = migrateProject(r.project);
     return {
       project,
-      path: typeof r.path === "string" && r.path ? r.path : null,
+      path: typeof r.path === "string" && r.path ? toLocation(r.path) : null,
       source: r.source === "memory" ? "memory" : "disk",
     };
   } catch {
@@ -38,10 +39,10 @@ export function shouldAskBeforeRestoring(live: LiveCopy): boolean {
   return live.source !== "memory";
 }
 
-/** What the Restore question says. */
-export function restorePrompt(live: LiveCopy): string {
+/** What the Restore question says. `nameOf` turns a location into a file name (the platform knows how). */
+export function restorePrompt(live: LiveCopy, nameOf: (location: Location) => string): string {
   const title = live.project.title || "Untitled";
-  const file = live.path ? live.path.split(/[/\\]/).pop() : null;
+  const file = live.path ? nameOf(live.path) : null;
   return file
     ? `Fabulator closed with unsaved changes to “${title}” (${file}). Restore those changes?`
     : `Fabulator closed before “${title}” was saved to a file. Restore that unsaved work?`;

@@ -15,7 +15,7 @@ import {
   type ThemeSpec,
 } from "./theme-file";
 import { THEMES, type ThemeInfo } from "./themes";
-import { BUILT_IN, IMPORTED, collectionNameFromPath, planFolderImport } from "./themelib";
+import { BUILT_IN, IMPORTED, collectionNameFromFolder, planFolderImport } from "./themelib";
 
 export type ImportOutcome =
   | { status: "imported"; name: string; warnings: string[] }
@@ -133,7 +133,7 @@ export async function importThemeFolder(): Promise<FolderImportOutcome> {
     if (files.length === 0) {
       return { status: "error", message: "No .yaml, .yml or .json files found in that folder (subfolders up to four levels deep are included)." };
     }
-    const collection = collectionNameFromPath(chosen);
+    const collection = collectionNameFromFolder(platform().displayName(chosen));
     const plan = planFolderImport(
       files.map((f) => ({ name: f.name, text: f.contents })),
       collection,

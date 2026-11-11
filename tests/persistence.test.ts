@@ -1,7 +1,8 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
-import { setPlatform } from "../src/lib/platform/index.ts";
+import { setPlatform, toLocation } from "../src/lib/platform/index.ts";
+import { recentFiles, clearRecents } from "../src/lib/recentStore.ts";
 import {
   loadInitialProject, manualSave, saveNow, ensureSafeToLeave, newProject, loadSample, openProject, startMirror,
 } from "../src/lib/persistence.ts";
@@ -20,6 +21,7 @@ beforeEach(() => {
   project.set(null as any);
   currentPath.set(null);
   markClean();
+  clearRecents();
 });
 
 const liveEnvelope = (title: string, path: string | null, source: "memory" | "disk") => {
@@ -111,7 +113,7 @@ test("autosave never opens a dialog for a story with no file", async () => {
 
 test("a failed save reports the error and leaves the story marked unsaved", async () => {
   await loadInitialProject();
-  currentPath.set("C:\\a.fabulator.json");
+  currentPath.set(toLocation("C:\\a.fabulator.json"));
   markDirty();
   fake.state.failNext = "save";
   assert.equal(await saveNow(), false);
@@ -124,7 +126,7 @@ test("leaving: clean → no question; dirty with a file → saves, no question; 
   assert.equal(await ensureSafeToLeave("Go?"), true);
   assert.equal(fake.state.confirms.length, 0);
 
-  currentPath.set("C:\\a.fabulator.json");
+  currentPath.set(toLocation("C:\\a.fabulator.json"));
   markDirty();
   assert.equal(await ensureSafeToLeave("Go?"), true);
   assert.equal(fake.state.confirms.length, 0);
@@ -194,4 +196,51 @@ test("the live mirror sends unsaved work after a pause and clears when saved", a
   await new Promise((r) => setImmediate(r));
   assert.equal(fake.state.live, null);
   stop();
+});
+
+import { openRecent } from "../src/lib/persistence.ts";
+
+test("opening or saving a file puts it at the top of the recent list", async () => {
+  await loadInitialProject();
+  markDirty();
+  fake.state.saveAnswers.push("C:\\Stories\\one.fabulator.json");
+  await manualSave();
+  assert.deepEqual(get(recentFiles).map((r) => r.name), ["one.fabulator.json"]);
+
+  fake.state.files.set("C:\\Stories\\two.fabulator.json", blankProject(newId));
+  fake.state.openAnswers.push("C:\\Stories\\two.fabulator.json");
+  await openProject();
+  assert.deepEqual(get(recentFiles).map((r) => r.name), ["two.fabulator.json", "one.fabulator.json"]);
+});
+
+test("Open recent opens that file; a missing one is reported and removed from the list", async () => {
+  await loadInitialProject();
+  const good = toLocation("C:\\Stories\\good.fabulator.json");
+  const gone = toLocation("C:\\Stories\\gone.fabulator.json");
+  fake.state.files.set(good, { ...blankProject(newId), title: "Good one" });
+  recentFiles.set([
+    { location: good, name: "good.fabulator.json", at: 2 },
+    { location: gone, name: "gone.fabulator.json", at: 1 },
+  ]);
+
+  await openRecent(gone);
+  assert.equal(get(saveState).status, "error");
+  assert.match(get(saveState).message ?? "", /gone\.fabulator\.json.*removed from recent/);
+  assert.deepEqual(get(recentFiles).map((r) => r.name), ["good.fabulator.json"]);
+
+  await openRecent(good);
+  assert.equal(get(project)!.title, "Good one");
+  assert.equal(get(currentPath), good);
+  assert.equal(get(isDirty), false);
+});
+
+test("Open recent still protects unsaved work", async () => {
+  await loadInitialProject();
+  updateSceneTitle(get(project)!.scenes[0].id, "Unsaved");
+  const loc = toLocation("C:\\x.fabulator.json");
+  fake.state.files.set(loc, blankProject(newId));
+  fake.state.confirmAnswers.push(false); // "Cancel"
+  await openRecent(loc);
+  assert.equal(get(project)!.scenes[0].title, "Unsaved");
+  assert.match(fake.state.confirms[0], /unsaved changes/i);
 });
