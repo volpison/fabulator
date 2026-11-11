@@ -35,6 +35,8 @@ export interface Scene {
   notes: string;
   /** Private to-do list for the scene. */
   todos: SceneTodo[];
+  /** When the scene happens inside the story ("Day 3 evening", "1342-05-02"); free text. */
+  when: string;
 }
 
 export interface SceneTodo {

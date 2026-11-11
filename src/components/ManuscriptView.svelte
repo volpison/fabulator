@@ -22,6 +22,7 @@
   import RichTextEditor from "./RichTextEditor.svelte";
   import ContinuityPanel from "./ContinuityPanel.svelte";
   import SceneNotes from "./SceneNotes.svelte";
+  import WhenField from "./WhenField.svelte";
   import { stats } from "../lib/goalsStore";
   import { formatCount } from "../lib/wordcount";
   import SceneLabels from "./SceneLabels.svelte";
@@ -284,6 +285,7 @@
         ></textarea>
         <div class="meta">
           <SceneLabels scene={$selectedScene} />
+          <WhenField scene={$selectedScene} />
           <span>{formatCount(wordCount)} word{wordCount === 1 ? "" : "s"}</span>
           <button
             type="button"

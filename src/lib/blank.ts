@@ -30,6 +30,7 @@ export function blankProject(newId: (prefix: string) => string): Project {
         color: "",
         notes: "",
         todos: [],
+        when: "",
       },
     ],
     snapshots: [],

@@ -2,6 +2,7 @@
   import { stats } from "../lib/goalsStore";
   import FilterBar from "./FilterBar.svelte";
   import SceneLabels from "./SceneLabels.svelte";
+  import ChronologyView from "./ChronologyView.svelte";
   import PlotlineLabel from "./PlotlineLabel.svelte";
   import { sceneFilter } from "../lib/stores";
   import { colorHex, isFilterActive, matchScene, STATUS_LABEL, cleanStatus } from "../lib/labels";
@@ -25,6 +26,24 @@
   import { scenesInChapter } from "../lib/model";
 
   $: filterOn = isFilterActive($sceneFilter);
+
+  // "Story order" (the plotline grid) or "Story time" (scenes by when they happen).
+  const VIEW_KEY = "fabulator.timelineView";
+  let timeView: "grid" | "time" = (() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "time" ? "time" : "grid";
+    } catch {
+      return "grid";
+    }
+  })();
+  function setTimeView(v: "grid" | "time") {
+    timeView = v;
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* fine */
+    }
+  }
 
   type SceneDrop = {
     chapterId: string;
@@ -253,6 +272,10 @@
     <div class="toolbar">
       <button class="add-scene" on:click={onAddScene}>+ Add Scene</button>
       <button class="add-scene" on:click={onAddChapter}>+ Add Chapter</button>
+      <span class="seg" role="group" aria-label="Timeline view">
+        <button type="button" class:on={timeView === "grid"} on:click={() => setTimeView("grid")} title="Chapters × plotlines">Book order</button>
+        <button type="button" class:on={timeView === "time"} on:click={() => setTimeView("time")} title="Scenes sorted by when they happen in the story">Story time</button>
+      </span>
       <span class="hint">
         Drag cards to move or reorder · Drag chapter headers to reorder chapters ·
         Double-click a title to rename · Click a card to write
@@ -261,6 +284,9 @@
 
     <FilterBar />
 
+    {#if timeView === "time"}
+      <ChronologyView />
+    {:else}
     <div class="timeline">
       <div class="header-row">
         <div class="lane-spacer"></div>
@@ -537,6 +563,7 @@
         </p>
       {/if}
     </div>
+    {/if}
   </div>
 {/if}
 
@@ -546,6 +573,25 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
+  }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .seg button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    color: var(--text-muted);
+  }
+
+  .seg button.on {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--text);
+    font-weight: 600;
   }
 
   .toolbar {

@@ -158,6 +158,7 @@ export function recreateScene(
     color: "",
     notes: "",
     todos: [],
+    when: "",
   };
 }
 

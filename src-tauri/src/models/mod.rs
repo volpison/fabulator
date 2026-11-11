@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 5;
+pub const SCHEMA_VERSION: u32 = 6;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -56,6 +56,9 @@ pub struct Scene {
     /// Private to-do list for the scene.
     #[serde(default)]
     pub todos: Vec<SceneTodo>,
+    /// When the scene happens inside the story (free text, e.g. "Day 3 evening").
+    #[serde(default)]
+    pub when: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -263,6 +266,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
                 // Act II – The Deceptions
                 Scene {
@@ -280,6 +284,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
                 Scene {
                     id: "sc-3".into(),
@@ -296,6 +301,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
                 // Act III – The Reckoning
                 Scene {
@@ -313,6 +319,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
                 Scene {
                     id: "sc-5".into(),
@@ -329,6 +336,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
                 Scene {
                     id: "sc-6".into(),
@@ -345,6 +353,7 @@ impl Project {
                     color: String::new(),
                     notes: String::new(),
                     todos: vec![],
+                    when: String::new(),
                 },
             ],
         }

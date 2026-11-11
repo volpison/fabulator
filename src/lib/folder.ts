@@ -170,6 +170,7 @@ export function toFolder(p: Project): FolderFile[] {
             ["characters", s.character_ids],
             ["places", s.place_ids],
             ["tags", s.tags],
+            ["when", s.when],
             ["notes", s.notes],
             ["todos", todosToLines(s.todos)],
           ]) + (body ? `\n${body}\n` : ""),
@@ -311,6 +312,7 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
         tags: asList(h.tags),
         status: cleanStatus(h.status, defaultStatusFor(content)),
         color: cleanColor(h.color),
+        when: asString(h.when),
         notes: asString(h.notes),
         todos: linesToTodos(asList(h.todos)),
       });
