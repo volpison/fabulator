@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import { themesOpen, galleryOpen } from "../lib/stores";
   import { settings, updateSettings, customThemes } from "../lib/appearance";
   import { THEMES, type ThemeInfo } from "../lib/themes";
@@ -97,7 +97,7 @@
 
   async function onRemoveCollection() {
     const n = counts.all;
-    const ok = await ask(`Remove all ${collections.find((c) => c.name === collection)?.count ?? n} themes in “${collection}”? This cannot be undone.`, {
+    const ok = await platform().confirm(`Remove all ${collections.find((c) => c.name === collection)?.count ?? n} themes in “${collection}”? This cannot be undone.`, {
       title: "Remove collection",
       kind: "warning",
       okLabel: "Remove",

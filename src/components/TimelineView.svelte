@@ -7,7 +7,7 @@
   import { sceneFilter } from "../lib/stores";
   import { colorHex, isFilterActive, matchScene, STATUS_LABEL, cleanStatus } from "../lib/labels";
   import { formatCount } from "../lib/wordcount";
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import {
     project,
     selectedSceneId,
@@ -113,7 +113,7 @@
 
   async function onDeleteScene(id: string, title: string, e: MouseEvent) {
     e.stopPropagation();
-    const ok = await ask(`Delete scene “${title}”? This cannot be undone.`, {
+    const ok = await platform().confirm(`Delete scene “${title}”? This cannot be undone.`, {
       title: "Delete scene",
       kind: "warning",
       okLabel: "Delete",
@@ -157,7 +157,7 @@
   }
 
   async function onDeleteChapter(id: string, title: string) {
-    const ok = await ask(`Delete the empty chapter “${title}”?`, {
+    const ok = await platform().confirm(`Delete the empty chapter “${title}”?`, {
       title: "Delete chapter",
       kind: "warning",
       okLabel: "Delete",

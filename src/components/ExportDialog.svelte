@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { save } from "@tauri-apps/plugin-dialog";
-  import { invoke } from "@tauri-apps/api/core";
+  import { platform } from "../lib/platform";
   import { project, selectedScene, exportOpen } from "../lib/stores";
   import {
     DEFAULT_OPTIONS,
@@ -88,16 +87,16 @@
 
       const result = exportProject($project, options);
       const ext = result.fileName.split(".").pop() ?? "";
-      const path = await save({
+      const path = await platform().pickSaveFile({
         title: "Export",
-        defaultPath: result.fileName,
+        defaultName: result.fileName,
         filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
       });
       if (!path) {
         busy = false;
         return; // cancelled
       }
-      await invoke("write_export", { path, bytes: Array.from(result.bytes) });
+      await platform().writeBytes(path, result.bytes);
       message = `Exported ${result.scenes} scene${result.scenes === 1 ? "" : "s"} to ${path}`;
     } catch (e) {
       failed = true;

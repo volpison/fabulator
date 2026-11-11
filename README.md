@@ -236,6 +236,12 @@ Every scene has a **When** field (under the scene title in the Manuscript, or in
 
 The Timeline toolbar switches between **Book order** (the chapters × plotlines grid) and **Story time**: scenes listed in story order with the gap to the previous one ("+3 days"), their place in the book (#n), and **↩ out of book order** where the story jumps back (flashbacks). Scenes with no usable time, or written in the other style, are listed separately under *Not placed*. Other text is kept as a label (the field turns amber to say it can't be sorted). Story time is saved in the project (format v6; older files upgrade automatically) and in the Markdown folder export, and is not part of exported stories.
 
+## Architecture: the Platform layer
+
+The app never calls Tauri or the operating system directly. Everything that needs the machine (file dialogs, reading and writing project files, recovery copies, the live mirror, imported themes, message boxes, the window's close button) goes through one interface, `Platform` (`src/lib/platform/types.ts`). The desktop implementation (`src/lib/platform/tauri.ts`) is the **only** file with Tauri `invoke`/dialog calls; `main.ts` installs it at start-up.
+
+Why: a different backend (Android with content URIs, or Rust owning the whole project model) means writing another implementation of the same interface, not changing the editor, Timeline or save logic. It also makes the save/open/recovery logic testable: `tests/fakePlatform.ts` is an in-memory pretend disk with scripted dialog answers, and `tests/persistence.test.ts` checks flows such as start-up, Start fresh, reload recovery, Save, New story and opening old files against it.
+
 ## Reordering scenes from the Manuscript list
 
 Drag a scene in the left-hand list and drop it on the top or bottom half of another scene; a line shows where it will land. Dropping onto a scene in another chapter moves it to that chapter (it keeps its plotline). Keyboard: focus a scene and press **Alt+↑ / Alt+↓** to move it one step in reading order (past a chapter boundary it moves into the neighbouring chapter). The Timeline reflects the change immediately.

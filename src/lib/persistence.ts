@@ -3,13 +3,11 @@
  * All file I/O goes through the Rust commands `load_project`, `save_project`
  * and `sample_project`.
  */
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
 import { get } from "svelte/store";
 import type { Project } from "./types";
 import { migrateProject } from "./migrate";
-import { toFolder, fromFolder, type FolderFile } from "./folder";
+import { toFolder, fromFolder } from "./folder";
+import { platform } from "./platform";
 import { blankProject } from "./blank";
 import { MIRROR_DEBOUNCE_MS, parseLive, restorePrompt, shouldAskBeforeRestoring, type LiveCopy } from "./mirror";
 import {
@@ -53,9 +51,9 @@ export function saveNow(opts: SaveOptions = {}): Promise<boolean> {
 
 async function pickSavePath(proj: Project): Promise<string | null> {
   const safeName = proj.title.replace(/[<>:"/\\|?*]/g, "_") || "Untitled";
-  return save({
+  return platform().pickSaveFile({
     title: "Save Fabulator Project",
-    defaultPath: `${safeName}.fabulator.json`,
+    defaultName: `${safeName}.fabulator.json`,
     filters: FILE_FILTERS,
   });
 }
@@ -76,11 +74,7 @@ async function doSave(opts: SaveOptions): Promise<boolean> {
   saveState.set({ status: "saving", at: previous.at, message: null });
 
   try {
-    await invoke("save_project", {
-      path,
-      project: proj,
-      forceBackup: !!opts.forceBackup,
-    });
+    await platform().saveProject(path, proj, { forceBackup: !!opts.forceBackup });
     currentPath.set(path);
     void clearRecovery(false); // it has a real file now
     // Only mark clean if the user didn't keep typing during the save.
@@ -114,7 +108,7 @@ export async function saveAs(): Promise<boolean> {
 export async function ensureSafeToLeave(question: string): Promise<boolean> {
   if (!get(isDirty)) return true;
   if (get(currentPath) && (await saveNow({ forceBackup: true }))) return true;
-  return ask(`You have unsaved changes. ${question}`, {
+  return platform().confirm(`You have unsaved changes. ${question}`, {
     title: "Unsaved changes",
     kind: "warning",
     okLabel: "Discard changes",
@@ -127,8 +121,8 @@ export async function ensureSafeToLeave(question: string): Promise<boolean> {
 /** Best-effort: recovery must never get in the way of writing. */
 async function clearRecovery(keep: boolean): Promise<void> {
   try {
-    await invoke("clear_recovery", { keep });
-    await invoke("clear_live"); // the live mirror only exists while work is unsaved
+    await platform().recovery.clear(keep);
+    await platform().live.clear(); // the live mirror only exists while work is unsaved
   } catch {
     /* nothing to clear, or not possible: fine */
   }
@@ -138,7 +132,7 @@ async function writeRecovery(): Promise<void> {
   const proj = get(project);
   if (!proj || get(currentPath)) return;
   try {
-    await invoke("write_recovery", { project: proj });
+    await platform().recovery.write(proj);
   } catch (e) {
     console.warn("recovery copy failed", e);
   }
@@ -156,21 +150,17 @@ export async function openProject(): Promise<void> {
   if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
   await clearRecovery(false);
 
-  const chosen = await open({
-    title: "Open Fabulator Project",
-    multiple: false,
-    filters: FILE_FILTERS,
-  });
-  if (!chosen || Array.isArray(chosen)) return;
+  const chosen = await platform().pickOpenFile({ title: "Open Fabulator Project", filters: FILE_FILTERS });
+  if (!chosen) return;
 
   try {
-    const raw = await invoke<unknown>("load_project", { path: chosen });
+    const raw = await platform().readProject(chosen);
     const { project: loaded, migratedFrom } = migrateProject(raw);
 
     if (migratedFrom !== null) {
       // Keep an untouched copy of the old-format file before it can be
       // overwritten, then flag the project so the upgrade gets saved.
-      await invoke("backup_project", { path: chosen });
+      await platform().backupProject(chosen);
       showProject(loaded, chosen);
       markDirty(); // autosave then writes the upgraded file
     } else {
@@ -185,19 +175,14 @@ export async function openProject(): Promise<void> {
 export async function exportFolder(): Promise<void> {
   const proj = get(project);
   if (!proj) return;
-  const chosen = await open({
+  const chosen = await platform().pickFolder({
     title: "Choose an empty folder (or an earlier export) for the Markdown files",
-    directory: true,
-    multiple: false,
   });
-  if (!chosen || Array.isArray(chosen)) return;
+  if (!chosen) return;
   try {
     const files = toFolder(proj);
-    const r = await invoke<{ written: number; unchanged: number; removed: number }>("write_project_folder", {
-      dir: chosen,
-      files,
-    });
-    await message(
+    const r = await platform().writeProjectFolder(chosen, files);
+    await platform().notify(
       `Exported ${proj.scenes.length} scene${proj.scenes.length === 1 ? "" : "s"} to the folder.\n` +
         `${r.written} file${r.written === 1 ? "" : "s"} written, ${r.unchanged} unchanged` +
         (r.removed ? `, ${r.removed} no longer needed and removed` : "") +
@@ -205,20 +190,20 @@ export async function exportFolder(): Promise<void> {
       { title: "Export as folder", kind: "info" }
     );
   } catch (e) {
-    await message(`${e}`, { title: "Export as folder failed", kind: "error" });
+    await platform().notify(`${e}`, { title: "Export as folder failed", kind: "error" });
   }
 }
 
 /** File → Open folder: a project folder of Markdown files becomes the open project. */
 export async function openFolder(): Promise<void> {
   if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
-  const chosen = await open({ title: "Open a project folder", directory: true, multiple: false });
-  if (!chosen || Array.isArray(chosen)) return;
+  const chosen = await platform().pickFolder({ title: "Open a project folder" });
+  if (!chosen) return;
   try {
-    const files = await invoke<FolderFile[]>("read_project_folder", { dir: chosen });
+    const files = await platform().readProjectFolder(chosen);
     const result = fromFolder(files, uid);
     if (!result.ok) {
-      await message(result.error, { title: "Open folder", kind: "error" });
+      await platform().notify(result.error, { title: "Open folder", kind: "error" });
       return;
     }
     await clearRecovery(false);
@@ -227,10 +212,10 @@ export async function openFolder(): Promise<void> {
     if (result.warnings.length) {
       const shown = result.warnings.slice(0, 8).join("\n");
       const more = result.warnings.length > 8 ? `\n…and ${result.warnings.length - 8} more.` : "";
-      await message(`Opened with notes:\n\n${shown}${more}`, { title: "Open folder", kind: "warning" });
+      await platform().notify(`Opened with notes:\n\n${shown}${more}`, { title: "Open folder", kind: "warning" });
     }
   } catch (e) {
-    await message(`${e}`, { title: "Open folder failed", kind: "error" });
+    await platform().notify(`${e}`, { title: "Open folder failed", kind: "error" });
   }
 }
 
@@ -244,7 +229,7 @@ export async function newProject(): Promise<void> {
 export async function loadSample(): Promise<void> {
   if (!(await ensureSafeToLeave("Load the sample project anyway?"))) return;
   await clearRecovery(false);
-  showProject(await invoke<Project>("sample_project"), null);
+  showProject(await platform().sampleProject(), null);
 }
 
 /** Initial project on startup. */
@@ -255,7 +240,7 @@ export async function loadInitialProject(): Promise<void> {
     // After a restart (copy from disk) ask first.
     const adopt =
       !shouldAskBeforeRestoring(live) ||
-      (await ask(restorePrompt(live), {
+      (await platform().confirm(restorePrompt(live), {
         title: "Recover unsaved work",
         kind: "info",
         okLabel: "Restore",
@@ -270,7 +255,7 @@ export async function loadInitialProject(): Promise<void> {
   }
   const recovered = await readRecovery();
   if (recovered) {
-    const restore = await ask(
+    const restore = await platform().confirm(
       `Fabulator closed before “${recovered.title || "Untitled"}” was saved to a file. Restore that unsaved work?`,
       {
         title: "Recover unsaved work",
@@ -291,7 +276,7 @@ export async function loadInitialProject(): Promise<void> {
 
 async function readLive(): Promise<LiveCopy | null> {
   try {
-    return parseLive(await invoke<unknown>("live_project"));
+    return parseLive(await platform().live.read());
   } catch (e) {
     console.warn("could not read live copy", e);
     return null;
@@ -300,7 +285,7 @@ async function readLive(): Promise<LiveCopy | null> {
 
 async function readRecovery(): Promise<Project | null> {
   try {
-    const raw = await invoke<unknown>("read_recovery");
+    const raw = await platform().recovery.read();
     return raw ? migrateProject(raw).project : null;
   } catch (e) {
     console.warn("could not read recovery copy", e);
@@ -359,9 +344,9 @@ export function startMirror(): () => void {
       .then(async () => {
         const proj = get(project);
         if (proj && get(isDirty)) {
-          await invoke("mirror_project", { project: proj, path: get(currentPath) });
+          await platform().live.mirror(proj, get(currentPath));
         } else {
-          await invoke("clear_live");
+          await platform().live.clear();
         }
       })
       .catch((e) => console.warn("live mirror failed", e));
@@ -407,11 +392,9 @@ export function startMirror(): () => void {
  * otherwise ask before throwing away unsaved work.
  */
 export async function installCloseGuard(): Promise<() => void> {
-  return getCurrentWindow().onCloseRequested(async (event) => {
-    if (!(await ensureSafeToLeave("Close Fabulator and discard them?"))) {
-      event.preventDefault();
-      return;
-    }
+  return platform().onCloseRequested(async () => {
+    if (!(await ensureSafeToLeave("Close Fabulator and discard them?"))) return false;
     await clearRecovery(false); // closed on purpose: nothing to recover
+    return true;
   });
 }
