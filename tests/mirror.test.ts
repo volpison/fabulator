@@ -1,14 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { blankProject } from "../src/lib/blank.ts";
-import { parseLive, shouldAskBeforeRestoring, restorePrompt, MIRROR_DEBOUNCE_MS } from "../src/lib/mirror.ts";
+import { parseUnsaved, shouldAskBeforeRestoring, restorePrompt, MIRROR_DEBOUNCE_MS } from "../src/lib/mirror.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;
 const env = (over: object = {}) => JSON.parse(JSON.stringify({ path: null, project: blankProject(newId), source: "memory", ...over }));
 
 test("a reload copy is parsed, adopted silently and keeps its file path", () => {
-  const live = parseLive(env({ path: "C:\\Stories\\wolf.fabulator.json" }));
+  const live = parseUnsaved(env({ path: "C:\\Stories\\wolf.fabulator.json" }));
   assert.ok(live);
   assert.equal(live.path, "C:\\Stories\\wolf.fabulator.json");
   assert.equal(live.source, "memory");
@@ -16,26 +16,26 @@ test("a reload copy is parsed, adopted silently and keeps its file path", () => 
 });
 
 test("a copy read from disk after a restart asks first; no path means no file yet", () => {
-  const live = parseLive(env({ source: "disk" }));
+  const live = parseUnsaved(env({ source: "disk" }));
   assert.ok(live);
   assert.equal(live.path, null);
   assert.equal(shouldAskBeforeRestoring(live), true);
 });
 
 test("old-format projects are upgraded; garbage gives null, never an exception", () => {
-  assert.equal(parseLive(null), null);
-  assert.equal(parseLive("x"), null);
-  assert.equal(parseLive({ path: null }), null);
-  assert.equal(parseLive({ project: 5 }), null);
+  assert.equal(parseUnsaved(null), null);
+  assert.equal(parseUnsaved("x"), null);
+  assert.equal(parseUnsaved({ path: null }), null);
+  assert.equal(parseUnsaved({ project: 5 }), null);
   const old = env();
   old.project.scenes[0].status = undefined;
-  assert.ok(parseLive(old)?.project.scenes[0].status);
+  assert.ok(parseUnsaved(old)?.project.scenes[0].status);
 });
 
 test("the prompt names the project and the file", () => {
-  const withFile = parseLive(env({ source: "disk", path: "/home/a/wolf.fabulator.json" }))!;
+  const withFile = parseUnsaved(env({ source: "disk", path: "/home/a/wolf.fabulator.json" }))!;
   assert.match(restorePrompt(withFile, (l) => l.split("/").pop()!), /wolf\.fabulator\.json/);
-  const noFile = parseLive(env({ source: "disk" }))!;
+  const noFile = parseUnsaved(env({ source: "disk" }))!;
   assert.match(restorePrompt(noFile, (l) => l.split("/").pop()!), /before .* was saved to a file/);
 });
 

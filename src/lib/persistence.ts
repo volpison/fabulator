@@ -11,7 +11,7 @@ import { platform } from "./platform";
 import type { Location } from "./platform/types";
 import { rememberRecent, forgetRecent } from "./recentStore";
 import { blankProject } from "./blank";
-import { MIRROR_DEBOUNCE_MS, parseLive, restorePrompt, shouldAskBeforeRestoring, type LiveCopy } from "./mirror";
+import { MIRROR_DEBOUNCE_MS, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
 import {
   project,
   currentPath,
@@ -79,7 +79,8 @@ async function doSave(opts: SaveOptions): Promise<boolean> {
     await platform().saveProject(path, proj, { forceBackup: !!opts.forceBackup });
     currentPath.set(path);
     rememberRecent(path);
-    void clearRecovery(false); // it has a real file now
+    // The unsaved-work copy is dropped by the mirror once nothing is unsaved (see startMirror):
+    // only it knows whether more edits arrived while this save was running.
     // Only mark clean if the user didn't keep typing during the save.
     if (get(revision) === startedAt) markClean();
     saveState.set({ status: "saved", at: Date.now(), message: null });
@@ -119,25 +120,14 @@ export async function ensureSafeToLeave(question: string): Promise<boolean> {
   });
 }
 
-// ─── Recovery copy for projects with no file yet ───────────
+// ─── Unsaved work (kept by the platform: see startMirror) ───
 
-/** Best-effort: recovery must never get in the way of writing. */
-async function clearRecovery(keep: boolean): Promise<void> {
+/** Best-effort: this must never get in the way of what the person is doing. */
+async function discardUnsaved(keepCopy: boolean): Promise<void> {
   try {
-    await platform().recovery.clear(keep);
-    await platform().live.clear(); // the live mirror only exists while work is unsaved
+    await platform().unsaved.discard(keepCopy);
   } catch {
-    /* nothing to clear, or not possible: fine */
-  }
-}
-
-async function writeRecovery(): Promise<void> {
-  const proj = get(project);
-  if (!proj || get(currentPath)) return;
-  try {
-    await platform().recovery.write(proj);
-  } catch (e) {
-    console.warn("recovery copy failed", e);
+    /* nothing to discard, or not possible: fine */
   }
 }
 
@@ -152,7 +142,7 @@ function showProject(proj: Project, path: Location | null) {
 /** File → Open…: ask which file, then open it. */
 export async function openProject(): Promise<void> {
   if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
-  await clearRecovery(false);
+  await discardUnsaved(false);
 
   const chosen = await platform().pickOpenFile({ title: "Open Fabulator Project", filters: FILE_FILTERS });
   if (!chosen) return;
@@ -162,21 +152,19 @@ export async function openProject(): Promise<void> {
 /** File → Open recent → a file from the list. */
 export async function openRecent(location: Location): Promise<void> {
   if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
-  await clearRecovery(false);
+  await discardUnsaved(false);
   await openAt(location, true);
 }
 
 async function openAt(location: Location, fromRecent: boolean): Promise<void> {
   try {
-    const raw = await platform().readProject(location);
-    const { project: loaded, migratedFrom } = migrateProject(raw);
+    // The platform has already backed up an older-format file before this returns.
+    const { data } = await platform().openProject(location);
+    const { project: loaded, migratedFrom } = migrateProject(data);
 
     if (migratedFrom !== null) {
-      // Keep an untouched copy of the old-format file before it can be
-      // overwritten, then flag the project so the upgrade gets saved.
-      await platform().backupProject(location);
       showProject(loaded, location);
-      markDirty(); // autosave then writes the upgraded file
+      markDirty(); // flag the project so autosave writes the upgraded file
     } else {
       showProject(loaded, location);
     }
@@ -231,7 +219,7 @@ export async function openFolder(): Promise<void> {
       await platform().notify(result.error, { title: "Open folder", kind: "error" });
       return;
     }
-    await clearRecovery(false);
+    await discardUnsaved(false);
     showProject(result.project, null);
     markDirty(); // it has no .fabulator.json yet: ask to save before closing
     if (result.warnings.length) {
@@ -247,80 +235,52 @@ export async function openFolder(): Promise<void> {
 /** File → New story. */
 export async function newProject(): Promise<void> {
   if (!(await ensureSafeToLeave("Start a new story anyway?"))) return;
-  await clearRecovery(false);
+  await discardUnsaved(false);
   showProject(blankProject(uid), null);
 }
 
 export async function loadSample(): Promise<void> {
   if (!(await ensureSafeToLeave("Load the sample project anyway?"))) return;
-  await clearRecovery(false);
+  await discardUnsaved(false);
   showProject(await platform().sampleProject(), null);
 }
 
 /** Initial project on startup. */
 export async function loadInitialProject(): Promise<void> {
-  const live = await readLive();
-  if (live) {
-    // Reload of the web view: Rust still has the work, so just carry on.
-    // After a restart (copy from disk) ask first.
+  const unsaved = await readUnsaved();
+  if (unsaved) {
+    // A reload of the web view: the platform still has the work, so just carry on.
+    // After a restart or crash (a copy from disk) ask first.
     const adopt =
-      !shouldAskBeforeRestoring(live) ||
-      (await platform().confirm(restorePrompt(live, (l) => platform().displayName(l)), {
+      !shouldAskBeforeRestoring(unsaved) ||
+      (await platform().confirm(restorePrompt(unsaved, (l) => platform().displayName(l)), {
         title: "Recover unsaved work",
         kind: "info",
         okLabel: "Restore",
         cancelLabel: "Start fresh",
       }));
     if (adopt) {
-      showProject(live.project, live.path);
+      showProject(unsaved.project, unsaved.path);
       markDirty(); // still unsaved: guards closing, autosaves, keeps mirroring
       return;
     }
-    await clearRecovery(true);
-  }
-  const recovered = await readRecovery();
-  if (recovered) {
-    const restore = await platform().confirm(
-      `Fabulator closed before “${recovered.title || "Untitled"}” was saved to a file. Restore that unsaved work?`,
-      {
-        title: "Recover unsaved work",
-        kind: "info",
-        okLabel: "Restore",
-        cancelLabel: "Start fresh",
-      }
-    );
-    if (restore) {
-      showProject(recovered, null);
-      markDirty(); // still unsaved: keeps the recovery copy going and guards closing
-      return;
-    }
-    await clearRecovery(true); // kept aside as "discarded", not deleted
+    await discardUnsaved(true); // kept aside as "discarded", not deleted
   }
   showProject(blankProject(uid), null); // a new session starts with an empty story
 }
 
-async function readLive(): Promise<LiveCopy | null> {
+async function readUnsaved(): Promise<UnsavedCopy | null> {
   try {
-    return parseLive(await platform().live.read());
+    return parseUnsaved(await platform().unsaved.read());
   } catch (e) {
-    console.warn("could not read live copy", e);
-    return null;
-  }
-}
-
-async function readRecovery(): Promise<Project | null> {
-  try {
-    const raw = await platform().recovery.read();
-    return raw ? migrateProject(raw).project : null;
-  } catch (e) {
-    console.warn("could not read recovery copy", e);
+    console.warn("could not read unsaved work", e);
     return null;
   }
 }
 
 /**
- * Autosave: projects with a file are saved to it; projects without one get a
- * recovery copy in the app's data folder. Returns a cleanup function.
+ * Autosave: projects with a file are saved to it. (Projects without one are kept
+ * safe by the mirror below.) Returns a cleanup function.
  */
 export function startAutosave(): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -328,8 +288,6 @@ export function startAutosave(): () => void {
 
   const unsubscribe = revision.subscribe(() => {
     if (!get(isDirty)) return;
-    const hasFile = !!get(currentPath);
-
     const now = Date.now();
     if (!firstUnsavedAt) firstUnsavedAt = now;
     const untilMaxWait = firstUnsavedAt + AUTOSAVE_MAX_WAIT_MS - now;
@@ -338,10 +296,9 @@ export function startAutosave(): () => void {
     timer = setTimeout(
       () => {
         firstUnsavedAt = 0;
-        // With a file: a real autosave. Without one: a recovery copy only
-        // (autosave never opens a "Save as" dialog while you write).
-        if (hasFile || get(currentPath)) void saveNow();
-        else void writeRecovery();
+        // With a file: a real autosave. Without one nothing is written (autosave never opens
+        // a "Save as" dialog while you write); the mirror already keeps a copy for recovery.
+        if (get(currentPath)) void saveNow();
       },
       Math.max(0, Math.min(AUTOSAVE_DEBOUNCE_MS, untilMaxWait))
     );
@@ -369,9 +326,9 @@ export function startMirror(): () => void {
       .then(async () => {
         const proj = get(project);
         if (proj && get(isDirty)) {
-          await platform().live.mirror(proj, get(currentPath));
+          await platform().unsaved.keep(proj, get(currentPath));
         } else {
-          await platform().live.clear();
+          await platform().unsaved.discard(false);
         }
       })
       .catch((e) => console.warn("live mirror failed", e));
@@ -419,7 +376,7 @@ export function startMirror(): () => void {
 export async function installCloseGuard(): Promise<() => void> {
   return platform().onCloseRequested(async () => {
     if (!(await ensureSafeToLeave("Close Fabulator and discard them?"))) return false;
-    await clearRecovery(false); // closed on purpose: nothing to recover
+    await discardUnsaved(false); // closed on purpose: nothing to recover
     return true;
   });
 }

@@ -2,6 +2,7 @@
  * An in-memory Platform for tests: a pretend disk, scripted dialog answers, and a
  * record of what the app asked for.
  */
+import { CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
 import { toLocation, type Platform, type FolderFile, type ThemeFileData } from "../src/lib/platform/index.ts";
 
 export type Fake = ReturnType<typeof createFakePlatform>;
@@ -11,9 +12,9 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     /** Pretend disk: location → raw JSON as stored. */
     files: new Map<string, unknown>(),
     folders: new Map<string, FolderFile[]>(),
-    recovery: null as unknown,
+    /** The unsaved-work copy: `{ project, path, source }` (tests may set any source). */
+    unsaved: null as null | { project: unknown; path: string | null; source: "memory" | "disk" | "legacy" },
     discarded: null as unknown,
-    live: null as unknown,
     themes: new Map<string, string>(),
     /** Scripted answers, consumed in order (defaults: confirm → false, pickers → null). */
     confirmAnswers: [] as boolean[],
@@ -26,6 +27,8 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     notices: [] as string[],
     /** Set to make the next call of that kind fail. */
     failNext: null as string | null,
+    /** Runs in the middle of the next save (to simulate typing while a save is in progress). */
+    duringSave: null as null | (() => void),
   };
   const note = (s: string) => state.log.push(s);
   const maybeFail = (kind: string) => {
@@ -62,17 +65,21 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     async sampleProject() {
       return clone(sample) as any;
     },
-    async readProject(location) {
+    async openProject(location) {
       if (!state.files.has(location)) throw new Error(`no such file: ${location}`);
-      return clone(state.files.get(location));
+      const data = clone(state.files.get(location)) as any;
+      // The platform's rule: an older-format (or unversioned) file is backed up before it can be replaced.
+      const backedUp = typeof data?.schema_version !== "number" || data.schema_version < CURRENT_SCHEMA_VERSION;
+      if (backedUp) note(`backup ${location}`);
+      return { data, backedUp };
     },
     async saveProject(location, project, o) {
       maybeFail("save");
+      const hook = state.duringSave;
+      state.duringSave = null;
+      hook?.();
       note(`save ${location}${o.forceBackup ? " (backup)" : ""}`);
       state.files.set(location, clone(project));
-    },
-    async backupProject(location) {
-      note(`backup ${location}`);
     },
 
     async readText(location) {
@@ -89,31 +96,18 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
       return clone(state.folders.get(folder) ?? []);
     },
 
-    recovery: {
-      async write(project) {
-        note("recovery.write");
-        state.recovery = clone(project);
+    unsaved: {
+      async keep(project, path) {
+        note("unsaved.keep");
+        state.unsaved = { project: clone(project), path, source: "memory" };
       },
       async read() {
-        return clone(state.recovery) ?? null;
+        return clone(state.unsaved) ?? null;
       },
-      async clear(keep) {
-        note(`recovery.clear${keep ? "(keep)" : ""}`);
-        if (keep && state.recovery) state.discarded = state.recovery;
-        state.recovery = null;
-      },
-    },
-    live: {
-      async mirror(project, path) {
-        note("live.mirror");
-        state.live = { path, project: clone(project) };
-      },
-      async read() {
-        return clone(state.live) ?? null;
-      },
-      async clear() {
-        note("live.clear");
-        state.live = null;
+      async discard(keepCopy) {
+        note(`unsaved.discard${keepCopy ? "(keep)" : ""}`);
+        if (keepCopy && state.unsaved) state.discarded = state.unsaved;
+        state.unsaved = null;
       },
     },
 

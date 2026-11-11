@@ -298,11 +298,21 @@ The sun hung heavy over the **north pasture**.
 
 ## Live mirror: a reload or crash cannot lose your work
 
-The web view still owns the project, but while there are unsaved changes it sends the whole project to the Rust side about half a second after each edit (and when the window is hidden or unloading). Rust keeps that copy in memory and also writes it to `live.fabulator.json` in the app's `recovery` data folder.
+The web view still owns the project, but while there are unsaved changes it sends the whole project (plus its file path, if any) to the Rust side about half a second after each edit (and when the window is hidden or unloading). Rust keeps that copy in memory and also writes it to `live.fabulator.json` in the app's `recovery` data folder.
 
 - **Web view reloaded** (the Rust process is still running): the app silently picks the work back up, with the same file path, still marked unsaved.
 - **App restarted or crashed**: you are asked whether to restore the unsaved changes (works for projects with and without a file).
-- The mirror is cleared when everything is saved, or when you close the window, start a new story or open another project on purpose.
+- The copy is dropped when the web view reports nothing is unsaved (after a save that covered everything), or when you close the window, start a new story or open another project on purpose. Text typed *during* a save is never lost: the copy survives until the next mirror update says it is clean.
+
+### Rules that now live in Rust
+
+These are commands any front end can reuse (`src-tauri/src/storage.rs` holds the logic, `lib.rs` the commands):
+
+- `open_project(path)`: reads and parses the file, and makes a one-off `.bak` of it first if it is older than the current schema (or has no version), so an upgrade can never destroy the original. If that backup fails, the open fails.
+- `save_project(path, project, force_backup)`: atomic write with rotating backups (also drops any legacy recovery copy).
+- `keep_unsaved(project, path)` / `unsaved_work()` / `discard_unsaved(keep_copy)`: one store for unsaved work. Reading prefers the in-memory copy, then `live.fabulator.json`, then the legacy `recovery.fabulator.json` from older versions (still read, never written). *Start fresh* uses `keep_copy` to move the newest copy to `discarded.fabulator.json` (one slot, replaced each time).
+
+The web view no longer writes separate recovery files; autosave only saves projects that already have a file.
 
 Planned later: sending only the changed scene for very large projects.
 

@@ -115,49 +115,22 @@ pub fn backup_existing(path: &Path, force: bool, now: u64) -> io::Result<Option<
     Ok(Some(dest))
 }
 
-// ─── Crash recovery for projects that have no file yet ───────────
-
-const RECOVERY_FILE: &str = "recovery.fabulator.json";
-const DISCARDED_FILE: &str = "discarded.fabulator.json";
-
-/// Keep a copy of unsaved work (atomic). `dir` is created if needed.
-pub fn write_recovery(dir: &Path, bytes: &[u8]) -> io::Result<()> {
-    fs::create_dir_all(dir)?;
-    write_atomic(&dir.join(RECOVERY_FILE), bytes)
-}
-
-/// The recovery copy, if there is one.
-pub fn read_recovery(dir: &Path) -> io::Result<Option<String>> {
-    match fs::read_to_string(dir.join(RECOVERY_FILE)) {
-        Ok(s) => Ok(Some(s)),
-        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e),
-    }
-}
-
-/// Remove the recovery copy. With `keep`, it is moved to a single
-/// "discarded" file instead (replacing the previous one), so declining a
-/// restore by mistake is not fatal.
-pub fn clear_recovery(dir: &Path, keep: bool) -> io::Result<()> {
-    let file = dir.join(RECOVERY_FILE);
-    if !file.exists() {
-        return Ok(());
-    }
-    if keep {
-        let _ = fs::remove_file(dir.join(DISCARDED_FILE));
-        fs::rename(&file, dir.join(DISCARDED_FILE))
-    } else {
-        fs::remove_file(&file)
-    }
-}
-
-// ─── Live mirror of the project being edited ─────────────────────
+// ─── Unsaved work ────────────────────────────────────────────────
 //
-// The web view sends the whole unsaved project here a moment after each
-// edit. Rust keeps it in memory (survives a WebView reload) and also on
-// disk (survives a crash). It only exists while there are unsaved changes.
+// One concept: "what would be lost if the app died right now". While there are
+// unsaved changes the web view sends the whole project here (`write_live`);
+// Rust keeps it in memory (survives a WebView reload) and in a file (survives a
+// crash). Older versions kept a separate recovery copy of projects that had no
+// file yet (`recovery.fabulator.json`); it is still read, never written.
 
 const LIVE_FILE: &str = "live.fabulator.json";
+const LEGACY_RECOVERY_FILE: &str = "recovery.fabulator.json";
+const DISCARDED_FILE: &str = "discarded.fabulator.json";
+
+/// Where a copy of unsaved work came from.
+pub const SOURCE_MEMORY: &str = "memory";
+pub const SOURCE_DISK: &str = "disk";
+pub const SOURCE_LEGACY: &str = "legacy";
 
 /// Write the live copy (atomic). `dir` is created if needed.
 pub fn write_live(dir: &Path, bytes: &[u8]) -> io::Result<()> {
@@ -165,21 +138,76 @@ pub fn write_live(dir: &Path, bytes: &[u8]) -> io::Result<()> {
     write_atomic(&dir.join(LIVE_FILE), bytes)
 }
 
-/// The live copy on disk, if there is one.
-pub fn read_live(dir: &Path) -> io::Result<Option<String>> {
-    match fs::read_to_string(dir.join(LIVE_FILE)) {
+fn read_optional(path: &Path) -> io::Result<Option<String>> {
+    match fs::read_to_string(path) {
         Ok(s) => Ok(Some(s)),
         Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
         Err(e) => Err(e),
     }
 }
 
-/// Remove the live copy (nothing to remove is fine).
-pub fn clear_live(dir: &Path) -> io::Result<()> {
-    match fs::remove_file(dir.join(LIVE_FILE)) {
+/// The copy to offer: the one in memory (the web view was reloaded), else the
+/// live file (the app restarted or crashed), else a legacy recovery copy.
+/// Returns where it came from and its text.
+pub fn choose_unsaved(memory: Option<String>, dir: &Path) -> io::Result<Option<(&'static str, String)>> {
+    if let Some(text) = memory {
+        return Ok(Some((SOURCE_MEMORY, text)));
+    }
+    if let Some(text) = read_optional(&dir.join(LIVE_FILE))? {
+        return Ok(Some((SOURCE_DISK, text)));
+    }
+    Ok(read_optional(&dir.join(LEGACY_RECOVERY_FILE))?.map(|text| (SOURCE_LEGACY, text)))
+}
+
+/// Forget the unsaved copies on disk. With `keep`, the newest one (live, else
+/// legacy) is moved to a single "discarded" file instead (replacing the
+/// previous one), so declining a restore by mistake is not fatal.
+pub fn discard_unsaved(dir: &Path, keep: bool) -> io::Result<()> {
+    let live = dir.join(LIVE_FILE);
+    let legacy = dir.join(LEGACY_RECOVERY_FILE);
+    let discarded = dir.join(DISCARDED_FILE);
+
+    if keep {
+        let newest = if live.is_file() {
+            Some(&live)
+        } else if legacy.is_file() {
+            Some(&legacy)
+        } else {
+            None
+        };
+        if let Some(src) = newest {
+            let _ = fs::remove_file(&discarded);
+            fs::rename(src, &discarded)?;
+        }
+    }
+    for f in [&live, &legacy] {
+        match fs::remove_file(f) {
+            Ok(()) => {}
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
+}
+
+/// A successful save of a project that used to have only a legacy recovery copy
+/// makes that copy obsolete. (The live copy is handled by the web view, because
+/// only it knows whether more edits arrived while the save was running.)
+pub fn clear_legacy_recovery(dir: &Path) -> io::Result<()> {
+    match fs::remove_file(dir.join(LEGACY_RECOVERY_FILE)) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
         Err(e) => Err(e),
+    }
+}
+
+/// Opening a file written by an older version of Fabulator: it is upgraded in
+/// memory and will replace the old file on the next save, so an untouched copy
+/// is kept first. Files without a version are the oldest format.
+pub fn needs_upgrade_backup(found: Option<u64>, current: u32) -> bool {
+    match found {
+        None => true,
+        Some(v) => v < u64::from(current),
     }
 }
 
@@ -596,40 +624,74 @@ mod tests {
     }
 
     #[test]
-    fn live_copy_roundtrip_and_clear() {
-        let d = scratch("live").join("nested").join("recovery");
-        assert_eq!(read_live(&d).unwrap(), None);
-        clear_live(&d).unwrap(); // clearing nothing is fine
-        write_live(&d, b"one").unwrap(); // creates the folder
-        write_live(&d, b"two").unwrap();
-        assert_eq!(read_live(&d).unwrap().as_deref(), Some("two"));
-        // independent of the pathless recovery copy
-        assert_eq!(read_recovery(&d).unwrap(), None);
-        clear_live(&d).unwrap();
-        assert_eq!(read_live(&d).unwrap(), None);
+    fn unsaved_work_prefers_memory_then_live_then_legacy() {
+        let d = scratch("unsaved-choose").join("nested").join("recovery");
+        assert_eq!(choose_unsaved(None, &d).unwrap(), None); // nothing, no error
+
+        fs::create_dir_all(&d).unwrap();
+        fs::write(d.join(LEGACY_RECOVERY_FILE), "legacy").unwrap();
+        assert_eq!(choose_unsaved(None, &d).unwrap(), Some((SOURCE_LEGACY, "legacy".to_string())));
+
+        write_live(&d, b"live").unwrap();
+        assert_eq!(choose_unsaved(None, &d).unwrap(), Some((SOURCE_DISK, "live".to_string())));
+
+        assert_eq!(
+            choose_unsaved(Some("mem".to_string()), &d).unwrap(),
+            Some((SOURCE_MEMORY, "mem".to_string()))
+        );
     }
 
     #[test]
-    fn recovery_roundtrip_discard_and_clear() {
-        let d = scratch("recovery").join("nested").join("recovery");
-        assert_eq!(read_recovery(&d).unwrap(), None); // nothing yet, no error
-        clear_recovery(&d, false).unwrap(); // clearing nothing is fine
+    fn live_copy_is_replaced_atomically() {
+        let d = scratch("unsaved-live").join("x");
+        write_live(&d, b"one").unwrap();
+        write_live(&d, b"two").unwrap();
+        assert_eq!(read_optional(&d.join(LIVE_FILE)).unwrap().as_deref(), Some("two"));
+    }
 
-        write_recovery(&d, b"first").unwrap(); // creates the folder
-        write_recovery(&d, b"second").unwrap();
-        assert_eq!(read_recovery(&d).unwrap().as_deref(), Some("second"));
+    #[test]
+    fn discarding_removes_everything_or_sets_the_newest_aside() {
+        let d = scratch("unsaved-discard").join("recovery");
+        discard_unsaved(&d, false).unwrap(); // nothing to discard is fine
+        discard_unsaved(&d, true).unwrap();
 
-        clear_recovery(&d, true).unwrap(); // kept as "discarded"
-        assert_eq!(read_recovery(&d).unwrap(), None);
-        assert_eq!(fs::read_to_string(d.join("discarded.fabulator.json")).unwrap(), "second");
+        write_live(&d, b"first").unwrap();
+        fs::write(d.join(LEGACY_RECOVERY_FILE), "old").unwrap();
+        discard_unsaved(&d, true).unwrap(); // the live copy is the newest
+        assert_eq!(choose_unsaved(None, &d).unwrap(), None);
+        assert_eq!(read_optional(&d.join(DISCARDED_FILE)).unwrap().as_deref(), Some("first"));
 
-        write_recovery(&d, b"third").unwrap();
-        clear_recovery(&d, true).unwrap(); // replaces the previous discarded copy
-        assert_eq!(fs::read_to_string(d.join("discarded.fabulator.json")).unwrap(), "third");
+        write_live(&d, b"second").unwrap();
+        discard_unsaved(&d, true).unwrap(); // replaces the previous discarded copy
+        assert_eq!(read_optional(&d.join(DISCARDED_FILE)).unwrap().as_deref(), Some("second"));
 
-        write_recovery(&d, b"fourth").unwrap();
-        clear_recovery(&d, false).unwrap(); // really gone
-        assert_eq!(read_recovery(&d).unwrap(), None);
+        fs::write(d.join(LEGACY_RECOVERY_FILE), "only legacy").unwrap();
+        discard_unsaved(&d, true).unwrap(); // falls back to the legacy copy
+        assert_eq!(read_optional(&d.join(DISCARDED_FILE)).unwrap().as_deref(), Some("only legacy"));
+
+        write_live(&d, b"third").unwrap();
+        discard_unsaved(&d, false).unwrap(); // really gone (the kept copy stays)
+        assert_eq!(choose_unsaved(None, &d).unwrap(), None);
+        assert_eq!(read_optional(&d.join(DISCARDED_FILE)).unwrap().as_deref(), Some("only legacy"));
+    }
+
+    #[test]
+    fn saving_clears_only_the_legacy_recovery_copy() {
+        let d = scratch("unsaved-legacy-save").join("recovery");
+        clear_legacy_recovery(&d).unwrap(); // nothing there: fine
+        write_live(&d, b"live").unwrap();
+        fs::write(d.join(LEGACY_RECOVERY_FILE), "old").unwrap();
+        clear_legacy_recovery(&d).unwrap();
+        assert_eq!(choose_unsaved(None, &d).unwrap(), Some((SOURCE_DISK, "live".to_string())));
+    }
+
+    #[test]
+    fn only_older_or_unversioned_files_get_an_upgrade_backup() {
+        assert!(needs_upgrade_backup(None, 6));
+        assert!(needs_upgrade_backup(Some(0), 6));
+        assert!(needs_upgrade_backup(Some(5), 6));
+        assert!(!needs_upgrade_backup(Some(6), 6));
+        assert!(!needs_upgrade_backup(Some(7), 6)); // newer: the app refuses it elsewhere
     }
 
     #[test]
