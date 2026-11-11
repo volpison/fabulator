@@ -470,6 +470,12 @@
                         {/if}
                         <div class="card-foot">
                           <span class="badge s-{cleanStatus(scene.status)}">{STATUS_LABEL[cleanStatus(scene.status)]}</span>
+                          {#if scene.todos.some((t) => !t.done)}
+                            <span class="card-todo" title="Open to-dos in this scene">☐ {scene.todos.filter((t) => !t.done).length}</span>
+                          {/if}
+                          {#if scene.notes.trim()}
+                            <span class="card-todo" title="This scene has notes">✎</span>
+                          {/if}
                           <span class="card-words">
                             {formatCount($stats.byScene.get(scene.id) ?? 0)} words
                           </span>
@@ -843,6 +849,12 @@
     justify-content: space-between;
     gap: 0.5rem;
     margin-top: 0.4rem;
+  }
+
+  .card-todo {
+    font-size: 0.68rem;
+    color: #b45309;
+    margin-left: 0.35rem;
   }
 
   .card-words {

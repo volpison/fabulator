@@ -9,9 +9,10 @@
  * turns version n into n+1, and add a test. Never edit an old step.
  */
 import { cleanColor, cleanStatus, defaultStatusFor } from "./labels";
+import { cleanTodos } from "./scenenotes";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export type MigrationResult = {
   project: Project;
@@ -69,11 +70,17 @@ function v3ToV4(p: Raw): Raw {
   return { ...p, schema_version: 4 };
 }
 
+/** v4 -> v5: scenes gain `notes` and `todos` (normalize() fills them). */
+function v4ToV5(p: Raw): Raw {
+  return { ...p, schema_version: 5 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
   2: v2ToV3,
   3: v3ToV4,
+  4: v4ToV5,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -156,6 +163,8 @@ function normalize(p: Raw): Project {
     tags: arr(s.tags).filter((x) => typeof x === "string"),
     status: cleanStatus(s.status, defaultStatusFor(str(s.content))),
     color: cleanColor(s.color),
+    notes: str(s.notes),
+    todos: cleanTodos(s.todos),
   })) as Scene[];
 
   // Dense orders per chapter; ties keep original file order (sort is stable).

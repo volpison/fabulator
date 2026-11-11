@@ -209,7 +209,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (schema v4): scenes with text become *Draft*, empty ones *Idea*.
+- Older projects are upgraded automatically (now schema v5): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -222,6 +222,10 @@ While writing, type `@` at the start of a word (not inside an e-mail address) an
 ## Cast check above the editor
 
 A slim bar above the text compares a scene's cast with its text. If everything lines up it lists the cast with mention counts ("Cast matches the text"). If someone is on the cast but never named in the text it turns amber and offers **Unlink** (take them off the scene) or **×** (keep them, e.g. they appear only as "she", and hide the notice for this session). Names that appear in the text but are not on the cast are still offered by the **Link** banner. The bar is hidden in focus mode.
+
+## Scene notes and to-dos
+
+Under the editor, a collapsed bar **Notes & to-dos** opens a private area for the scene: a notes box (reminders, research, "check the timeline") and a to-do list (type and press Enter; tick to complete; double-click to edit; **Clear done** removes finished ones). The bar summarises what is pending, and Timeline cards show **☐ n** for open to-dos and **✎** when a scene has notes. Notes and to-dos are saved in the project file (format upgraded to v5; older files upgrade automatically) and in the Markdown folder export, but are **never part of the exported story** (DOCX, EPUB, text…).
 
 ## Reordering scenes from the Manuscript list
 
@@ -297,7 +301,7 @@ Planned later: sending only the changed scene for very large projects.
   chapter headers, hover highlights the row and column and describes the cell, the open scene is
   marked, and clicking a name shows that character or place in the side panel.
 
-## Data model (schema v4)
+## Data model (schema v5)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.
