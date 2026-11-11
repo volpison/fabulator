@@ -5,19 +5,27 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
-import type { Platform, FolderFile, FolderWriteReport, ThemeFileData } from "./types";
+import { toLocation, type Platform, type Location, type FolderFile, type FolderWriteReport, type ThemeFileData } from "./types";
 import type { Project } from "../types";
 
-const single = (r: string | string[] | null): string | null => (!r || Array.isArray(r) ? null : r);
+const single = (r: string | string[] | null): Location | null => (!r || Array.isArray(r) ? null : toLocation(r));
+
+const lastSegment = (path: string) => path.split(/[/\\]/).filter(Boolean).pop() ?? path;
 
 export const tauriPlatform: Platform = {
+  displayName: (location) => lastSegment(location),
+  describe: (location) => location,
+
   confirm: (msg, o) =>
     ask(msg, { title: o.title, kind: o.kind ?? "warning", okLabel: o.okLabel, cancelLabel: o.cancelLabel }),
   notify: async (msg, o) => {
     await message(msg, { title: o.title, kind: o.kind ?? "info" });
   },
   pickOpenFile: async (o) => single(await open({ title: o.title, multiple: false, filters: o.filters })),
-  pickSaveFile: async (o) => (await save({ title: o.title, defaultPath: o.defaultName, filters: o.filters })) ?? null,
+  pickSaveFile: async (o) => {
+    const r = await save({ title: o.title, defaultPath: o.defaultName, filters: o.filters });
+    return r ? toLocation(r) : null;
+  },
   pickFolder: async (o) => single(await open({ title: o.title, directory: true, multiple: false })),
 
   sampleProject: () => invoke<Project>("sample_project"),

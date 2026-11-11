@@ -1,10 +1,10 @@
 <script lang="ts">
   import { project, currentPath, isDirty, saveState } from "../lib/stores";
+  import { platform } from "../lib/platform";
   import GoalsPanel from "./GoalsPanel.svelte";
 
-  $: fileLabel = $currentPath
-    ? ($currentPath.split(/[/\\]/).pop() ?? $currentPath)
-    : "Not saved to a file yet";
+  $: fileLabel = $currentPath ? platform().displayName($currentPath) : "Not saved to a file yet";
+  $: fileTip = $currentPath ? platform().describe($currentPath) : "Not saved yet";
 
   $: statusText =
     $saveState.status === "saving"
@@ -23,7 +23,7 @@
 <footer class="statusbar">
   <div class="left">
     {#if $project}
-      <span class="title" title={$currentPath ?? "Not saved yet"}>
+      <span class="title" title={fileTip}>
         {$project.title}{#if $isDirty}<span class="dirty" aria-label="unsaved changes"> •</span>{/if}
       </span>
       <span class="file">{fileLabel}</span>

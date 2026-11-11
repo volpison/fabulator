@@ -16,8 +16,16 @@
  */
 import type { Project } from "../types";
 
-/** Where a file or folder lives. Opaque: never parse or build one in app code. */
-export type Location = string;
+/**
+ * Where a file or folder lives. Opaque: app code must never parse or build one (no
+ * splitting on "/"), only keep it, show it through `displayName` / `describe`, and hand
+ * it back to the platform. On desktop it is a path; on Android it would be a content URI.
+ * The brand makes the compiler enforce this.
+ */
+export type Location = string & { readonly __location: unique symbol };
+
+/** Turn text that came from a platform (or from stored JSON) back into a Location. */
+export const toLocation = (value: string): Location => value as Location;
 
 export type DialogKind = "info" | "warning" | "error";
 export type FileFilter = { name: string; extensions: string[] };
@@ -33,6 +41,12 @@ export type FolderWriteReport = { written: number; unchanged: number; removed: n
 export type ThemeFileData = { name: string; contents: string };
 
 export interface Platform {
+  // ── Naming locations (synchronous, so they can be used while rendering) ──
+  /** Short name to show in lists and the status bar, e.g. "wolf.fabulator.json". */
+  displayName(location: Location): string;
+  /** Longer human-readable form for tooltips, e.g. the full path. */
+  describe(location: Location): string;
+
   // ── Dialogs ──────────────────────────────────────────────
   /** Yes/no question. Resolves true for the OK button. */
   confirm(message: string, options: ConfirmOptions): Promise<boolean>;

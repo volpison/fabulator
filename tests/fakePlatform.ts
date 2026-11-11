@@ -2,7 +2,7 @@
  * An in-memory Platform for tests: a pretend disk, scripted dialog answers, and a
  * record of what the app asked for.
  */
-import type { Platform, FolderFile, ThemeFileData } from "../src/lib/platform/index.ts";
+import { toLocation, type Platform, type FolderFile, type ThemeFileData } from "../src/lib/platform/index.ts";
 
 export type Fake = ReturnType<typeof createFakePlatform>;
 
@@ -37,6 +37,8 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
   const clone = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
   const platform: Platform = {
+    displayName: (l) => l.split(/[/\\]/).filter(Boolean).pop() ?? l,
+    describe: (l) => l,
     async confirm(message) {
       state.confirms.push(message);
       return state.confirmAnswers.shift() ?? false;
@@ -45,13 +47,16 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
       state.notices.push(message);
     },
     async pickOpenFile() {
-      return state.openAnswers.shift() ?? null;
+      const a = state.openAnswers.shift();
+      return a ? toLocation(a) : null;
     },
     async pickSaveFile() {
-      return state.saveAnswers.shift() ?? null;
+      const a = state.saveAnswers.shift();
+      return a ? toLocation(a) : null;
     },
     async pickFolder() {
-      return state.folderAnswers.shift() ?? null;
+      const a = state.folderAnswers.shift();
+      return a ? toLocation(a) : null;
     },
 
     async sampleProject() {

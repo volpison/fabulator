@@ -34,9 +34,9 @@ test("old-format projects are upgraded; garbage gives null, never an exception",
 
 test("the prompt names the project and the file", () => {
   const withFile = parseLive(env({ source: "disk", path: "/home/a/wolf.fabulator.json" }))!;
-  assert.match(restorePrompt(withFile), /wolf\.fabulator\.json/);
+  assert.match(restorePrompt(withFile, (l) => l.split("/").pop()!), /wolf\.fabulator\.json/);
   const noFile = parseLive(env({ source: "disk" }))!;
-  assert.match(restorePrompt(noFile), /before .* was saved to a file/);
+  assert.match(restorePrompt(noFile, (l) => l.split("/").pop()!), /before .* was saved to a file/);
 });
 
 test("mirroring is quick but debounced", () => {

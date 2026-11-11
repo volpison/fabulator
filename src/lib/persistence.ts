@@ -8,6 +8,8 @@ import type { Project } from "./types";
 import { migrateProject } from "./migrate";
 import { toFolder, fromFolder } from "./folder";
 import { platform } from "./platform";
+import type { Location } from "./platform/types";
+import { rememberRecent, forgetRecent } from "./recentStore";
 import { blankProject } from "./blank";
 import { MIRROR_DEBOUNCE_MS, parseLive, restorePrompt, shouldAskBeforeRestoring, type LiveCopy } from "./mirror";
 import {
@@ -37,7 +39,7 @@ type SaveOptions = {
   /** Allow showing a "Save as" dialog when the project has no file yet. */
   interactive?: boolean;
   /** Save to this path instead of the current one (Save As). */
-  pathOverride?: string;
+  pathOverride?: Location;
 };
 
 // Saves run one at a time, in order.
@@ -49,7 +51,7 @@ export function saveNow(opts: SaveOptions = {}): Promise<boolean> {
   return run;
 }
 
-async function pickSavePath(proj: Project): Promise<string | null> {
+async function pickSavePath(proj: Project): Promise<Location | null> {
   const safeName = proj.title.replace(/[<>:"/\\|?*]/g, "_") || "Untitled";
   return platform().pickSaveFile({
     title: "Save Fabulator Project",
@@ -76,6 +78,7 @@ async function doSave(opts: SaveOptions): Promise<boolean> {
   try {
     await platform().saveProject(path, proj, { forceBackup: !!opts.forceBackup });
     currentPath.set(path);
+    rememberRecent(path);
     void clearRecovery(false); // it has a real file now
     // Only mark clean if the user didn't keep typing during the save.
     if (get(revision) === startedAt) markClean();
@@ -138,7 +141,7 @@ async function writeRecovery(): Promise<void> {
   }
 }
 
-function showProject(proj: Project, path: string | null) {
+function showProject(proj: Project, path: Location | null) {
   project.set(proj);
   currentPath.set(path);
   selectedSceneId.set(proj.scenes[0]?.id ?? null);
@@ -146,28 +149,50 @@ function showProject(proj: Project, path: string | null) {
   saveState.set({ status: "idle", at: null, message: null });
 }
 
+/** File → Open…: ask which file, then open it. */
 export async function openProject(): Promise<void> {
   if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
   await clearRecovery(false);
 
   const chosen = await platform().pickOpenFile({ title: "Open Fabulator Project", filters: FILE_FILTERS });
   if (!chosen) return;
+  await openAt(chosen, false);
+}
 
+/** File → Open recent → a file from the list. */
+export async function openRecent(location: Location): Promise<void> {
+  if (!(await ensureSafeToLeave("Open another project anyway?"))) return;
+  await clearRecovery(false);
+  await openAt(location, true);
+}
+
+async function openAt(location: Location, fromRecent: boolean): Promise<void> {
   try {
-    const raw = await platform().readProject(chosen);
+    const raw = await platform().readProject(location);
     const { project: loaded, migratedFrom } = migrateProject(raw);
 
     if (migratedFrom !== null) {
       // Keep an untouched copy of the old-format file before it can be
       // overwritten, then flag the project so the upgrade gets saved.
-      await platform().backupProject(chosen);
-      showProject(loaded, chosen);
+      await platform().backupProject(location);
+      showProject(loaded, location);
       markDirty(); // autosave then writes the upgraded file
     } else {
-      showProject(loaded, chosen);
+      showProject(loaded, location);
     }
+    rememberRecent(location);
   } catch (e) {
-    saveState.set({ status: "error", at: null, message: `Open failed: ${e}` });
+    if (fromRecent) {
+      // A recent file that is gone (moved, deleted, drive unplugged) should not stay in the list.
+      forgetRecent(location);
+      saveState.set({
+        status: "error",
+        at: null,
+        message: `Could not open ${platform().displayName(location)} (removed from recent files): ${e}`,
+      });
+    } else {
+      saveState.set({ status: "error", at: null, message: `Open failed: ${e}` });
+    }
   }
 }
 
@@ -240,7 +265,7 @@ export async function loadInitialProject(): Promise<void> {
     // After a restart (copy from disk) ask first.
     const adopt =
       !shouldAskBeforeRestoring(live) ||
-      (await platform().confirm(restorePrompt(live), {
+      (await platform().confirm(restorePrompt(live, (l) => platform().displayName(l)), {
         title: "Recover unsaved work",
         kind: "info",
         okLabel: "Restore",

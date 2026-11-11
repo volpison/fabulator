@@ -7,16 +7,29 @@
     exportOpen,
     replaceOpen,
   } from "../lib/stores";
-  import { manualSave, saveAs, openProject, openFolder, exportFolder, loadSample, newProject } from "../lib/persistence";
+  import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, loadSample, newProject } from "../lib/persistence";
+  import { recentFiles, clearRecents } from "../lib/recentStore";
+  import { recentLabels } from "../lib/recent";
+  import { platform } from "../lib/platform";
   import type { MenuItem } from "../lib/menu";
   import type { MainView, SidePanel } from "../lib/types";
   import Menu from "./Menu.svelte";
   import ViewMenu from "./ViewMenu.svelte";
 
-  const fileItems: MenuItem[] = [
+  $: recentNames = recentLabels($recentFiles, (l) => platform().describe(l));
+  $: recentItems = ($recentFiles.length === 0
+    ? [{ label: "No recent files", disabled: true }]
+    : [
+        ...$recentFiles.map((r, i) => ({ label: recentNames[i], action: () => void openRecent(r.location) })),
+        { separator: true },
+        { label: "Clear list", action: () => clearRecents() },
+      ]) as MenuItem[];
+
+  $: fileItems = [
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
     { separator: true },
     { label: "Open…", shortcut: "Ctrl+O", action: () => void openProject() },
+    { label: "Open recent", children: recentItems },
     { label: "Open folder…", action: () => void openFolder() },
     { separator: true },
     { label: "Save", shortcut: "Ctrl+S", action: () => void manualSave() },
@@ -29,7 +42,7 @@
       label: "Load sample story",
       children: [{ label: "The Boy Who Cried Wolf", action: () => void loadSample() }],
     },
-  ];
+  ] as MenuItem[];
 
   const toolItems: MenuItem[] = [
     { label: "Search…", shortcut: "Ctrl+F", action: () => searchOpen.set(true) },
