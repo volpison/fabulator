@@ -298,7 +298,7 @@ The sun hung heavy over the **north pasture**.
 
 ## Live mirror: a reload or crash cannot lose your work
 
-The web view still owns the project, but while there are unsaved changes it sends the whole project (plus its file path, if any) to the Rust side about half a second after each edit (and when the window is hidden or unloading). Rust keeps that copy in memory and also writes it to `live.fabulator.json` in the app's `recovery` data folder.
+The web view still owns the project, but while there are unsaved changes it sends the Rust side **only what changed** (plus the file path, if any) about half a second after each edit (and when the window is hidden or unloading). Rust keeps that copy in memory and also writes it to `live.fabulator.json` in the app's `recovery` data folder.
 
 - **Web view reloaded** (the Rust process is still running): the app silently picks the work back up, with the same file path, still marked unsaved.
 - **App restarted or crashed**: you are asked whether to restore the unsaved changes (works for projects with and without a file).
@@ -314,7 +314,13 @@ These are commands any front end can reuse (`src-tauri/src/storage.rs` holds the
 
 The web view no longer writes separate recovery files; autosave only saves projects that already have a file.
 
-Planned later: sending only the changed scene for very large projects.
+### Small changes instead of the whole project
+
+The first send after a (re)start is the whole project; later sends are *patches* (`src/lib/patch.ts`): changed plain fields, plus per list (scenes, chapters, notes…) the items added or changed, the ids removed, and the full id order only when it changed. Typing in one scene sends that scene, not the book. Rust applies the patch to the copy it keeps (`src-tauri/src/patch.rs`, same rules, tested on both sides) via `keep_unsaved_changes`.
+
+Safety net: every copy has a revision number. If Rust is not at the revision a patch was made for (restart, discard, a patch that doesn't fit), it drops the copy and answers "send everything"; the web view then sends the whole project. It also re-sends the whole project every 100 patches. Rust still rewrites `live.fabulator.json` on every update (disk cost only; nothing crosses the web view boundary).
+
+Not done yet: Rust does not own the *whole* model (saving still sends the project from the web view). This patch format is the first piece of that.
 
 ## Appearances
 

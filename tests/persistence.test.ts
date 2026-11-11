@@ -305,3 +305,22 @@ test("autosave for a story with no file writes nothing (the mirror covers it)", 
   assert.equal(fake.state.files.size, 0);
   stop();
 });
+
+test("the mirror sends the whole project once, then only the changes", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  const stop = startMirror();
+  const id = get(project)!.scenes[0].id;
+
+  updateSceneTitle(id, "One");
+  t.mock.timers.tick(501);
+  await flush();
+  updateSceneTitle(id, "Two");
+  t.mock.timers.tick(501);
+  await flush();
+
+  assert.deepEqual(fake.state.log.filter((l) => l.startsWith("unsaved.keep")), ["unsaved.keep", "unsaved.keepChanges"]);
+  assert.equal((fake.state.unsaved as any).project.scenes[0].title, "Two");
+  stop();
+});

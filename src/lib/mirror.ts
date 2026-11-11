@@ -5,6 +5,7 @@
 import type { Project } from "./types";
 import { toLocation, type Location } from "./platform/types";
 import { migrateProject } from "./migrate";
+import { diffProject, type ProjectPatch } from "./patch";
 
 /** How long after the last edit the project is sent to Rust. */
 export const MIRROR_DEBOUNCE_MS = 500;
@@ -46,4 +47,54 @@ export function restorePrompt(live: UnsavedCopy, nameOf: (location: Location) =>
   return file
     ? `Fabulator closed with unsaved changes to “${title}” (${file}). Restore those changes?`
     : `Fabulator closed before “${title}” was saved to a file. Restore that unsaved work?`;
+}
+
+/** After this many patches the whole project is re-sent, so a drifting copy can never persist. */
+export const FULL_RESYNC_EVERY = 100;
+
+/** What the platform offers for keeping unsaved work (a subset of `Platform["unsaved"]`). */
+export type UnsavedSink = {
+  /** Replace the kept copy with the whole project. Returns the new revision. */
+  keep(project: Project, path: Location | null): Promise<number>;
+  /** Apply a patch on top of revision `base`. Returns the new revision, or null if the kept copy
+   *  is not at `base` (restarted, discarded, damaged): then the caller sends everything. */
+  keepChanges(base: number, patch: ProjectPatch, path: Location | null): Promise<number | null>;
+  discard(keepCopy: boolean): Promise<void>;
+};
+
+/**
+ * Keeps the platform's unsaved copy up to date with as little data as possible: the first
+ * send is the whole project, later sends are patches. Any doubt → the whole project.
+ */
+export function createUnsavedSync(sink: UnsavedSink) {
+  let last: { project: Project; path: Location | null; revision: number; patches: number } | null = null;
+
+  return {
+    async keep(project: Project, path: Location | null): Promise<void> {
+      if (last && last.project === project && last.path === path) return; // nothing new
+      const previous = last;
+      last = null; // if anything below throws, the next send starts from scratch
+      if (previous && previous.patches < FULL_RESYNC_EVERY) {
+        const delta = diffProject(previous.project, project);
+        if (delta.kind === "none" && previous.path === path) {
+          last = { ...previous, project };
+          return;
+        }
+        if (delta.kind !== "full") {
+          const patch = delta.kind === "patch" ? delta.patch : {};
+          const revision = await sink.keepChanges(previous.revision, patch, path);
+          if (revision !== null) {
+            last = { project, path, revision, patches: previous.patches + 1 };
+            return;
+          }
+        }
+      }
+      const revision = await sink.keep(project, path);
+      last = { project, path, revision, patches: 0 };
+    },
+    async discard(keepCopy: boolean): Promise<void> {
+      last = null;
+      await sink.discard(keepCopy);
+    },
+  };
 }
