@@ -87,13 +87,15 @@ export interface Platform {
    * view reload (memory) and a crash (disk). One store for projects with and without a file.
    */
   unsaved: {
-    /** Keep the project (and the file it belongs to, if any) as the latest unsaved copy. Returns its revision. */
-    keep(project: Project, path: Location | null): Promise<number>;
+    /** Keep the project (and the file it belongs to, if any) as the platform's copy. `dirty` = it has unsaved changes: only then is a recovery copy written. Returns its revision. */
+    keep(project: Project, path: Location | null, dirty: boolean): Promise<number>;
     /**
      * Apply a small change on top of revision `base` of the kept copy (see patch.ts). Returns the
      * new revision, or null when the kept copy is not at `base`: send the whole project instead.
      */
-    keepChanges(base: number, patch: ProjectPatch, path: Location | null): Promise<number | null>;
+    keepChanges(base: number, patch: ProjectPatch, path: Location | null, dirty: boolean): Promise<number | null>;
+    /** Everything is saved: the copy stays (small changes keep working) but is no longer unsaved work. */
+    settle(): Promise<void>;
     /**
      * The copy to offer, as stored (`{ project, path, source }`, see mirror.ts), or null.
      * `source` "memory" = the view was reloaded (carry on silently); "disk" or "legacy" =

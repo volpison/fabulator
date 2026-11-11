@@ -52,23 +52,31 @@ export function restorePrompt(live: UnsavedCopy, nameOf: (location: Location) =>
 /** After this many patches the whole project is re-sent, so a drifting copy can never persist. */
 export const FULL_RESYNC_EVERY = 100;
 
-/** What the platform offers for keeping unsaved work (a subset of `Platform["unsaved"]`). */
+/** What the platform offers for keeping the current project (a subset of `Platform["unsaved"]`). */
 export type UnsavedSink = {
-  /** Replace the kept copy with the whole project. Returns the new revision. */
-  keep(project: Project, path: Location | null): Promise<number>;
+  /** Replace the kept copy with the whole project. `dirty`: it has unsaved changes (so it is also
+   *  written to disk as a recovery copy). Returns the new revision. */
+  keep(project: Project, path: Location | null, dirty: boolean): Promise<number>;
   /** Apply a patch on top of revision `base`. Returns the new revision, or null if the kept copy
    *  is not at `base` (restarted, discarded, damaged): then the caller sends everything. */
-  keepChanges(base: number, patch: ProjectPatch, path: Location | null): Promise<number | null>;
+  keepChanges(base: number, patch: ProjectPatch, path: Location | null, dirty: boolean): Promise<number | null>;
+  /** Everything is saved: keep the copy (so later changes can be small) but it is no longer "unsaved work". */
+  settle(): Promise<void>;
   discard(keepCopy: boolean): Promise<void>;
 };
 
 /**
- * Keeps the platform's unsaved copy up to date with as little data as possible: the first
- * send is the whole project, later sends are patches. Any doubt → the whole project.
+ * Keeps the platform's copy of the current project up to date with as little data as possible:
+ * the first send is the whole project, later sends are patches. Any doubt → the whole project.
  * Everything runs one call at a time, in order, so two callers can never interleave.
+ *
+ * Three ways to use the copy: `hold` (the project was just opened or created: the platform holds
+ * it, nothing unsaved), `keep` (it has unsaved changes: the platform also keeps a recovery copy),
+ * `settle` (saved: back to "nothing unsaved", the copy stays for small changes later).
  */
 export function createUnsavedSync(sink: UnsavedSink) {
-  let last: { project: Project; path: Location | null; revision: number; patches: number } | null = null;
+  type Held = { project: Project; path: Location | null; revision: number; patches: number; dirty: boolean };
+  let last: Held | null = null;
   let chain: Promise<unknown> = Promise.resolve();
   const inOrder = <T>(job: () => Promise<T>): Promise<T> => {
     const run = chain.then(job);
@@ -76,39 +84,53 @@ export function createUnsavedSync(sink: UnsavedSink) {
     return run;
   };
 
-  /** Make the platform's copy equal to `project`; returns its revision. */
-  async function bring(project: Project, path: Location | null): Promise<number> {
-    if (last && last.project === project && last.path === path) return last.revision; // nothing new
+  /** Make the platform's copy equal to `project`; returns its revision. `dirty` only ever raises the flag. */
+  async function bring(project: Project, path: Location | null, dirty: boolean): Promise<number> {
+    if (last && last.project === project && last.path === path && (last.dirty || !dirty)) return last.revision;
     const previous = last;
     last = null; // if anything below throws, the next send starts from scratch
-    if (previous && previous.patches < FULL_RESYNC_EVERY) {
+    // A different project (opened another one) is a replacement, not a change.
+    const sameProject = !!previous && previous.project.id === project.id;
+    const nowDirty = dirty || (sameProject && !!previous?.dirty);
+    if (previous && sameProject && previous.patches < FULL_RESYNC_EVERY) {
       const delta = diffProject(previous.project, project);
-      if (delta.kind === "none" && previous.path === path) {
+      if (delta.kind === "none" && previous.path === path && (previous.dirty || !dirty)) {
         last = { ...previous, project };
         return previous.revision;
       }
       if (delta.kind !== "full") {
         const patch = delta.kind === "patch" ? delta.patch : {};
-        const revision = await sink.keepChanges(previous.revision, patch, path);
+        const revision = await sink.keepChanges(previous.revision, patch, path, dirty);
         if (revision !== null) {
-          last = { project, path, revision, patches: previous.patches + 1 };
+          last = { project, path, revision, patches: previous.patches + 1, dirty: nowDirty };
           return revision;
         }
       }
     }
-    const revision = await sink.keep(project, path);
-    last = { project, path, revision, patches: 0 };
+    const revision = await sink.keep(project, path, nowDirty);
+    last = { project, path, revision, patches: 0, dirty: nowDirty };
     return revision;
   }
 
   return {
-    keep: (project: Project, path: Location | null): Promise<void> => inOrder(() => bring(project, path).then(() => {})),
+    /** Unsaved changes: keep the copy current and mark it unsaved work. */
+    keep: (project: Project, path: Location | null): Promise<void> =>
+      inOrder(() => bring(project, path, true).then(() => {})),
+    /** A project was just opened or created: let the platform hold it (no recovery copy needed). */
+    hold: (project: Project, path: Location | null): Promise<void> =>
+      inOrder(() => bring(project, path, false).then(() => {})),
     /**
      * Make the platform's copy equal to `project`, then run `use` with that copy's revision
      * (before anything else can change it). Used to save straight from the kept copy.
      */
     withKept: <T>(project: Project, path: Location | null, use: (revision: number) => Promise<T>): Promise<T> =>
-      inOrder(async () => use(await bring(project, path))),
+      inOrder(async () => use(await bring(project, path, false))),
+    /** Saved: nothing is unsaved any more. */
+    settle: (): Promise<void> =>
+      inOrder(async () => {
+        await sink.settle();
+        if (last) last = { ...last, dirty: false };
+      }),
     discard: (keepCopy: boolean): Promise<void> =>
       inOrder(async () => {
         last = null;

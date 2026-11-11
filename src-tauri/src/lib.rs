@@ -103,6 +103,9 @@ struct Stored {
     envelope: serde_json::Value,
     /// Counts every change to the copy. A patch only applies on top of the revision it was made for.
     revision: u64,
+    /// True while the copy has changes that are not in the file. Only then is it offered for
+    /// recovery and written to disk; a clean copy is just held so later changes and saves are small.
+    dirty: bool,
 }
 
 #[derive(Default)]
@@ -122,15 +125,18 @@ fn keep_unsaved(
     unsaved: tauri::State<UnsavedWork>,
     project: Project,
     path: Option<String>,
+    dirty: bool,
 ) -> Result<u64, String> {
     let envelope = serde_json::json!({ "path": path, "project": project });
     let revision = {
         let mut guard = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?;
         let revision = guard.as_ref().map_or(1, |s| s.revision + 1);
-        *guard = Some(Stored { envelope: envelope.clone(), revision });
+        *guard = Some(Stored { envelope: envelope.clone(), revision, dirty });
         revision
     };
-    write_live_copy(&app, &envelope)?;
+    if dirty {
+        write_live_copy(&app, &envelope)?;
+    }
     Ok(revision)
 }
 
@@ -145,6 +151,7 @@ fn keep_unsaved_changes(
     base: u64,
     patch: serde_json::Value,
     path: Option<String>,
+    dirty: bool,
 ) -> Result<Option<u64>, String> {
     let (revision, envelope) = {
         let mut guard = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?;
@@ -168,9 +175,12 @@ fn keep_unsaved_changes(
         };
         stored.envelope["path"] = serde_json::json!(path);
         stored.revision += 1;
-        (stored.revision, stored.envelope.clone())
+        stored.dirty = stored.dirty || dirty; // a change can only raise the flag; `settle_unsaved` lowers it
+        (stored.revision, stored.dirty.then(|| stored.envelope.clone()))
     };
-    write_live_copy(&app, &envelope)?;
+    if let Some(envelope) = envelope {
+        write_live_copy(&app, &envelope)?;
+    }
     Ok(Some(revision))
 }
 
@@ -220,6 +230,7 @@ fn unsaved_work(
         .lock()
         .map_err(|_| "Unsaved-work store is busy".to_string())?
         .as_ref()
+        .filter(|s| s.dirty) // a clean copy is not unsaved work
         .map(|s| s.envelope.to_string());
     let chosen = storage::choose_unsaved(in_memory, &recovery_dir(&app)?)
         .map_err(|e| format!("Read error: {e}"))?;
@@ -237,6 +248,17 @@ fn unsaved_work(
     }
     value["source"] = serde_json::Value::String(source.to_string());
     Ok(Some(value))
+}
+
+/// Everything is saved: the copy stays in memory (so later changes can be small) but it is no
+/// longer unsaved work, and the recovery copies on disk are removed.
+#[tauri::command]
+fn settle_unsaved(app: tauri::AppHandle, unsaved: tauri::State<UnsavedWork>) -> Result<(), String> {
+    if let Some(stored) = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?.as_mut() {
+        stored.dirty = false;
+    }
+    storage::discard_unsaved(&recovery_dir(&app)?, false)
+        .map_err(|e| format!("Could not remove the recovery copy: {e}"))
 }
 
 /// Forget the unsaved work (saved, closed or replaced on purpose). With
@@ -368,6 +390,7 @@ pub fn run() {
             keep_unsaved,
             keep_unsaved_changes,
             save_unsaved,
+            settle_unsaved,
             unsaved_work,
             discard_unsaved,
             read_text_file,

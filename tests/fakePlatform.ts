@@ -19,6 +19,7 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     unsavedRevision: 0,
     /** How many saves were made from the kept copy (the project was not sent again). */
     keptSaves: 0,
+    held: null as null | { project: unknown; path: string | null; source: "memory" },
     discarded: null as unknown,
     themes: new Map<string, string>(),
     /** Scripted answers, consumed in order (defaults: confirm → false, pickers → null). */
@@ -102,29 +103,39 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     },
 
     unsaved: {
-      async keep(project, path) {
-        note("unsaved.keep");
+      // `state.unsaved` is the copy with unsaved changes (what a restart would offer);
+      // `state.held` is the copy the platform holds while nothing is unsaved.
+      async keep(project, path, dirty) {
+        note(dirty ? "unsaved.keep" : "unsaved.hold");
         state.unsavedRevision += 1;
-        state.unsaved = { project: clone(project), path, source: "memory" };
+        const copy = { project: clone(project), path, source: "memory" as const };
+        if (dirty) { state.unsaved = copy; state.held = null; } else { state.held = copy; state.unsaved = null; }
         return state.unsavedRevision;
       },
-      async keepChanges(base, patch, path) {
-        if (!state.unsaved || base !== state.unsavedRevision) return null;
-        note("unsaved.keepChanges");
+      async keepChanges(base, patch, path, dirty) {
+        const cur = state.unsaved ?? state.held;
+        if (!cur || base !== state.unsavedRevision) return null;
+        note(dirty ? "unsaved.keepChanges" : "unsaved.holdChanges");
         state.unsavedRevision += 1;
-        state.unsaved = { ...state.unsaved, project: applyPatch(state.unsaved.project as Project, patch), path };
+        const next = { ...cur, project: applyPatch(cur.project as Project, patch), path };
+        if (dirty || state.unsaved) { state.unsaved = next; state.held = null; } else { state.held = next; }
         return state.unsavedRevision;
       },
       async saveKept(location, revision, o) {
-        if (!state.unsaved || revision !== state.unsavedRevision) return false;
+        const cur = state.unsaved ?? state.held;
+        if (!cur || revision !== state.unsavedRevision) return false;
         maybeFail("save");
         const hook = state.duringSave;
         state.duringSave = null;
         hook?.();
         note(`save ${location}${o.forceBackup ? " (backup)" : ""}`);
-        state.files.set(location, clone(state.unsaved.project));
+        state.files.set(location, clone(cur.project));
         state.keptSaves += 1;
         return true;
+      },
+      async settle() {
+        note("unsaved.settle");
+        if (state.unsaved) { state.held = state.unsaved; state.unsaved = null; }
       },
       async read() {
         return clone(state.unsaved) ?? null;
@@ -133,6 +144,7 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
         note(`unsaved.discard${keepCopy ? "(keep)" : ""}`);
         if (keepCopy && state.unsaved) state.discarded = state.unsaved;
         state.unsaved = null;
+        state.held = null;
       },
     },
 
