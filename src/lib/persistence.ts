@@ -149,8 +149,9 @@ export async function ensureSafeToLeave(question: string): Promise<boolean> {
 
 /** Sends the platform small changes after the first full copy (see mirror.ts, patch.ts). */
 const unsavedSync = createUnsavedSync({
-  keep: (proj, path) => platform().unsaved.keep(proj, path),
-  keepChanges: (base, patch, path) => platform().unsaved.keepChanges(base, patch, path),
+  keep: (proj, path, dirty) => platform().unsaved.keep(proj, path, dirty),
+  keepChanges: (base, patch, path, dirty) => platform().unsaved.keepChanges(base, patch, path, dirty),
+  settle: () => platform().unsaved.settle(),
   discard: (keepCopy) => platform().unsaved.discard(keepCopy),
 });
 
@@ -169,6 +170,9 @@ function showProject(proj: Project, path: Location | null) {
   selectedSceneId.set(proj.scenes[0]?.id ?? null);
   markClean();
   saveState.set({ status: "idle", at: null, message: null });
+  // Let the platform hold the project from now on, so later changes and saves can be small.
+  // Best-effort: if it fails, the next change or save sends the project anyway.
+  unsavedSync.hold(proj, path).catch((e) => console.warn("could not hand the project to the platform", e));
 }
 
 /** File → Open…: ask which file, then open it. */
@@ -360,7 +364,7 @@ export function startMirror(): () => void {
         if (proj && get(isDirty)) {
           await unsavedSync.keep(proj, get(currentPath));
         } else {
-          await unsavedSync.discard(false);
+          await unsavedSync.settle();
         }
       })
       .catch((e) => console.warn("live mirror failed", e));

@@ -41,8 +41,9 @@ export const tauriPlatform: Platform = {
   readProjectFolder: (dir) => invoke<FolderFile[]>("read_project_folder", { dir }),
 
   unsaved: {
-    keep: (project, path) => invoke<number>("keep_unsaved", { project, path }),
-    keepChanges: (base, patch, path) => invoke<number | null>("keep_unsaved_changes", { base, patch, path }),
+    keep: (project, path, dirty) => invoke<number>("keep_unsaved", { project, path, dirty }),
+    keepChanges: (base, patch, path, dirty) => invoke<number | null>("keep_unsaved_changes", { base, patch, path, dirty }),
+    settle: () => invoke("settle_unsaved"),
     saveKept: (path, revision, o) => invoke<boolean>("save_unsaved", { path, revision, forceBackup: o.forceBackup }),
     read: () => invoke<unknown>("unsaved_work"),
     discard: (keepCopy) => invoke("discard_unsaved", { keepCopy }),

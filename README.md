@@ -324,7 +324,11 @@ Safety net: every copy has a revision number. If Rust is not at the revision a p
 
 When you save, the web view first brings Rust's copy up to date (a small patch, or nothing if the mirror already did) and then says "save revision N to this file" (`save_unsaved`). Rust writes its own copy with the same rules as `save_project` (serialize first, rotating backup, atomic replace). The project is not sent a second time. If Rust has no copy, or it is at another revision, nothing is written and the web view saves the ordinary way (`save_project`). A failed write is reported as it is, never silently retried.
 
-Not done yet: the web view still builds every edit; Rust holds a copy only while there are unsaved changes (opening still hands the file to the web view).
+### Rust holds the project from the moment it is shown
+
+When a project is opened, created or restored, the web view hands it to Rust (`keep_unsaved` with `dirty: false`). From then on Rust always has the current project: edits arrive as small patches (which mark the copy *unsaved* and write the recovery file), saves write Rust's copy, and after a save Rust is told to `settle_unsaved` (the copy stays in memory, the recovery files are removed, and the next edit is again a small patch). Only a copy with unsaved changes is ever offered for recovery; a clean held copy is never restored by mistake. Opening a different project replaces the held one with a whole-project send.
+
+Still on the web view's side: opening a file (it needs the web view's upgrade step) and all editing logic. Moving the editing rules themselves into Rust is a larger step that can come when the app is more mature.
 
 ## Appearances
 

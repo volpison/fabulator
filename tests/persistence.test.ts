@@ -185,10 +185,10 @@ test("the live mirror sends unsaved work after a pause and clears when saved", a
 
   updateSceneTitle(get(project)!.scenes[0].id, "Typing…");
   t.mock.timers.tick(499);
-  assert.ok(!fake.state.log.includes("unsaved.keep")); // still waiting
+  assert.ok(!fake.state.log.some((l) => l.startsWith("unsaved.keep"))); // still waiting
   t.mock.timers.tick(2);
   await new Promise((r) => setImmediate(r));
-  assert.ok(fake.state.log.includes("unsaved.keep"));
+  assert.ok(fake.state.log.some((l) => l.startsWith("unsaved.keep")));
   assert.equal((fake.state.unsaved as any).project.scenes[0].title, "Typing…");
 
   markClean();
@@ -320,7 +320,8 @@ test("the mirror sends the whole project once, then only the changes", async (t)
   t.mock.timers.tick(501);
   await flush();
 
-  assert.deepEqual(fake.state.log.filter((l) => l.startsWith("unsaved.keep")), ["unsaved.keep", "unsaved.keepChanges"]);
+  // The platform already holds the project (since it was shown), so both sends are patches.
+  assert.deepEqual(fake.state.log.filter((l) => l.startsWith("unsaved.keep")), ["unsaved.keepChanges", "unsaved.keepChanges"]);
   assert.equal((fake.state.unsaved as any).project.scenes[0].title, "Two");
   stop();
 });
@@ -369,4 +370,50 @@ test("a failed save from the kept copy reports the error and keeps the story uns
   assert.equal(await saveNow(), true === false);
   assert.equal(get(isDirty), true);
   stop();
+});
+
+test("the platform holds a project from the moment it is shown, without calling it unsaved work", async () => {
+  fakeBrowserGlobals();
+  await loadInitialProject();
+  await flush();
+  assert.ok(fake.state.held);
+  assert.equal(fake.state.unsaved, null); // nothing to recover
+  assert.equal(((await fake.platform.unsaved.read()) as unknown), null);
+});
+
+test("after a save the copy stays held, so the next edit is a small patch (not a whole project)", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  currentPath.set(toLocation("C:\\Stories\\h.fabulator.json"));
+  const stop = startMirror();
+  const id = get(project)!.scenes[0].id;
+
+  updateSceneTitle(id, "A");
+  t.mock.timers.tick(501);
+  await flush();
+  assert.equal(await saveNow(), true);
+  await flush();
+  assert.equal(fake.state.unsaved, null); // saved: nothing to recover
+  assert.ok(fake.state.held);
+
+  fake.state.log.length = 0;
+  updateSceneTitle(id, "B");
+  t.mock.timers.tick(501);
+  await flush();
+  assert.deepEqual(fake.state.log.filter((l) => l.startsWith("unsaved.")), ["unsaved.keepChanges"]);
+  assert.equal((fake.state.unsaved as any).project.scenes[0].title, "B");
+  stop();
+});
+
+test("opening another project replaces the held one (a whole project, never a patch of the old one)", async () => {
+  fakeBrowserGlobals();
+  fake.state.files.set("C:\\Stories\\o.fabulator.json", { ...blankProject(newId), title: "Other" });
+  await loadInitialProject();
+  await flush();
+  fake.state.log.length = 0;
+  await openRecent(toLocation("C:\\Stories\\o.fabulator.json"));
+  await flush();
+  assert.ok(fake.state.log.includes("unsaved.hold"));
+  assert.equal((fake.state.held as any).project.title, "Other");
 });
