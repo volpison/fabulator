@@ -320,7 +320,11 @@ The first send after a (re)start is the whole project; later sends are *patches*
 
 Safety net: every copy has a revision number. If Rust is not at the revision a patch was made for (restart, discard, a patch that doesn't fit), it drops the copy and answers "send everything"; the web view then sends the whole project. It also re-sends the whole project every 100 patches. Rust still rewrites `live.fabulator.json` on every update (disk cost only; nothing crosses the web view boundary).
 
-Not done yet: Rust does not own the *whole* model (saving still sends the project from the web view). This patch format is the first piece of that.
+### Saving from the copy Rust already holds
+
+When you save, the web view first brings Rust's copy up to date (a small patch, or nothing if the mirror already did) and then says "save revision N to this file" (`save_unsaved`). Rust writes its own copy with the same rules as `save_project` (serialize first, rotating backup, atomic replace). The project is not sent a second time. If Rust has no copy, or it is at another revision, nothing is written and the web view saves the ordinary way (`save_project`). A failed write is reported as it is, never silently retried.
+
+Not done yet: the web view still builds every edit; Rust holds a copy only while there are unsaved changes (opening still hands the file to the web view).
 
 ## Appearances
 

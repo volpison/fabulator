@@ -324,3 +324,49 @@ test("the mirror sends the whole project once, then only the changes", async (t)
   assert.equal((fake.state.unsaved as any).project.scenes[0].title, "Two");
   stop();
 });
+
+test("saving uses the kept copy when the platform has the current project", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  currentPath.set(toLocation("C:\\Stories\\k.fabulator.json"));
+  const stop = startMirror();
+  updateSceneTitle(get(project)!.scenes[0].id, "Kept");
+  t.mock.timers.tick(501);
+  await flush();
+
+  assert.equal(await saveNow(), true);
+  assert.equal(fake.state.keptSaves, 1);
+  assert.equal((fake.state.files.get("C:\\Stories\\k.fabulator.json") as any).scenes[0].title, "Kept");
+  stop();
+});
+
+test("saving catches the kept copy up first, and falls back to sending the project when there is none", async () => {
+  fakeBrowserGlobals();
+  await loadInitialProject();
+  currentPath.set(toLocation("C:\\Stories\\f.fabulator.json"));
+  updateSceneTitle(get(project)!.scenes[0].id, "Fresh"); // the mirror never ran: no kept copy yet
+  assert.equal(await saveNow(), true);
+  assert.equal((fake.state.files.get("C:\\Stories\\f.fabulator.json") as any).scenes[0].title, "Fresh");
+
+  // A kept copy that vanished (e.g. the app restarted) is replaced, never trusted.
+  fake.state.unsaved = null;
+  updateSceneTitle(get(project)!.scenes[0].id, "Again");
+  assert.equal(await saveNow(), true);
+  assert.equal((fake.state.files.get("C:\\Stories\\f.fabulator.json") as any).scenes[0].title, "Again");
+});
+
+test("a failed save from the kept copy reports the error and keeps the story unsaved", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  currentPath.set(toLocation("C:\\Stories\\e.fabulator.json"));
+  const stop = startMirror();
+  updateSceneTitle(get(project)!.scenes[0].id, "x");
+  t.mock.timers.tick(501);
+  await flush();
+  fake.state.failNext = "save";
+  assert.equal(await saveNow(), true === false);
+  assert.equal(get(isDirty), true);
+  stop();
+});

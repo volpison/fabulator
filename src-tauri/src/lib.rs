@@ -3,6 +3,7 @@ mod patch;
 mod storage;
 
 use models::Project;
+use serde::Deserialize;
 use tauri::Manager;
 use std::fs;
 use std::path::PathBuf;
@@ -60,6 +61,16 @@ fn save_project(
 ) -> Result<(), String> {
     let json =
         serde_json::to_string_pretty(&project).map_err(|e| format!("Serialize error: {e}"))?;
+    write_project_file(&app, &path, &json, force_backup)
+}
+
+/// Steps 2-4 of saving, shared by every way of saving.
+fn write_project_file(
+    app: &tauri::AppHandle,
+    path: &str,
+    json: &str,
+    force_backup: bool,
+) -> Result<(), String> {
     let path = PathBuf::from(path);
 
     // A failed backup must never block saving your work.
@@ -69,7 +80,7 @@ fn save_project(
 
     storage::write_atomic(&path, json.as_bytes()).map_err(|e| format!("Write error: {e}"))?;
 
-    if let Ok(dir) = recovery_dir(&app) {
+    if let Ok(dir) = recovery_dir(app) {
         let _ = storage::clear_legacy_recovery(&dir); // best effort
     }
     Ok(())
@@ -161,6 +172,38 @@ fn keep_unsaved_changes(
     };
     write_live_copy(&app, &envelope)?;
     Ok(Some(revision))
+}
+
+/// Save the kept unsaved copy at `revision` to `path`, exactly like `save_project`, without
+/// the web view sending the project again. Returns false (and writes nothing) when the kept
+/// copy is missing or at another revision: the caller then saves with `save_project`.
+#[tauri::command]
+fn save_unsaved(
+    app: tauri::AppHandle,
+    unsaved: tauri::State<UnsavedWork>,
+    path: String,
+    revision: u64,
+    force_backup: bool,
+) -> Result<bool, String> {
+    let json = {
+        let guard = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?;
+        let Some(stored) = guard.as_ref() else {
+            return Ok(false);
+        };
+        if stored.revision != revision {
+            return Ok(false);
+        }
+        let raw = stored
+            .envelope
+            .get("project")
+            .ok_or_else(|| "The kept copy has no project".to_string())?;
+        // Going through `Project` validates the copy and writes the exact same format as `save_project`.
+        let project = Project::deserialize(raw)
+            .map_err(|e| format!("The kept copy is not a valid project: {e}"))?;
+        serde_json::to_string_pretty(&project).map_err(|e| format!("Serialize error: {e}"))?
+    };
+    write_project_file(&app, &path, &json, force_backup)?;
+    Ok(true)
 }
 
 /// The unsaved work to offer, or null: `{ path, project, source }` where `source`
@@ -324,6 +367,7 @@ pub fn run() {
             read_project_folder,
             keep_unsaved,
             keep_unsaved_changes,
+            save_unsaved,
             unsaved_work,
             discard_unsaved,
             read_text_file,

@@ -100,6 +100,12 @@ export interface Platform {
      * the app restarted or crashed (ask first).
      */
     read(): Promise<unknown>;
+    /**
+     * Save the kept copy at `revision` to `location`, exactly as `saveProject` would, without
+     * sending the project again. Returns false if the kept copy is not at that revision
+     * (nothing was written): save with `saveProject` instead.
+     */
+    saveKept(location: Location, revision: number, options: { forceBackup: boolean }): Promise<boolean>;
     /** Forget it; with `keepCopy`, set the newest copy aside as a single "discarded" one. */
     discard(keepCopy: boolean): Promise<void>;
   };
