@@ -3,6 +3,8 @@
  * record of what the app asked for.
  */
 import { CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
+import { applyPatch } from "../src/lib/patch.ts";
+import type { Project } from "../src/lib/types.ts";
 import { toLocation, type Platform, type FolderFile, type ThemeFileData } from "../src/lib/platform/index.ts";
 
 export type Fake = ReturnType<typeof createFakePlatform>;
@@ -14,6 +16,7 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     folders: new Map<string, FolderFile[]>(),
     /** The unsaved-work copy: `{ project, path, source }` (tests may set any source). */
     unsaved: null as null | { project: unknown; path: string | null; source: "memory" | "disk" | "legacy" },
+    unsavedRevision: 0,
     discarded: null as unknown,
     themes: new Map<string, string>(),
     /** Scripted answers, consumed in order (defaults: confirm → false, pickers → null). */
@@ -99,7 +102,16 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     unsaved: {
       async keep(project, path) {
         note("unsaved.keep");
+        state.unsavedRevision += 1;
         state.unsaved = { project: clone(project), path, source: "memory" };
+        return state.unsavedRevision;
+      },
+      async keepChanges(base, patch, path) {
+        if (!state.unsaved || base !== state.unsavedRevision) return null;
+        note("unsaved.keepChanges");
+        state.unsavedRevision += 1;
+        state.unsaved = { ...state.unsaved, project: applyPatch(state.unsaved.project as Project, patch), path };
+        return state.unsavedRevision;
       },
       async read() {
         return clone(state.unsaved) ?? null;

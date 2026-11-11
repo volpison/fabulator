@@ -1,4 +1,5 @@
 mod models;
+mod patch;
 mod storage;
 
 use models::Project;
@@ -84,25 +85,82 @@ fn recovery_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 // ─── Unsaved work: the latest copy of what would be lost if the app died now ───
 
-/// The newest copy the web view sent (a JSON envelope `{path, project}`).
-/// It lives in this process, so a WebView reload cannot lose it.
-#[derive(Default)]
-struct UnsavedWork(Mutex<Option<String>>);
+/// The newest copy the web view sent. It lives in this process, so a WebView reload
+/// cannot lose it.
+struct Stored {
+    /// `{ path, project }`; the project is kept as raw JSON so small patches can be applied to it.
+    envelope: serde_json::Value,
+    /// Counts every change to the copy. A patch only applies on top of the revision it was made for.
+    revision: u64,
+}
 
-/// Keep the unsaved project (whether or not it has a file yet) in memory and on
-/// disk. Disk is best-effort: the in-memory copy is already safe.
+#[derive(Default)]
+struct UnsavedWork(Mutex<Option<Stored>>);
+
+/// Write the kept copy to disk. Best-effort for the caller: the in-memory copy is already safe.
+fn write_live_copy(app: &tauri::AppHandle, envelope: &serde_json::Value) -> Result<(), String> {
+    storage::write_live(&recovery_dir(app)?, envelope.to_string().as_bytes())
+        .map_err(|e| format!("Could not write the recovery copy: {e}"))
+}
+
+/// Keep the whole unsaved project (whether or not it has a file yet) in memory and on
+/// disk. Returns the copy's new revision.
 #[tauri::command]
 fn keep_unsaved(
     app: tauri::AppHandle,
     unsaved: tauri::State<UnsavedWork>,
     project: Project,
     path: Option<String>,
-) -> Result<(), String> {
-    let envelope = serde_json::json!({ "path": path, "project": project }).to_string();
-    *unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())? =
-        Some(envelope.clone());
-    storage::write_live(&recovery_dir(&app)?, envelope.as_bytes())
-        .map_err(|e| format!("Could not write the recovery copy: {e}"))
+) -> Result<u64, String> {
+    let envelope = serde_json::json!({ "path": path, "project": project });
+    let revision = {
+        let mut guard = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?;
+        let revision = guard.as_ref().map_or(1, |s| s.revision + 1);
+        *guard = Some(Stored { envelope: envelope.clone(), revision });
+        revision
+    };
+    write_live_copy(&app, &envelope)?;
+    Ok(revision)
+}
+
+/// Apply a small change (see `patch.rs`) on top of revision `base` of the kept copy.
+/// Returns the new revision, or null when it cannot be applied (nothing kept, another
+/// revision, or a patch that does not fit): the kept copy is then dropped and the web
+/// view sends the whole project instead.
+#[tauri::command]
+fn keep_unsaved_changes(
+    app: tauri::AppHandle,
+    unsaved: tauri::State<UnsavedWork>,
+    base: u64,
+    patch: serde_json::Value,
+    path: Option<String>,
+) -> Result<Option<u64>, String> {
+    let (revision, envelope) = {
+        let mut guard = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?;
+        let Some(stored) = guard.as_mut() else {
+            return Ok(None);
+        };
+        if stored.revision != base {
+            return Ok(None);
+        }
+        let applied = stored
+            .envelope
+            .get_mut("project")
+            .map(|project| patch::apply(project, &patch).is_ok())
+            .unwrap_or(false);
+        if !applied {
+            *guard = None; // possibly half-applied: never trust it again
+            return Ok(None);
+        }
+        let Some(stored) = guard.as_mut() else {
+            return Ok(None);
+        };
+        stored.envelope["path"] = serde_json::json!(path);
+        stored.revision += 1;
+        (stored.revision, stored.envelope.clone())
+    };
+    write_live_copy(&app, &envelope)?;
+    Ok(Some(revision))
 }
 
 /// The unsaved work to offer, or null: `{ path, project, source }` where `source`
@@ -114,7 +172,12 @@ fn unsaved_work(
     app: tauri::AppHandle,
     unsaved: tauri::State<UnsavedWork>,
 ) -> Result<Option<serde_json::Value>, String> {
-    let in_memory = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?.clone();
+    let in_memory = unsaved
+        .0
+        .lock()
+        .map_err(|_| "Unsaved-work store is busy".to_string())?
+        .as_ref()
+        .map(|s| s.envelope.to_string());
     let chosen = storage::choose_unsaved(in_memory, &recovery_dir(&app)?)
         .map_err(|e| format!("Read error: {e}"))?;
     let Some((source, text)) = chosen else {
@@ -260,6 +323,7 @@ pub fn run() {
             write_project_folder,
             read_project_folder,
             keep_unsaved,
+            keep_unsaved_changes,
             unsaved_work,
             discard_unsaved,
             read_text_file,

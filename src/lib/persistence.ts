@@ -11,7 +11,7 @@ import { platform } from "./platform";
 import type { Location } from "./platform/types";
 import { rememberRecent, forgetRecent } from "./recentStore";
 import { blankProject } from "./blank";
-import { MIRROR_DEBOUNCE_MS, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
+import { MIRROR_DEBOUNCE_MS, createUnsavedSync, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
 import {
   project,
   currentPath,
@@ -122,10 +122,17 @@ export async function ensureSafeToLeave(question: string): Promise<boolean> {
 
 // ─── Unsaved work (kept by the platform: see startMirror) ───
 
+/** Sends the platform small changes after the first full copy (see mirror.ts, patch.ts). */
+const unsavedSync = createUnsavedSync({
+  keep: (proj, path) => platform().unsaved.keep(proj, path),
+  keepChanges: (base, patch, path) => platform().unsaved.keepChanges(base, patch, path),
+  discard: (keepCopy) => platform().unsaved.discard(keepCopy),
+});
+
 /** Best-effort: this must never get in the way of what the person is doing. */
 async function discardUnsaved(keepCopy: boolean): Promise<void> {
   try {
-    await platform().unsaved.discard(keepCopy);
+    await unsavedSync.discard(keepCopy);
   } catch {
     /* nothing to discard, or not possible: fine */
   }
@@ -311,7 +318,7 @@ export function startAutosave(): () => void {
 }
 
 /**
- * Live mirror: while there are unsaved changes, send the whole project to Rust
+ * Live mirror: while there are unsaved changes, send Rust the changes (the whole project the first time)
  * shortly after each edit (and when the window is hidden or unloading). Once
  * everything is saved the mirror is cleared. Returns a cleanup function.
  */
@@ -326,9 +333,9 @@ export function startMirror(): () => void {
       .then(async () => {
         const proj = get(project);
         if (proj && get(isDirty)) {
-          await platform().unsaved.keep(proj, get(currentPath));
+          await unsavedSync.keep(proj, get(currentPath));
         } else {
-          await platform().unsaved.discard(false);
+          await unsavedSync.discard(false);
         }
       })
       .catch((e) => console.warn("live mirror failed", e));

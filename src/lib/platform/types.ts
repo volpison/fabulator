@@ -15,6 +15,7 @@
  *  - Pickers resolve to null when the person cancels (that is not an error).
  */
 import type { Project } from "../types";
+import type { ProjectPatch } from "../patch";
 
 /**
  * Where a file or folder lives. Opaque: app code must never parse or build one (no
@@ -86,8 +87,13 @@ export interface Platform {
    * view reload (memory) and a crash (disk). One store for projects with and without a file.
    */
   unsaved: {
-    /** Keep the project (and the file it belongs to, if any) as the latest unsaved copy. */
-    keep(project: Project, path: Location | null): Promise<void>;
+    /** Keep the project (and the file it belongs to, if any) as the latest unsaved copy. Returns its revision. */
+    keep(project: Project, path: Location | null): Promise<number>;
+    /**
+     * Apply a small change on top of revision `base` of the kept copy (see patch.ts). Returns the
+     * new revision, or null when the kept copy is not at `base`: send the whole project instead.
+     */
+    keepChanges(base: number, patch: ProjectPatch, path: Location | null): Promise<number | null>;
     /**
      * The copy to offer, as stored (`{ project, path, source }`, see mirror.ts), or null.
      * `source` "memory" = the view was reloaded (carry on silently); "disk" or "legacy" =
