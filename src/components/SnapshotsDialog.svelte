@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import {
     project,
     selectedScene,
@@ -85,7 +85,7 @@
     const message = sceneExists
       ? `Restore “${name}”? Your current version of this scene is saved as a snapshot first, so you can undo this.`
       : `Bring back the deleted scene “${name}”?`;
-    const ok = await ask(message, {
+    const ok = await platform().confirm(message, {
       title: sceneExists ? "Restore snapshot" : "Restore scene",
       kind: "info",
       okLabel: "Restore",
@@ -101,7 +101,7 @@
   }
 
   async function onDelete(id: string) {
-    const ok = await ask("Delete this snapshot? This cannot be undone.", {
+    const ok = await platform().confirm("Delete this snapshot? This cannot be undone.", {
       title: "Delete snapshot",
       kind: "warning",
       okLabel: "Delete",
@@ -114,7 +114,7 @@
   }
 
   async function onForget(sceneId: string, name: string) {
-    const ok = await ask(
+    const ok = await platform().confirm(
       `Permanently forget “${name}” and all its saved versions? This cannot be undone.`,
       { title: "Forget deleted scene", kind: "warning", okLabel: "Forget", cancelLabel: "Cancel" }
     );

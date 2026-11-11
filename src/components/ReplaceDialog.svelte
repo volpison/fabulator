@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import {
     project,
     selectedScene,
@@ -81,7 +81,7 @@
 
   async function apply() {
     if (chosen.length === 0) return;
-    const ok = await ask(
+    const ok = await platform().confirm(
       `Replace “${find}” with “${replacement}” — ${chosenTotal} time${chosenTotal === 1 ? "" : "s"} in ${chosen.length} scene${chosen.length === 1 ? "" : "s"}?\n\nEach changed scene is saved as a snapshot first, so you can undo it from Snapshots.`,
       { title: "Replace", kind: "warning", okLabel: "Replace", cancelLabel: "Cancel" }
     );

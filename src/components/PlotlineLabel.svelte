@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import { PLOTLINE_COLORS } from "../lib/plotlines";
   import { updatePlotline, deletePlotline, movePlotline } from "../lib/stores";
   import type { Plotline } from "../lib/types";
@@ -39,7 +39,7 @@
       sceneCount > 0
         ? `Delete the plotline “${plotline.name}”? Its ${sceneCount} scene${sceneCount === 1 ? "" : "s"} will move to another plotline.`
         : `Delete the plotline “${plotline.name}”?`;
-    if (await ask(msg, { title: "Delete plotline", kind: "warning", okLabel: "Delete", cancelLabel: "Cancel" })) {
+    if (await platform().confirm(msg, { title: "Delete plotline", kind: "warning", okLabel: "Delete", cancelLabel: "Cancel" })) {
       deletePlotline(plotline.id);
     }
   }

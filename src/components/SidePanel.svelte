@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { platform } from "../lib/platform";
   import Appearances from "./Appearances.svelte";
   import { clampPanelWidth, PANEL_DEFAULT } from "../lib/layout";
   import {
@@ -109,7 +109,7 @@
 
   async function onDelete(id: string, label: string) {
     const panel = $sidePanel; // the panel could change while the dialog is open
-    const ok = await ask(`Delete “${label}”?`, {
+    const ok = await platform().confirm(`Delete “${label}”?`, {
       title: "Delete",
       kind: "warning",
       okLabel: "Delete",
