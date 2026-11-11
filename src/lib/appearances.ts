@@ -196,3 +196,38 @@ export function castGrid(project: Project): CastGrid {
     ],
   };
 }
+
+// ─── per-scene continuity ────────────────────────────────────
+
+export type ContinuityItem = {
+  type: EntityType;
+  id: string;
+  name: string;
+  /** How many times the scene text names them. */
+  mentions: number;
+};
+
+export type SceneContinuity = {
+  /** Linked to the scene and named in the text. */
+  matched: ContinuityItem[];
+  /** Linked to the scene, but the text never names them. */
+  linkedNotNamed: ContinuityItem[];
+  /** Named in the text, but not linked (the "Link" banner already offers these). */
+  namedNotLinked: ContinuityItem[];
+};
+
+/** Who is on a scene's cast versus who its text actually names (same rules as appearanceReport). */
+export function sceneContinuity(project: Project, scene: Scene): SceneContinuity {
+  const entities = entitiesOf(project);
+  const counts = sceneCounts(scene, entities, entitiesSignature(entities));
+  const out: SceneContinuity = { matched: [], linkedNotNamed: [], namedNotLinked: [] };
+
+  for (const e of entities) {
+    const mentions = counts.get(keyOf(e.type, e.id)) ?? 0;
+    const linked = isLinked(scene, e.type, e.id);
+    if (!linked && mentions === 0) continue;
+    const item = { type: e.type, id: e.id, name: e.name, mentions };
+    (linked ? (mentions > 0 ? out.matched : out.linkedNotNamed) : out.namedNotLinked).push(item);
+  }
+  return out;
+}

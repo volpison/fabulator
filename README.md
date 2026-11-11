@@ -219,6 +219,10 @@ Click **+ Plotline** under the lanes to add one (it gets the next free colour). 
 
 While writing, type `@` at the start of a word (not inside an e-mail address) and a small list of your characters and places appears. Keep typing to narrow it (accents and capitals don't matter; aliases count). **↑ ↓** choose, **Enter** or **Tab** inserts the name and links it to the scene, **Esc** closes the list. If nothing has exactly that name, the list also offers **＋ New character "…"** or **＋ New place "…"**, which creates it (fill in the details later in the side panel) and links it at once.
 
+## Cast check above the editor
+
+A slim bar above the text compares a scene's cast with its text. If everything lines up it lists the cast with mention counts ("Cast matches the text"). If someone is on the cast but never named in the text it turns amber and offers **Unlink** (take them off the scene) or **×** (keep them, e.g. they appear only as "she", and hide the notice for this session). Names that appear in the text but are not on the cast are still offered by the **Link** banner. The bar is hidden in focus mode.
+
 ## Reordering scenes from the Manuscript list
 
 Drag a scene in the left-hand list and drop it on the top or bottom half of another scene; a line shows where it will land. Dropping onto a scene in another chapter moves it to that chapter (it keeps its plotline). Keyboard: focus a scene and press **Alt+↑ / Alt+↓** to move it one step in reading order (past a chapter boundary it moves into the neighbouring chapter). The Timeline reflects the change immediately.

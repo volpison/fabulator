@@ -20,6 +20,7 @@
   import type { Scene, Character, Place } from "../lib/types";
   import { readingOrder, chapterNumber, sceneDropTarget } from "../lib/model";
   import RichTextEditor from "./RichTextEditor.svelte";
+  import ContinuityPanel from "./ContinuityPanel.svelte";
   import { stats } from "../lib/goalsStore";
   import { formatCount } from "../lib/wordcount";
   import SceneLabels from "./SceneLabels.svelte";
@@ -417,6 +418,8 @@
           {/if}
         </div>
       {/if}
+
+      <ContinuityPanel />
 
       {#key $selectedScene.id}
         <div class="editor-body">
