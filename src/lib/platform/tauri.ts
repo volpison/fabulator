@@ -43,6 +43,7 @@ export const tauriPlatform: Platform = {
   unsaved: {
     keep: (project, path) => invoke<number>("keep_unsaved", { project, path }),
     keepChanges: (base, patch, path) => invoke<number | null>("keep_unsaved_changes", { base, patch, path }),
+    saveKept: (path, revision, o) => invoke<boolean>("save_unsaved", { path, revision, forceBackup: o.forceBackup }),
     read: () => invoke<unknown>("unsaved_work"),
     discard: (keepCopy) => invoke("discard_unsaved", { keepCopy }),
   },

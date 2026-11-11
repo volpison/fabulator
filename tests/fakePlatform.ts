@@ -17,6 +17,8 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
     /** The unsaved-work copy: `{ project, path, source }` (tests may set any source). */
     unsaved: null as null | { project: unknown; path: string | null; source: "memory" | "disk" | "legacy" },
     unsavedRevision: 0,
+    /** How many saves were made from the kept copy (the project was not sent again). */
+    keptSaves: 0,
     discarded: null as unknown,
     themes: new Map<string, string>(),
     /** Scripted answers, consumed in order (defaults: confirm → false, pickers → null). */
@@ -112,6 +114,17 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
         state.unsavedRevision += 1;
         state.unsaved = { ...state.unsaved, project: applyPatch(state.unsaved.project as Project, patch), path };
         return state.unsavedRevision;
+      },
+      async saveKept(location, revision, o) {
+        if (!state.unsaved || revision !== state.unsavedRevision) return false;
+        maybeFail("save");
+        const hook = state.duringSave;
+        state.duringSave = null;
+        hook?.();
+        note(`save ${location}${o.forceBackup ? " (backup)" : ""}`);
+        state.files.set(location, clone(state.unsaved.project));
+        state.keptSaves += 1;
+        return true;
       },
       async read() {
         return clone(state.unsaved) ?? null;

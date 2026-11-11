@@ -60,6 +60,31 @@ async function pickSavePath(proj: Project): Promise<Location | null> {
   });
 }
 
+/**
+ * Write the project. Preferred: the platform already holds this exact project as its unsaved
+ * copy (the mirror keeps it current), so it saves that and the project is not sent again.
+ * Any doubt (no copy, another revision, the copy can't be brought up to date) → send it.
+ */
+async function writeProject(path: Location, proj: Project, forceBackup: boolean): Promise<void> {
+  let writeError: unknown = null;
+  try {
+    const saved = await unsavedSync.withKept(proj, get(currentPath), async (rev) => {
+      try {
+        return await platform().unsaved.saveKept(path, rev, { forceBackup });
+      } catch (e) {
+        writeError = e; // the write itself failed: report it, don't write again
+        throw e;
+      }
+    });
+    if (saved) return;
+  } catch (e) {
+    if (writeError) throw writeError;
+    // Only bringing the kept copy up to date failed: the ordinary way below still works.
+    console.warn("could not use the kept copy; saving directly", e);
+  }
+  await platform().saveProject(path, proj, { forceBackup });
+}
+
 async function doSave(opts: SaveOptions): Promise<boolean> {
   const proj = get(project);
   if (!proj) return false;
@@ -76,7 +101,7 @@ async function doSave(opts: SaveOptions): Promise<boolean> {
   saveState.set({ status: "saving", at: previous.at, message: null });
 
   try {
-    await platform().saveProject(path, proj, { forceBackup: !!opts.forceBackup });
+    await writeProject(path, proj, !!opts.forceBackup);
     currentPath.set(path);
     rememberRecent(path);
     // The unsaved-work copy is dropped by the mirror once nothing is unsaved (see startMirror):
