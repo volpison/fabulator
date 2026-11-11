@@ -29,24 +29,21 @@ export const tauriPlatform: Platform = {
   pickFolder: async (o) => single(await open({ title: o.title, directory: true, multiple: false })),
 
   sampleProject: () => invoke<Project>("sample_project"),
-  readProject: (path) => invoke<unknown>("load_project", { path }),
+  openProject: async (path) => {
+    const r = await invoke<{ data: unknown; backed_up: boolean }>("open_project", { path });
+    return { data: r.data, backedUp: r.backed_up };
+  },
   saveProject: (path, project, o) => invoke("save_project", { path, project, forceBackup: o.forceBackup }),
-  backupProject: (path) => invoke("backup_project", { path }),
 
   readText: (path) => invoke<string>("read_text_file", { path }),
   writeBytes: (path, bytes) => invoke("write_export", { path, bytes: Array.from(bytes) }),
   writeProjectFolder: (dir, files) => invoke<FolderWriteReport>("write_project_folder", { dir, files }),
   readProjectFolder: (dir) => invoke<FolderFile[]>("read_project_folder", { dir }),
 
-  recovery: {
-    write: (project) => invoke("write_recovery", { project }),
-    read: () => invoke<unknown>("read_recovery"),
-    clear: (keep) => invoke("clear_recovery", { keep }),
-  },
-  live: {
-    mirror: (project, path) => invoke("mirror_project", { project, path }),
-    read: () => invoke<unknown>("live_project"),
-    clear: () => invoke("clear_live"),
+  unsaved: {
+    keep: (project, path) => invoke("keep_unsaved", { project, path }),
+    read: () => invoke<unknown>("unsaved_work"),
+    discard: (keepCopy) => invoke("discard_unsaved", { keepCopy }),
   },
 
   themes: {

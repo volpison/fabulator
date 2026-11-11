@@ -59,12 +59,18 @@ export interface Platform {
   // ── Project files ────────────────────────────────────────
   /** The built-in sample story. */
   sampleProject(): Promise<Project>;
-  /** The file's JSON as stored (old formats are upgraded by the app, not here). */
-  readProject(location: Location): Promise<unknown>;
-  /** Write the project atomically; with `forceBackup`, keep a copy of the previous file first. */
+  /**
+   * Open a project file. `data` is the file's JSON as stored (old formats are upgraded by
+   * the app, not here). The platform's rule: a file written by an older version is backed
+   * up BEFORE it can be overwritten with the upgraded format (`backedUp` says it was);
+   * if that backup fails, opening fails.
+   */
+  openProject(location: Location): Promise<{ data: unknown; backedUp: boolean }>;
+  /**
+   * Write the project atomically; with `forceBackup`, keep a copy of the previous file
+   * first (otherwise backups are rotated and throttled). Never leaves a half-written file.
+   */
   saveProject(location: Location, project: Project, options: { forceBackup: boolean }): Promise<void>;
-  /** Keep an untouched copy of the file as it is on disk (before an upgraded version replaces it). */
-  backupProject(location: Location): Promise<void>;
 
   // ── Other files ──────────────────────────────────────────
   readText(location: Location): Promise<string>;
@@ -73,21 +79,23 @@ export interface Platform {
   writeProjectFolder(folder: Location, files: FolderFile[]): Promise<FolderWriteReport>;
   readProjectFolder(folder: Location): Promise<FolderFile[]>;
 
-  // ── Work that exists only in memory (not saved yet) ──────
-  /** A copy of a project that has no file yet. */
-  recovery: {
-    write(project: Project): Promise<void>;
-    /** The copy as stored (raw JSON), or null. */
+  // ── Unsaved work ─────────────────────────────────────────
+  /**
+   * What would be lost if the app died right now. While there are unsaved changes the app
+   * sends the whole project; the platform keeps the latest copy somewhere that survives a
+   * view reload (memory) and a crash (disk). One store for projects with and without a file.
+   */
+  unsaved: {
+    /** Keep the project (and the file it belongs to, if any) as the latest unsaved copy. */
+    keep(project: Project, path: Location | null): Promise<void>;
+    /**
+     * The copy to offer, as stored (`{ project, path, source }`, see mirror.ts), or null.
+     * `source` "memory" = the view was reloaded (carry on silently); "disk" or "legacy" =
+     * the app restarted or crashed (ask first).
+     */
     read(): Promise<unknown>;
-    /** Remove it; with `keep`, set it aside as "discarded" instead of deleting. */
-    clear(keep: boolean): Promise<void>;
-  };
-  /** The live mirror of the project being edited (survives a view reload or a crash). */
-  live: {
-    mirror(project: Project, path: Location | null): Promise<void>;
-    /** `{ project, path, source: "memory" | "disk" }` as stored, or null. */
-    read(): Promise<unknown>;
-    clear(): Promise<void>;
+    /** Forget it; with `keepCopy`, set the newest copy aside as a single "discarded" one. */
+    discard(keepCopy: boolean): Promise<void>;
   };
 
   // ── Imported colour themes ───────────────────────────────

@@ -13,30 +13,50 @@ fn sample_project() -> Project {
     Project::sample()
 }
 
-/// Read a project file as raw JSON. It is deliberately NOT parsed into
-/// `Project` here: older files have a different shape, and the frontend
-/// upgrades them (src/lib/migrate.ts) before they are used.
-#[tauri::command]
-fn load_project(path: String) -> Result<serde_json::Value, String> {
-    let data = fs::read_to_string(&path).map_err(|e| format!("Read error: {e}"))?;
-    serde_json::from_str(&data).map_err(|e| format!("Parse error: {e}"))
+/// What opening a project file gives back.
+#[derive(serde::Serialize)]
+struct OpenResult {
+    /// The file's JSON as stored. It is deliberately NOT parsed into `Project`
+    /// here: older files have a different shape, and the frontend upgrades them
+    /// (src/lib/migrate.ts) before they are used.
+    data: serde_json::Value,
+    /// An untouched copy of an older-format file was put in its backups folder
+    /// (the upgraded version will replace the file on the next save).
+    backed_up: bool,
 }
 
-/// Snapshot the file on disk into its backups folder (always, not throttled).
-/// Used right before an upgraded project can overwrite an older-format file.
+/// Open a project file. Rule: a file written by an older version is backed up
+/// BEFORE the app can overwrite it with the upgraded format. If that backup
+/// fails the open fails, so nothing is ever replaced unprotected.
 #[tauri::command]
-fn backup_project(path: String) -> Result<(), String> {
-    storage::backup_existing(&PathBuf::from(path), true, storage::now_secs())
-        .map(|_| ())
-        .map_err(|e| format!("Backup error: {e}"))
+fn open_project(path: String) -> Result<OpenResult, String> {
+    let path = PathBuf::from(path);
+    let text = fs::read_to_string(&path).map_err(|e| format!("Read error: {e}"))?;
+    let data: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| format!("Parse error: {e}"))?;
+
+    let found = data.get("schema_version").and_then(|v| v.as_u64());
+    let backed_up = storage::needs_upgrade_backup(found, models::SCHEMA_VERSION);
+    if backed_up {
+        storage::backup_existing(&path, true, storage::now_secs()).map_err(|e| {
+            format!("Could not back up the older-format file before upgrading it: {e}")
+        })?;
+    }
+    Ok(OpenResult { data, backed_up })
 }
 
 /// Save a project crash-safely:
 /// 1. serialize first (a serialization error can't touch the old file),
 /// 2. back up the current file (rotating; throttled unless `force_backup`),
-/// 3. atomically replace the file via temp-file + rename.
+/// 3. atomically replace the file via temp-file + rename,
+/// 4. drop a legacy recovery copy, which the saved file now supersedes.
 #[tauri::command]
-fn save_project(path: String, project: Project, force_backup: bool) -> Result<(), String> {
+fn save_project(
+    app: tauri::AppHandle,
+    path: String,
+    project: Project,
+    force_backup: bool,
+) -> Result<(), String> {
     let json =
         serde_json::to_string_pretty(&project).map_err(|e| format!("Serialize error: {e}"))?;
     let path = PathBuf::from(path);
@@ -46,10 +66,15 @@ fn save_project(path: String, project: Project, force_backup: bool) -> Result<()
         eprintln!("backup failed for {}: {e}", path.display());
     }
 
-    storage::write_atomic(&path, json.as_bytes()).map_err(|e| format!("Write error: {e}"))
+    storage::write_atomic(&path, json.as_bytes()).map_err(|e| format!("Write error: {e}"))?;
+
+    if let Ok(dir) = recovery_dir(&app) {
+        let _ = storage::clear_legacy_recovery(&dir); // best effort
+    }
+    Ok(())
 }
 
-/// Where unsaved-work recovery copies live (the app's own data folder).
+/// Where unsaved-work copies live (the app's own data folder).
 fn recovery_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
@@ -57,83 +82,69 @@ fn recovery_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| format!("No app data folder: {e}"))
 }
 
-/// Keep a copy of a project that has no file yet, so a crash cannot lose it.
-#[tauri::command]
-fn write_recovery(app: tauri::AppHandle, project: Project) -> Result<(), String> {
-    let json =
-        serde_json::to_string(&project).map_err(|e| format!("Serialize error: {e}"))?;
-    storage::write_recovery(&recovery_dir(&app)?, json.as_bytes())
-        .map_err(|e| format!("Recovery write error: {e}"))
-}
-
-/// The recovery copy as raw JSON (it is migrated by the frontend, like any file), or null.
-#[tauri::command]
-fn read_recovery(app: tauri::AppHandle) -> Result<Option<serde_json::Value>, String> {
-    match storage::read_recovery(&recovery_dir(&app)?).map_err(|e| format!("Read error: {e}"))? {
-        Some(s) => serde_json::from_str(&s)
-            .map(Some)
-            .map_err(|e| format!("Parse error: {e}")),
-        None => Ok(None),
-    }
-}
-
-/// Remove the recovery copy (`keep`: move it aside instead of deleting).
-#[tauri::command]
-fn clear_recovery(app: tauri::AppHandle, keep: bool) -> Result<(), String> {
-    storage::clear_recovery(&recovery_dir(&app)?, keep)
-        .map_err(|e| format!("Recovery clear error: {e}"))
-}
-
-// ─── Live mirror: the latest unsaved project, kept outside the web view ───
+// ─── Unsaved work: the latest copy of what would be lost if the app died now ───
 
 /// The newest copy the web view sent (a JSON envelope `{path, project}`).
 /// It lives in this process, so a WebView reload cannot lose it.
 #[derive(Default)]
-struct LiveMirror(Mutex<Option<String>>);
+struct UnsavedWork(Mutex<Option<String>>);
 
-/// Store the unsaved project in memory and on disk (disk is best-effort:
-/// the in-memory copy is already safe).
+/// Keep the unsaved project (whether or not it has a file yet) in memory and on
+/// disk. Disk is best-effort: the in-memory copy is already safe.
 #[tauri::command]
-fn mirror_project(
+fn keep_unsaved(
     app: tauri::AppHandle,
-    live: tauri::State<LiveMirror>,
+    unsaved: tauri::State<UnsavedWork>,
     project: Project,
     path: Option<String>,
 ) -> Result<(), String> {
     let envelope = serde_json::json!({ "path": path, "project": project }).to_string();
-    *live.0.lock().map_err(|_| "Mirror is busy".to_string())? = Some(envelope.clone());
+    *unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())? =
+        Some(envelope.clone());
     storage::write_live(&recovery_dir(&app)?, envelope.as_bytes())
-        .map_err(|e| format!("Live copy write error: {e}"))
+        .map_err(|e| format!("Could not write the recovery copy: {e}"))
 }
 
-/// The live copy: from memory (`"memory"`, a reload of the web view) or, after
-/// a restart, from disk (`"disk"`). Null when nothing is unsaved.
+/// The unsaved work to offer, or null: `{ path, project, source }` where `source`
+/// is "memory" (the web view was reloaded: carry on silently), "disk" (the app
+/// was restarted or crashed: ask first) or "legacy" (a recovery copy written by
+/// an older version: ask first). The project is raw JSON; the frontend upgrades it.
 #[tauri::command]
-fn live_project(
+fn unsaved_work(
     app: tauri::AppHandle,
-    live: tauri::State<LiveMirror>,
+    unsaved: tauri::State<UnsavedWork>,
 ) -> Result<Option<serde_json::Value>, String> {
-    let in_memory = live.0.lock().map_err(|_| "Mirror is busy".to_string())?.clone();
-    let (source, text) = match in_memory {
-        Some(t) => ("memory", t),
-        None => match storage::read_live(&recovery_dir(&app)?)
-            .map_err(|e| format!("Read error: {e}"))?
-        {
-            Some(t) => ("disk", t),
-            None => return Ok(None),
-        },
+    let in_memory = unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())?.clone();
+    let chosen = storage::choose_unsaved(in_memory, &recovery_dir(&app)?)
+        .map_err(|e| format!("Read error: {e}"))?;
+    let Some((source, text)) = chosen else {
+        return Ok(None);
     };
     let mut value: serde_json::Value =
         serde_json::from_str(&text).map_err(|e| format!("Parse error: {e}"))?;
+    if !value.is_object() {
+        return Err("The recovery copy is damaged.".to_string());
+    }
+    if source == storage::SOURCE_LEGACY {
+        // Legacy copies are a bare project with no file.
+        value = serde_json::json!({ "path": null, "project": value });
+    }
     value["source"] = serde_json::Value::String(source.to_string());
     Ok(Some(value))
 }
 
-/// Forget the live copy (saved, closed or replaced on purpose).
+/// Forget the unsaved work (saved, closed or replaced on purpose). With
+/// `keep_copy`, the newest copy is set aside as a single "discarded" file
+/// instead of being deleted.
 #[tauri::command]
-fn clear_live(app: tauri::AppHandle, live: tauri::State<LiveMirror>) -> Result<(), String> {
-    *live.0.lock().map_err(|_| "Mirror is busy".to_string())? = None;
-    storage::clear_live(&recovery_dir(&app)?).map_err(|e| format!("Live copy clear error: {e}"))
+fn discard_unsaved(
+    app: tauri::AppHandle,
+    unsaved: tauri::State<UnsavedWork>,
+    keep_copy: bool,
+) -> Result<(), String> {
+    *unsaved.0.lock().map_err(|_| "Unsaved-work store is busy".to_string())? = None;
+    storage::discard_unsaved(&recovery_dir(&app)?, keep_copy)
+        .map_err(|e| format!("Could not discard the recovery copy: {e}"))
 }
 
 fn themes_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -238,23 +249,19 @@ fn read_project_folder(dir: String) -> Result<Vec<FolderFile>, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(LiveMirror::default())
+        .manage(UnsavedWork::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             sample_project,
-            load_project,
-            backup_project,
+            open_project,
             save_project,
             write_export,
             write_project_folder,
             read_project_folder,
-            write_recovery,
-            read_recovery,
-            clear_recovery,
-            mirror_project,
-            live_project,
-            clear_live,
+            keep_unsaved,
+            unsaved_work,
+            discard_unsaved,
             read_text_file,
             list_user_themes,
             save_user_theme,

@@ -47,7 +47,7 @@ test("File → Load sample story really loads the sample", async () => {
 });
 
 test("a reload of the view (live copy in memory) is adopted silently, still unsaved, with its path", async () => {
-  fake.state.live = liveEnvelope("My draft", "C:\\Stories\\a.fabulator.json", "memory");
+  fake.state.unsaved = liveEnvelope("My draft", "C:\\Stories\\a.fabulator.json", "memory");
   await loadInitialProject();
   assert.equal(get(project)!.title, "My draft");
   assert.equal(get(currentPath), "C:\\Stories\\a.fabulator.json");
@@ -56,7 +56,7 @@ test("a reload of the view (live copy in memory) is adopted silently, still unsa
 });
 
 test("after a restart the live copy asks first; Restore adopts it", async () => {
-  fake.state.live = liveEnvelope("Recovered", null, "disk");
+  fake.state.unsaved = liveEnvelope("Recovered", null, "disk");
   fake.state.confirmAnswers.push(true);
   await loadInitialProject();
   assert.equal(fake.state.confirms.length, 1);
@@ -65,25 +65,25 @@ test("after a restart the live copy asks first; Restore adopts it", async () => 
 });
 
 test("'Start fresh' opens a BLANK story and drops the live copy", async () => {
-  fake.state.live = liveEnvelope("Recovered", null, "disk");
+  fake.state.unsaved = liveEnvelope("Recovered", null, "disk");
   fake.state.confirmAnswers.push(false);
   await loadInitialProject();
   assert.notEqual(get(project)!.title, "Recovered");
   assert.notEqual(get(project)!.title, "The Boy Who Cried Wolf");
   assert.equal(get(isDirty), false);
-  assert.equal(fake.state.live, null);
+  assert.equal(fake.state.unsaved, null);
 });
 
-test("the old pathless recovery copy is still offered when there is no live copy", async () => {
-  fake.state.recovery = blankProject(newId);
-  (fake.state.recovery as any).title = "Old recovery";
+test("a recovery copy left by an older version is still offered (and asks first)", async () => {
+  fake.state.unsaved = { project: { ...blankProject(newId), title: "Old recovery" }, path: null, source: "legacy" };
   fake.state.confirmAnswers.push(true);
   await loadInitialProject();
+  assert.equal(fake.state.confirms.length, 1);
   assert.equal(get(project)!.title, "Old recovery");
   assert.equal(get(isDirty), true);
 });
 
-test("Ctrl+S on a story with no file asks where, saves, remembers the path and clears recovery", async () => {
+test("Ctrl+S on a story with no file asks where, saves and remembers the path", async () => {
   await loadInitialProject();
   markDirty();
   fake.state.saveAnswers.push("C:\\Stories\\new.fabulator.json");
@@ -91,7 +91,6 @@ test("Ctrl+S on a story with no file asks where, saves, remembers the path and c
   assert.equal(get(currentPath), "C:\\Stories\\new.fabulator.json");
   assert.equal(get(isDirty), false);
   assert.ok(fake.state.files.has("C:\\Stories\\new.fabulator.json"));
-  assert.ok(fake.state.log.includes("live.clear"));
   assert.equal(get(saveState).status, "saved");
 });
 
@@ -150,7 +149,7 @@ test("New story: declined keeps the work; accepted replaces it with a blank stor
   await newProject();
   assert.notEqual(get(project)!.scenes[0].title, "Precious work");
   assert.equal(get(isDirty), false);
-  assert.ok(fake.state.log.includes("live.clear"));
+  assert.ok(fake.state.log.includes("unsaved.discard"));
 });
 
 test("opening an old-format file backs it up first and marks the upgrade for saving", async () => {
@@ -186,15 +185,15 @@ test("the live mirror sends unsaved work after a pause and clears when saved", a
 
   updateSceneTitle(get(project)!.scenes[0].id, "Typing…");
   t.mock.timers.tick(499);
-  assert.ok(!fake.state.log.includes("live.mirror")); // still waiting
+  assert.ok(!fake.state.log.includes("unsaved.keep")); // still waiting
   t.mock.timers.tick(2);
   await new Promise((r) => setImmediate(r));
-  assert.ok(fake.state.log.includes("live.mirror"));
-  assert.equal((fake.state.live as any).project.scenes[0].title, "Typing…");
+  assert.ok(fake.state.log.includes("unsaved.keep"));
+  assert.equal((fake.state.unsaved as any).project.scenes[0].title, "Typing…");
 
   markClean();
   await new Promise((r) => setImmediate(r));
-  assert.equal(fake.state.live, null);
+  assert.equal(fake.state.unsaved, null);
   stop();
 });
 
@@ -243,4 +242,66 @@ test("Open recent still protects unsaved work", async () => {
   await openRecent(loc);
   assert.equal(get(project)!.scenes[0].title, "Unsaved");
   assert.match(fake.state.confirms[0], /unsaved changes/i);
+});
+
+function fakeBrowserGlobals() {
+  (globalThis as any).window = { addEventListener() {}, removeEventListener() {} };
+  (globalThis as any).document = { addEventListener() {}, removeEventListener() {}, visibilityState: "visible" };
+}
+const flush = () => new Promise((r) => setImmediate(r));
+
+test("after a save, the unsaved copy is dropped once nothing is unsaved", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  const stop = startMirror();
+
+  updateSceneTitle(get(project)!.scenes[0].id, "Draft");
+  t.mock.timers.tick(501);
+  await flush();
+  assert.ok(fake.state.unsaved);
+
+  fake.state.saveAnswers.push("C:\\Stories\\s.fabulator.json");
+  assert.equal(await manualSave(), true);
+  await flush();
+  assert.equal(fake.state.unsaved, null);
+  stop();
+});
+
+test("typing while a save runs never loses the newer text: the unsaved copy survives the save", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  await loadInitialProject();
+  currentPath.set(toLocation("C:\\Stories\\s.fabulator.json"));
+  const stop = startMirror();
+  const id = get(project)!.scenes[0].id;
+
+  updateSceneTitle(id, "v1");
+  t.mock.timers.tick(501);
+  await flush();
+  assert.equal((fake.state.unsaved as any).project.scenes[0].title, "v1");
+
+  fake.state.duringSave = () => updateSceneTitle(id, "v2"); // typed during the save
+  assert.equal(await saveNow(), true);
+  await flush();
+  assert.equal(get(isDirty), true); // the save did not cover "v2"
+  assert.ok(fake.state.unsaved); // and the safety copy was NOT thrown away by the save
+
+  t.mock.timers.tick(501);
+  await flush();
+  assert.equal((fake.state.unsaved as any).project.scenes[0].title, "v2");
+  stop();
+});
+
+test("autosave for a story with no file writes nothing (the mirror covers it)", async (t) => {
+  fakeBrowserGlobals();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const { startAutosave } = await import("../src/lib/persistence.ts");
+  await loadInitialProject();
+  const stop = startAutosave();
+  updateSceneTitle(get(project)!.scenes[0].id, "Typing");
+  t.mock.timers.tick(20_000);
+  await flush();
+  assert.equal(fake.state.files.size, 0);
+  stop();
 });
