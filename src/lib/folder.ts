@@ -15,6 +15,7 @@
 import { migrateProject, CURRENT_SCHEMA_VERSION } from "./migrate";
 import { cleanColor, cleanStatus, defaultStatusFor } from "./labels";
 import { htmlToMd, mdToHtml } from "./mdbody";
+import { linesToTodos, todosToLines } from "./scenenotes";
 import type { Project, Scene } from "./types";
 
 export const FOLDER_FORMAT = "fabulator-folder";
@@ -169,6 +170,8 @@ export function toFolder(p: Project): FolderFile[] {
             ["characters", s.character_ids],
             ["places", s.place_ids],
             ["tags", s.tags],
+            ["notes", s.notes],
+            ["todos", todosToLines(s.todos)],
           ]) + (body ? `\n${body}\n` : ""),
       });
     });
@@ -308,6 +311,8 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
         tags: asList(h.tags),
         status: cleanStatus(h.status, defaultStatusFor(content)),
         color: cleanColor(h.color),
+        notes: asString(h.notes),
+        todos: linesToTodos(asList(h.todos)),
       });
     }
   }

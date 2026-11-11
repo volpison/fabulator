@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -50,6 +50,20 @@ pub struct Scene {
     /// A colour label id, or empty for none.
     #[serde(default)]
     pub color: String,
+    /// Private notes about the scene.
+    #[serde(default)]
+    pub notes: String,
+    /// Private to-do list for the scene.
+    #[serde(default)]
+    pub todos: Vec<SceneTodo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SceneTodo {
+    pub id: String,
+    pub text: String,
+    #[serde(default)]
+    pub done: bool,
 }
 
 fn default_status() -> String {
@@ -247,6 +261,8 @@ impl Project {
                     tags: vec!["Act I".into(), "Setup".into(), "Tension: Low".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
                 // Act II – The Deceptions
                 Scene {
@@ -262,6 +278,8 @@ impl Project {
                     tags: vec!["Act II".into(), "Rising Action".into(), "Tension: Comedic".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
                 Scene {
                     id: "sc-3".into(),
@@ -276,6 +294,8 @@ impl Project {
                     tags: vec!["Act II".into(), "Rising Action".into(), "Tension: Anxious".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
                 // Act III – The Reckoning
                 Scene {
@@ -291,6 +311,8 @@ impl Project {
                     tags: vec!["Act III".into(), "Climax".into(), "Tension: High".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
                 Scene {
                     id: "sc-5".into(),
@@ -305,6 +327,8 @@ impl Project {
                     tags: vec!["Act III".into(), "Climax".into(), "Tension: Terror".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
                 Scene {
                     id: "sc-6".into(),
@@ -319,6 +343,8 @@ impl Project {
                     tags: vec!["Act III".into(), "Resolution".into(), "Tension: Aftermath".into()],
                     status: "draft".into(),
                     color: String::new(),
+                    notes: String::new(),
+                    todos: vec![],
                 },
             ],
         }

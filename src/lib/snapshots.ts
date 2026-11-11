@@ -156,6 +156,8 @@ export function recreateScene(
     // Snapshots do not record these; a recreated scene starts unlabelled.
     status: defaultStatusFor(snap.content),
     color: "",
+    notes: "",
+    todos: [],
   };
 }
 

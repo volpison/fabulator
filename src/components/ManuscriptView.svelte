@@ -21,6 +21,7 @@
   import { readingOrder, chapterNumber, sceneDropTarget } from "../lib/model";
   import RichTextEditor from "./RichTextEditor.svelte";
   import ContinuityPanel from "./ContinuityPanel.svelte";
+  import SceneNotes from "./SceneNotes.svelte";
   import { stats } from "../lib/goalsStore";
   import { formatCount } from "../lib/wordcount";
   import SceneLabels from "./SceneLabels.svelte";
@@ -435,6 +436,8 @@
           />
         </div>
       {/key}
+
+      <SceneNotes />
     {:else}
       <div class="empty">Select a scene from the list to write.</div>
     {/if}

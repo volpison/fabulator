@@ -28,6 +28,8 @@ export function blankProject(newId: (prefix: string) => string): Project {
         tags: [],
         status: "idea",
         color: "",
+        notes: "",
+        todos: [],
       },
     ],
     snapshots: [],

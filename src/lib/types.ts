@@ -31,6 +31,16 @@ export interface Scene {
   status: SceneStatus;
   /** Optional colour label (a SCENE_COLORS id) or "" for none. */
   color: string;
+  /** Private notes about the scene (never exported with the story). */
+  notes: string;
+  /** Private to-do list for the scene. */
+  todos: SceneTodo[];
+}
+
+export interface SceneTodo {
+  id: string;
+  text: string;
+  done: boolean;
 }
 
 export interface Character {
