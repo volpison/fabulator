@@ -177,7 +177,7 @@ export function updateSceneSummary(sceneId: string, summary: string) {
 
 export function updateSceneFields(
   sceneId: string,
-  fields: Partial<Pick<Scene, "title" | "summary" | "plotline_id" | "tags" | "status" | "color" | "notes" | "todos">>
+  fields: Partial<Pick<Scene, "title" | "summary" | "plotline_id" | "tags" | "status" | "color" | "notes" | "todos" | "when">>
 ) {
   project.update((proj) => {
     if (!proj) return proj;
@@ -221,6 +221,7 @@ export function addScene(partial?: Partial<Scene>): string {
       color: partial?.color ?? "",
       notes: partial?.notes ?? "",
       todos: partial?.todos ?? [],
+      when: partial?.when ?? "",
     };
     return { ...proj, chapters, scenes: [...proj.scenes, scene] };
   });
