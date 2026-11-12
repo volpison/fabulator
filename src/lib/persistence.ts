@@ -11,6 +11,7 @@ import { platform } from "./platform";
 import type { Location } from "./platform/types";
 import { rememberRecent, forgetRecent } from "./recentStore";
 import { blankProject, blankProjectFor } from "./blank";
+import { comicReadingOrder } from "./comic";
 import { DEFAULT_STORY_FORMAT, formatOf, type StoryFormatId } from "./formats";
 import { MIRROR_DEBOUNCE_MS, createUnsavedSync, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
 import {
@@ -21,6 +22,7 @@ import {
   markClean,
   markDirty,
   selectedSceneId,
+  selectedPageId,
   saveState,
   uid,
 } from "./stores";
@@ -169,6 +171,7 @@ function showProject(proj: Project, path: Location | null) {
   project.set(proj);
   currentPath.set(path);
   selectedSceneId.set(proj.scenes[0]?.id ?? null);
+  selectedPageId.set(comicReadingOrder(proj)[0]?.id ?? null);
   markClean();
   saveState.set({ status: "idle", at: null, message: null });
   // Let the platform hold the project from now on, so later changes and saves can be small.

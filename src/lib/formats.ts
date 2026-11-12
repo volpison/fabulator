@@ -7,7 +7,7 @@
  * views built on it.
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
- *   comic        issues → pages → panels (plot-first or full script)  ← data only so far (`ready: false`)
+ *   comic        issues → pages → panels (plot-first or full script)  ← data and Timeline so far (`ready: false`)
  *   screenplay   act → scene → slug / action / dialogue (planned)
  *
  * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
@@ -40,6 +40,8 @@ export type StoryFormat = {
    * opened (its data is kept safe) but is not offered for new stories, and its views say so.
    */
   ready: boolean;
+  /** Which main views exist for this format (Cast always does). A missing one shows a short explanation. */
+  views: { timeline: boolean; manuscript: boolean };
   /** What the format calls its units, for labels like "Add chapter". */
   vocabulary: {
     /** The big unit that groups the small ones: a chapter, an issue, an act. */
@@ -55,6 +57,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     label: "Novel",
     description: "Chapters and scenes of long prose.",
     ready: true,
+    views: { timeline: true, manuscript: true },
     vocabulary: {
       group: { one: "chapter", many: "chapters" },
       unit: { one: "scene", many: "scenes" },
@@ -65,6 +68,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     label: "Comic",
     description: "Issues, pages and panels: a plot-first or full script.",
     ready: false,
+    views: { timeline: true, manuscript: false },
     vocabulary: {
       group: { one: "issue", many: "issues" },
       unit: { one: "page", many: "pages" },

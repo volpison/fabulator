@@ -30,6 +30,7 @@
 
   import TopBar from "./components/TopBar.svelte";
   import FormatNotReady from "./components/FormatNotReady.svelte";
+  import ComicTimeline from "./components/ComicTimeline.svelte";
   import { formatOf } from "./lib/formats";
   import StatusBar from "./components/StatusBar.svelte";
   import TimelineView from "./components/TimelineView.svelte";
@@ -155,10 +156,16 @@
       <main class="main">
         {#if $mainView === "cast"}
           <CastView />
-        {:else if !formatOf($project).ready}
-          <FormatNotReady />
         {:else if $mainView === "timeline"}
-          <TimelineView />
+          {#if !formatOf($project).views.timeline}
+            <FormatNotReady view="Timeline" />
+          {:else if $project.story_format === "comic"}
+            <ComicTimeline />
+          {:else}
+            <TimelineView />
+          {/if}
+        {:else if !formatOf($project).views.manuscript}
+          <FormatNotReady view="Manuscript" />
         {:else}
           <ManuscriptView />
         {/if}
