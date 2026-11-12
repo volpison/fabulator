@@ -2,6 +2,8 @@
 
 Story planning + manuscript writing tool.
 
+Where the project is going: see [ROADMAP.md](ROADMAP.md).
+
 ## Features in this skeleton
 
 - **Dual view**: Timeline (Plottr-style) ↔ Manuscript
