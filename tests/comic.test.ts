@@ -201,8 +201,9 @@ import {
   deleteComicPage, deleteComicIssue, renameComicIssue, deleteCharacter, addCharacter,
 } from "../src/lib/stores.ts";
 
-test("the comic format has a Timeline but no Manuscript yet", () => {
-  assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: false });
+test("the comic format has its Timeline and writing view, but is not ready until it can be exported", () => {
+  assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: true });
+  assert.equal(STORY_FORMATS.comic.ready, false);
   assert.deepEqual(STORY_FORMATS.novel.views, { timeline: true, manuscript: true });
 });
 
@@ -242,4 +243,35 @@ test("deleting a character removes them from comic pages too", () => {
   assert.deepEqual(get(project)!.pages.find((pg) => pg.id === pageId)!.character_ids, [c]);
   deleteCharacter(c);
   assert.deepEqual(get(project)!.pages[0].character_ids, []);
+});
+
+import {
+  addComicPanel, updateComicPanel, moveComicPanel, deleteComicPanel, addComicLine, updateComicLine, moveComicLine, deleteComicLine,
+} from "../src/lib/stores.ts";
+
+test("writing a page through the stores: panels, lines, speaker joins the cast", () => {
+  project.set(blankComic(newId));
+  markClean();
+  const page = get(project)!.pages[0].id;
+  const panel = addComicPanel(page);
+  assert.equal(get(isDirty), true);
+  updateComicPanel(page, panel, { description: "The bridge, from below." });
+  const line = addComicLine(page, panel);
+  updateComicLine(page, panel, line, { text: "Hold on!", speaker_id: "char-mara" });
+  const cap = addComicLine(page, panel, "caption");
+  moveComicLine(page, panel, cap, 0);
+
+  const pg = get(project)!.pages[0];
+  assert.equal(pg.panels[0].description, "The bridge, from below.");
+  assert.deepEqual(pg.panels[0].lines.map((l) => l.kind), ["caption", "dialogue"]);
+  assert.deepEqual(pg.character_ids, ["char-mara"]);
+
+  markClean();
+  updateComicLine(page, panel, line, { text: "Hold on!" }); // unchanged
+  moveComicPanel(page, panel, 0); // already first
+  assert.equal(get(isDirty), false);
+
+  deleteComicLine(page, panel, cap);
+  deleteComicPanel(page, panel);
+  assert.deepEqual(get(project)!.pages[0].panels, []);
 });

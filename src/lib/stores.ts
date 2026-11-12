@@ -17,6 +17,14 @@ import {
   updatePage as updatePageIn,
   movePage as movePageIn,
   deletePage as deletePageFrom,
+  addPanel as addPanelTo,
+  updatePanel as updatePanelIn,
+  movePanel as movePanelIn,
+  deletePanel as deletePanelFrom,
+  addLine as addLineTo,
+  updateLine as updateLineIn,
+  moveLine as moveLineIn,
+  deleteLine as deleteLineFrom,
   removeCastFromPages,
 } from "./comicedit";
 import type { SearchHit } from "./search";
@@ -37,6 +45,7 @@ import type {
   Character,
   Place,
   Note,
+  LineKind,
 } from "./types";
 
 export const project = writable<Project | null>(null);
@@ -367,6 +376,50 @@ export function moveComicPage(id: string, issueId: string, index: number) {
 export function deleteComicPage(id: string) {
   editProject((p) => deletePageFrom(p, id));
   selectedPageId.update((cur) => (cur === id ? null : cur));
+}
+
+// Panels and lines of the selected comic page (the writing view).
+
+export function addComicPanel(pageId: string, atIndex?: number): string {
+  let id = "";
+  editProject((p) => {
+    const r = addPanelTo(p, uid, pageId, atIndex);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+export function updateComicPanel(pageId: string, panelId: string, fields: { description?: string }) {
+  editProject((p) => updatePanelIn(p, pageId, panelId, fields));
+}
+export function moveComicPanel(pageId: string, panelId: string, toIndex: number) {
+  editProject((p) => movePanelIn(p, pageId, panelId, toIndex));
+}
+export function deleteComicPanel(pageId: string, panelId: string) {
+  editProject((p) => deletePanelFrom(p, pageId, panelId));
+}
+export function addComicLine(pageId: string, panelId: string, kind: LineKind = "dialogue", atIndex?: number): string {
+  let id = "";
+  editProject((p) => {
+    const r = addLineTo(p, uid, pageId, panelId, kind, atIndex);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+export function updateComicLine(
+  pageId: string,
+  panelId: string,
+  lineId: string,
+  fields: Parameters<typeof updateLineIn>[4]
+) {
+  editProject((p) => updateLineIn(p, pageId, panelId, lineId, fields));
+}
+export function moveComicLine(pageId: string, panelId: string, lineId: string, toIndex: number) {
+  editProject((p) => moveLineIn(p, pageId, panelId, lineId, toIndex));
+}
+export function deleteComicLine(pageId: string, panelId: string, lineId: string) {
+  editProject((p) => deleteLineFrom(p, pageId, panelId, lineId));
 }
 
 // ─── Chapters ─────────────────────────────────────────────

@@ -226,3 +226,26 @@ export function newPage(newId: NewId, issueId: string, order: number, plotlineId
     when: "",
   };
 }
+
+// ─── Gentle limits (shown as warnings, never enforced) ───
+
+/** A balloon that is longer than this is hard to letter and hard to read. */
+export const BALLOON_WORD_LIMIT = 25;
+/** More than this much lettering in one panel crowds the art. */
+export const PANEL_WORD_LIMIT = 45;
+/** More panels than this on one page makes them small. */
+export const PAGE_PANEL_LIMIT = 9;
+
+const readWords = (ln: Pick<ComicLine, "kind" | "text">) => (ln.kind === "sfx" ? 0 : wordsIn(ln.text));
+
+/** Words a reader reads in one line (sound effects are art, so 0). */
+export const lineWords = readWords;
+
+export const balloonTooLong = (ln: Pick<ComicLine, "kind" | "text">): boolean => readWords(ln) > BALLOON_WORD_LIMIT;
+
+/** Words of lettering in one panel. */
+export const panelWords = (pn: Pick<ComicPanel, "lines">): number => pn.lines.reduce((n, ln) => n + readWords(ln), 0);
+
+export const panelTooWordy = (pn: Pick<ComicPanel, "lines">): boolean => panelWords(pn) > PANEL_WORD_LIMIT;
+
+export const pageTooBusy = (page: Pick<ComicPage, "panels">): boolean => page.panels.length > PAGE_PANEL_LIMIT;

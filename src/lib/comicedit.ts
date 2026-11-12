@@ -3,8 +3,8 @@
  * returns a new project, or the very same object when nothing would change (so callers can tell).
  * The stores wrap these and mark the project as changed.
  */
-import type { ComicPage, ComicStage, Issue, Project } from "./types";
-import { COMIC_STAGES, newPage, pagesInIssue, panelCount, type NewId } from "./comic";
+import type { ComicLine, ComicPage, ComicPanel, ComicStage, Issue, LineKind, Project } from "./types";
+import { COMIC_STAGES, LINE_KINDS, newLine, newPage, newPanel, pagesInIssue, panelCount, type NewId } from "./comic";
 import { spreadOf } from "./comic";
 
 // ─── Issues ───
@@ -124,6 +124,127 @@ export function removeCastFromPages(p: Project, kind: "character" | "place", id:
   const key = kind === "character" ? "character_ids" : "place_ids";
   if (!p.pages.some((pg) => pg[key].includes(id))) return p;
   return { ...p, pages: p.pages.map((pg) => (pg[key].includes(id) ? { ...pg, [key]: pg[key].filter((x) => x !== id) } : pg)) };
+}
+
+// ─── Panels and lines (the writing view) ───
+
+function editPage(p: Project, pageId: string, fn: (pg: ComicPage) => ComicPage): Project {
+  const pg = p.pages.find((x) => x.id === pageId);
+  if (!pg) return p;
+  const next = fn(pg);
+  return next === pg ? p : { ...p, pages: p.pages.map((x) => (x.id === pageId ? next : x)) };
+}
+
+function editPanel(pg: ComicPage, panelId: string, fn: (pn: ComicPanel) => ComicPanel): ComicPage {
+  const pn = pg.panels.find((x) => x.id === panelId);
+  if (!pn) return pg;
+  const next = fn(pn);
+  return next === pn ? pg : { ...pg, panels: pg.panels.map((x) => (x.id === panelId ? next : x)) };
+}
+
+/** The same list with `id` moved to `toIndex` (clamped), or the very same list when nothing moves. */
+function moveInList<T extends { id: string }>(list: T[], id: string, toIndex: number): T[] {
+  const from = list.findIndex((x) => x.id === id);
+  if (from === -1) return list;
+  const to = Math.max(0, Math.min(list.length - 1, Math.floor(toIndex)));
+  if (to === from) return list;
+  const out = [...list];
+  const [moved] = out.splice(from, 1);
+  out.splice(to, 0, moved);
+  return out;
+}
+
+/** Add a panel to a page, at `atIndex` (the end by default). */
+export function addPanel(p: Project, newId: NewId, pageId: string, atIndex?: number): { project: Project; id: string } {
+  const panel = newPanel(newId);
+  const project = editPage(p, pageId, (pg) => {
+    const at = atIndex === undefined ? pg.panels.length : Math.max(0, Math.min(pg.panels.length, Math.floor(atIndex)));
+    return { ...pg, panels: [...pg.panels.slice(0, at), panel, ...pg.panels.slice(at)] };
+  });
+  return { project, id: project === p ? "" : panel.id };
+}
+
+export function updatePanel(p: Project, pageId: string, panelId: string, fields: { description?: string }): Project {
+  return editPage(p, pageId, (pg) =>
+    editPanel(pg, panelId, (pn) =>
+      fields.description === undefined || fields.description === pn.description ? pn : { ...pn, description: fields.description }
+    )
+  );
+}
+
+export function movePanel(p: Project, pageId: string, panelId: string, toIndex: number): Project {
+  return editPage(p, pageId, (pg) => {
+    const panels = moveInList(pg.panels, panelId, toIndex);
+    return panels === pg.panels ? pg : { ...pg, panels };
+  });
+}
+
+export function deletePanel(p: Project, pageId: string, panelId: string): Project {
+  return editPage(p, pageId, (pg) =>
+    pg.panels.some((x) => x.id === panelId) ? { ...pg, panels: pg.panels.filter((x) => x.id !== panelId) } : pg
+  );
+}
+
+/** Add a line (balloon, caption, thought or sound effect) to a panel, at `atIndex` (the end by default). */
+export function addLine(
+  p: Project,
+  newId: NewId,
+  pageId: string,
+  panelId: string,
+  kind: LineKind = "dialogue",
+  atIndex?: number
+): { project: Project; id: string } {
+  const line = newLine(newId, kind);
+  const project = editPage(p, pageId, (pg) =>
+    editPanel(pg, panelId, (pn) => {
+      const at = atIndex === undefined ? pn.lines.length : Math.max(0, Math.min(pn.lines.length, Math.floor(atIndex)));
+      return { ...pn, lines: [...pn.lines.slice(0, at), line, ...pn.lines.slice(at)] };
+    })
+  );
+  return { project, id: project === p ? "" : line.id };
+}
+
+/**
+ * Change a line. A caption or sound effect has no speaker. Giving a line to a character also
+ * puts that character on the page's cast (so the cast check and appearances stay true).
+ */
+export function updateLine(
+  p: Project,
+  pageId: string,
+  panelId: string,
+  lineId: string,
+  fields: Partial<Pick<ComicLine, "kind" | "speaker_id" | "text" | "note">>
+): Project {
+  if (fields.kind !== undefined && !(LINE_KINDS as readonly string[]).includes(fields.kind)) return p;
+  return editPage(p, pageId, (pg) => {
+    let cast = pg.character_ids;
+    const withLine = editPanel(pg, panelId, (pn) => {
+      const line = pn.lines.find((x) => x.id === lineId);
+      if (!line) return pn;
+      const next: ComicLine = { ...line, ...fields };
+      if (next.kind === "caption" || next.kind === "sfx") next.speaker_id = "";
+      if (next.kind === line.kind && next.speaker_id === line.speaker_id && next.text === line.text && next.note === line.note) return pn;
+      if (next.speaker_id && !cast.includes(next.speaker_id)) cast = [...cast, next.speaker_id];
+      return { ...pn, lines: pn.lines.map((x) => (x.id === lineId ? next : x)) };
+    });
+    if (withLine === pg) return pg;
+    return cast === pg.character_ids ? withLine : { ...withLine, character_ids: cast };
+  });
+}
+
+export function moveLine(p: Project, pageId: string, panelId: string, lineId: string, toIndex: number): Project {
+  return editPage(p, pageId, (pg) =>
+    editPanel(pg, panelId, (pn) => {
+      const lines = moveInList(pn.lines, lineId, toIndex);
+      return lines === pn.lines ? pn : { ...pn, lines };
+    })
+  );
+}
+
+export function deleteLine(p: Project, pageId: string, panelId: string, lineId: string): Project {
+  return editPage(p, pageId, (pg) =>
+    editPanel(pg, panelId, (pn) => (pn.lines.some((x) => x.id === lineId) ? { ...pn, lines: pn.lines.filter((x) => x.id !== lineId) } : pn))
+  );
 }
 
 // ─── Reading for the Timeline ───

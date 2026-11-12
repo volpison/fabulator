@@ -9,6 +9,7 @@
     updateComicPage,
     moveComicPage,
     deleteComicPage,
+    mainView,
   } from "../lib/stores";
   import { platform } from "../lib/platform";
   import {
@@ -40,11 +41,20 @@
     selectedPageId.set(id);
   }
 
+  /** Double-click (or Enter on the card) opens the page in the writing view, like a scene in a novel. */
+  function open(id: string) {
+    selectedPageId.set(id);
+    mainView.set("manuscript");
+  }
+
   function onCardKey(id: string, e: KeyboardEvent) {
     if (e.target !== e.currentTarget) return; // keys typed in the card's own controls are theirs
-    if (e.key === "Enter" || e.key === " ") {
+    if (e.key === " ") {
       e.preventDefault();
       select(id);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      open(id);
     }
   }
 
@@ -89,7 +99,7 @@
       {#if styleLabel}<span class="style" title="The scripting style of this comic">{styleLabel}</span>{/if}
       <span class="hint">
         Pages are grouped the way a reader sees them: page 1 alone, then facing pairs ·
-        “Page turn” marks the pages revealed by turning · Click a page to edit its plot
+        “Page turn” marks the pages revealed by turning · Click a page to edit its plot · Double-click (or Enter) to write its panels
       </span>
     </div>
 
@@ -139,6 +149,7 @@
                     aria-pressed={pg.id === $selectedPageId}
                     aria-label="Page {pageNumber(pg)}{pg.title ? ': ' + pg.title : ''}"
                     on:click={() => select(pg.id)}
+                    on:dblclick={() => open(pg.id)}
                     on:keydown={(e) => onCardKey(pg.id, e)}
                   >
                     <div class="card-top">
