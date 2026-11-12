@@ -40,6 +40,69 @@ export interface Scene {
   when: string;
 }
 
+// ─── Comic documents (story_format "comic": issue → page → panel) ───
+
+/** How far a page has got in the comic pipeline (plot-first: plot → art → dialogue → lettered). */
+export type ComicStage = "plot" | "art" | "dialogue" | "lettered";
+/** Which way of scripting the project favours; both are always possible (see comic.ts). */
+export type ScriptStyle = "plot-first" | "full";
+export type LineKind = "dialogue" | "caption" | "thought" | "sfx";
+
+/** An issue (like a chapter): ordered, groups pages. */
+export interface Issue {
+  id: string;
+  title: string;
+  summary: string;
+}
+
+/** One balloon, caption or sound effect inside a panel. */
+export interface ComicLine {
+  id: string;
+  kind: LineKind;
+  /** The character who says it (a Character id), or "" for a caption or SFX. */
+  speaker_id: string;
+  text: string;
+  /** Lettering note ("off-panel", "small", "whispered"). */
+  note: string;
+}
+
+export interface ComicPanel {
+  id: string;
+  /** What the artist should draw. */
+  description: string;
+  lines: ComicLine[];
+}
+
+/**
+ * A page. In the plot-first (Marvel) method only `plot` is written at first and the panels are added
+ * after the art comes back; in a full script the panels are written up front. Either way it is the
+ * same page. The shared fields (plotline, cast, places, tags, colour, notes, to-dos, story time)
+ * behave exactly as they do on a novel's scene.
+ */
+export interface ComicPage {
+  id: string;
+  /** Which issue this page belongs to (see Project.issues). */
+  issue_id: string;
+  /** Position inside its issue (0-based); the page number is order + 1. */
+  order: number;
+  /** Optional name ("Splash: the bridge"). */
+  title: string;
+  /** What happens on the page, in the writer's own words (the plot-first text). */
+  plot: string;
+  /** Planned layout, free text ("3 tiers: 2/1/3", "splash"). */
+  layout: string;
+  panels: ComicPanel[];
+  stage: ComicStage;
+  plotline_id: string;
+  character_ids: string[];
+  place_ids: string[];
+  tags: string[];
+  color: string;
+  notes: string;
+  todos: SceneTodo[];
+  when: string;
+}
+
 export interface SceneTodo {
   id: string;
   text: string;
@@ -114,6 +177,11 @@ export interface Project {
   /** Ordered: array position is the chapter's position in the book. */
   chapters: Chapter[];
   scenes: Scene[];
+  /** Comic documents only (empty in a novel): issues in order, and their pages. */
+  issues: Issue[];
+  pages: ComicPage[];
+  /** Comic only: which scripting style the project favours. */
+  script_style?: ScriptStyle;
   /** Saved scene versions (see Snapshot). */
   snapshots: Snapshot[];
   characters: Character[];

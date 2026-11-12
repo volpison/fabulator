@@ -10,7 +10,8 @@ import { toFolder, fromFolder } from "./folder";
 import { platform } from "./platform";
 import type { Location } from "./platform/types";
 import { rememberRecent, forgetRecent } from "./recentStore";
-import { blankProject } from "./blank";
+import { blankProject, blankProjectFor } from "./blank";
+import { DEFAULT_STORY_FORMAT, formatOf, type StoryFormatId } from "./formats";
 import { MIRROR_DEBOUNCE_MS, createUnsavedSync, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
 import {
   project,
@@ -224,6 +225,14 @@ async function openAt(location: Location, fromRecent: boolean): Promise<void> {
 export async function exportFolder(): Promise<void> {
   const proj = get(project);
   if (!proj) return;
+  if (proj.story_format !== "novel") {
+    // The folder format only knows chapters and scenes: refuse instead of writing a copy that lacks the pages.
+    await platform().notify(
+      `Exporting a ${formatOf(proj).label.toLowerCase()} as a Markdown folder is not supported yet.\n\nYour project file is not affected: save it as usual.`,
+      { title: "Export as folder", kind: "warning" }
+    );
+    return;
+  }
   const chosen = await platform().pickFolder({
     title: "Choose an empty folder (or an earlier export) for the Markdown files",
   });
@@ -268,11 +277,11 @@ export async function openFolder(): Promise<void> {
   }
 }
 
-/** File → New story. */
-export async function newProject(): Promise<void> {
+/** File → New story (a novel unless another format is asked for). */
+export async function newProject(format: StoryFormatId = DEFAULT_STORY_FORMAT): Promise<void> {
   if (!(await ensureSafeToLeave("Start a new story anyway?"))) return;
   await discardUnsaved(false);
-  showProject(blankProject(uid), null);
+  showProject(blankProjectFor(format, uid), null);
 }
 
 export async function loadSample(): Promise<void> {

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 7;
+pub const SCHEMA_VERSION: u32 = 8;
 
 /// The format of a project written before formats existed. The frontend decides what formats
 /// exist (src/lib/formats.ts); Rust stores whatever the file says and never interprets it.
@@ -26,6 +26,14 @@ pub struct Project {
     /// Ordered: position in the vec is the chapter's position in the book.
     pub chapters: Vec<Chapter>,
     pub scenes: Vec<Scene>,
+    /// Comic documents only (empty, and left out of the file, in a novel): issues in order and their pages.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub issues: Vec<Issue>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pages: Vec<ComicPage>,
+    /// Comic only: "plot-first" or "full". Rust stores it as written.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub script_style: Option<String>,
     /// Saved scene versions (manual, auto and safety snapshots).
     #[serde(default)]
     pub snapshots: Vec<Snapshot>,
@@ -40,6 +48,82 @@ pub struct Chapter {
     pub id: String,
     pub title: String,
     pub summary: String,
+}
+
+/// A comic issue (like a chapter): ordered, groups pages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Issue {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub summary: String,
+}
+
+/// One balloon, caption or sound effect. `kind` is "dialogue", "caption", "thought" or "sfx".
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComicLine {
+    pub id: String,
+    pub kind: String,
+    /// A Character id, or empty for a caption or sound effect.
+    #[serde(default)]
+    pub speaker_id: String,
+    #[serde(default)]
+    pub text: String,
+    /// Lettering note ("off-panel", "small").
+    #[serde(default)]
+    pub note: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComicPanel {
+    pub id: String,
+    /// What the artist should draw.
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub lines: Vec<ComicLine>,
+}
+
+/// A comic page. The shared fields behave exactly as on a novel's scene.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComicPage {
+    pub id: String,
+    pub issue_id: String,
+    /// Position inside its issue (0-based); the page number is order + 1.
+    pub order: u32,
+    #[serde(default)]
+    pub title: String,
+    /// What happens on the page, in the writer's own words (the plot-first text).
+    #[serde(default)]
+    pub plot: String,
+    /// Planned layout, free text ("3 tiers: 2/1/3", "splash").
+    #[serde(default)]
+    pub layout: String,
+    #[serde(default)]
+    pub panels: Vec<ComicPanel>,
+    /// "plot", "art", "dialogue" or "lettered".
+    #[serde(default = "default_stage")]
+    pub stage: String,
+    #[serde(default)]
+    pub plotline_id: String,
+    #[serde(default)]
+    pub character_ids: Vec<String>,
+    #[serde(default)]
+    pub place_ids: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub color: String,
+    #[serde(default)]
+    pub notes: String,
+    #[serde(default)]
+    pub todos: Vec<SceneTodo>,
+    #[serde(default)]
+    pub when: String,
+}
+
+fn default_stage() -> String {
+    "plot".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -368,6 +452,9 @@ impl Project {
                     when: String::new(),
                 },
             ],
+            issues: vec![],
+            pages: vec![],
+            script_style: None,
         }
     }
 }
@@ -381,6 +468,31 @@ mod tests {
         let p = Project::sample();
         assert_eq!(p.story_format, "novel");
         assert_eq!(p.schema_version, SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn a_novel_file_has_no_comic_fields_and_a_comic_keeps_its_pages() {
+        // A novel is written without the comic fields (its files do not change).
+        let novel = serde_json::to_value(Project::sample()).unwrap();
+        assert!(novel.get("issues").is_none() && novel.get("pages").is_none() && novel.get("script_style").is_none());
+
+        // A comic's pages, panels and lines round-trip, and missing optional fields get defaults.
+        let mut json = novel.clone();
+        json["story_format"] = "comic".into();
+        json["script_style"] = "plot-first".into();
+        json["issues"] = serde_json::json!([{ "id": "is-1", "title": "Issue 1" }]);
+        json["pages"] = serde_json::json!([{
+            "id": "pg-1", "issue_id": "is-1", "order": 0, "plot": "The bridge collapses.",
+            "panels": [{ "id": "pn-1", "description": "Wide shot", "lines": [
+                { "id": "ln-1", "kind": "dialogue", "speaker_id": "char-boy", "text": "Wolf!" } ] }]
+        }]);
+        let comic: Project = serde_json::from_value(json).unwrap();
+        assert_eq!(comic.issues.len(), 1);
+        assert_eq!(comic.pages[0].stage, "plot");
+        assert_eq!(comic.pages[0].panels[0].lines[0].text, "Wolf!");
+        assert_eq!(comic.script_style.as_deref(), Some("plot-first"));
+        let back = serde_json::to_value(&comic).unwrap();
+        assert_eq!(back["pages"][0]["panels"][0]["lines"][0]["speaker_id"], "char-boy");
     }
 
     #[test]

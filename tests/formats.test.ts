@@ -23,7 +23,8 @@ test("every known format is complete, and the default is one of them", () => {
 
 test("only known ids count as formats", () => {
   assert.ok(isStoryFormatId("novel"));
-  for (const bad of ["comic", "Novel", "", null, undefined, 3, {}]) assert.ok(!isStoryFormatId(bad), String(bad));
+  assert.ok(isStoryFormatId("comic"));
+  for (const bad of ["hologram", "Novel", "", null, undefined, 3, {}]) assert.ok(!isStoryFormatId(bad), String(bad));
 });
 
 test("a new story is a novel, with the novel's words", () => {
@@ -44,7 +45,7 @@ test("a file from before formats opens as a novel, and the upgrade is reported",
   assert.equal(r.migratedFrom, 6);
   assert.equal(r.project.story_format, "novel");
   assert.equal(r.project.schema_version, CURRENT_SCHEMA_VERSION);
-  assert.equal(CURRENT_SCHEMA_VERSION, 7);
+  assert.equal(CURRENT_SCHEMA_VERSION, 8);
 });
 
 test("every older version reaches the current one as a novel", () => {
@@ -66,8 +67,8 @@ test("a current file keeps its format and is not reported as upgraded", () => {
 
 test("a format this version does not know is refused with a clear message, never opened as a novel", () => {
   const raw = clone(blankProject(newId)) as Record<string, unknown>;
-  raw.story_format = "comic";
-  assert.throws(() => migrateProject(raw), /“comic” format.*Update Fabulator/);
+  raw.story_format = "hologram";
+  assert.throws(() => migrateProject(raw), /“hologram” format.*Update Fabulator/);
   assert.throws(() => readStoryFormat("hologram"), /“hologram”/);
   assert.throws(() => readStoryFormat(42), /unknown format/);
   assert.equal(readStoryFormat(undefined), "novel");
@@ -85,11 +86,11 @@ test("the format survives the Markdown folder round trip; an unknown one is refu
   if (back.ok) assert.equal(back.project.story_format, "novel");
 
   const edited = files.map((f) =>
-    f.path === "project.json" ? { ...f, text: JSON.stringify({ ...header, story_format: "comic" }) } : f
+    f.path === "project.json" ? { ...f, text: JSON.stringify({ ...header, story_format: "hologram" }) } : f
   );
   const refused = fromFolder(edited, newId);
   assert.ok(!refused.ok);
-  if (!refused.ok) assert.match(refused.error, /“comic” format/);
+  if (!refused.ok) assert.match(refused.error, /“hologram” format/);
 
   const legacy = files.map((f) => {
     if (f.path !== "project.json") return f;

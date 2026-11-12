@@ -29,6 +29,8 @@
   import { startGoals } from "./lib/goalsStore";
 
   import TopBar from "./components/TopBar.svelte";
+  import FormatNotReady from "./components/FormatNotReady.svelte";
+  import { formatOf } from "./lib/formats";
   import StatusBar from "./components/StatusBar.svelte";
   import TimelineView from "./components/TimelineView.svelte";
   import ManuscriptView from "./components/ManuscriptView.svelte";
@@ -151,10 +153,12 @@
 
     <div class="body">
       <main class="main">
-        {#if $mainView === "timeline"}
-          <TimelineView />
-        {:else if $mainView === "cast"}
+        {#if $mainView === "cast"}
           <CastView />
+        {:else if !formatOf($project).ready}
+          <FormatNotReady />
+        {:else if $mainView === "timeline"}
+          <TimelineView />
         {:else}
           <ManuscriptView />
         {/if}

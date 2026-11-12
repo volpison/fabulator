@@ -163,7 +163,7 @@ test("opening an old-format file backs it up first and marks the upgrade for sav
   assert.ok(fake.state.log.includes("backup C:\\old.fabulator.json"));
   assert.equal(get(currentPath), "C:\\old.fabulator.json");
   assert.equal(get(isDirty), true);
-  assert.equal(get(project)!.schema_version, 7);
+  assert.equal(get(project)!.schema_version, 8);
 });
 
 test("opening a missing file shows an error and keeps the current story", async () => {
@@ -416,4 +416,37 @@ test("opening another project replaces the held one (a whole project, never a pa
   await flush();
   assert.ok(fake.state.log.includes("unsaved.hold"));
   assert.equal((fake.state.held as any).project.title, "Other");
+});
+
+import { exportFolder } from "../src/lib/persistence.ts";
+
+test("a new comic can be started, saved and reopened with all its pages", async () => {
+  fakeBrowserGlobals();
+  await loadInitialProject();
+  await newProject("comic");
+  const p = get(project)!;
+  assert.equal(p.story_format, "comic");
+  assert.equal(p.pages.length, 1);
+
+  fake.state.saveAnswers.push("C:\\Stories\\c.fabulator.json");
+  assert.equal(await manualSave(), true);
+  const onDisk = fake.state.files.get("C:\\Stories\\c.fabulator.json") as any;
+  assert.equal(onDisk.story_format, "comic");
+  assert.equal(onDisk.pages.length, 1);
+
+  await newProject(); // back to a novel
+  assert.equal(get(project)!.story_format, "novel");
+  await openRecent(toLocation("C:\\Stories\\c.fabulator.json"));
+  assert.equal(get(project)!.story_format, "comic");
+  assert.deepEqual(get(project)!.pages, p.pages);
+});
+
+test("a comic is not written as a Markdown folder (which could not hold its pages)", async () => {
+  fakeBrowserGlobals();
+  await loadInitialProject();
+  await newProject("comic");
+  fake.state.folderAnswers.push("C:\\Out");
+  await exportFolder();
+  assert.equal(fake.state.folders.size, 0);
+  assert.match(fake.state.notices.join("\n"), /comic.*not supported yet/i);
 });

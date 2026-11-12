@@ -16,7 +16,17 @@
 import type { Project } from "./types";
 
 /** The project fields that are lists of items with an `id`. Everything else is a plain field. */
-export const LIST_FIELDS = ["chapters", "scenes", "snapshots", "characters", "places", "notes", "plotlines"] as const;
+export const LIST_FIELDS = [
+  "chapters",
+  "scenes",
+  "issues",
+  "pages",
+  "snapshots",
+  "characters",
+  "places",
+  "notes",
+  "plotlines",
+] as const;
 export type ListField = (typeof LIST_FIELDS)[number];
 
 export type ListPatch = { upsert?: unknown[]; remove?: string[]; order?: string[] };
