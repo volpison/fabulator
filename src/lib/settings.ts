@@ -10,6 +10,8 @@ export type ThemeChoice = string;
 export type EditorFont = "serif" | "sans" | "mono";
 export type EditorWidth = "narrow" | "medium" | "wide" | "full";
 export type LineSpacing = "compact" | "normal" | "relaxed";
+/** Typewriter scrolling: where the line being written stays on screen. */
+export type TypewriterMode = "off" | "center" | "upper";
 
 export type Settings = {
   theme: ThemeChoice;
@@ -20,6 +22,9 @@ export type Settings = {
   editorSize: number;
   editorWidth: EditorWidth;
   lineSpacing: LineSpacing;
+  typewriter: TypewriterMode;
+  /** Dim every paragraph except the one being written. */
+  dimOthers: boolean;
 };
 
 export const UI_SCALES = [90, 100, 110, 125, 150] as const;
@@ -33,6 +38,8 @@ export const DEFAULT_SETTINGS: Settings = {
   editorSize: 17,
   editorWidth: "medium",
   lineSpacing: "normal",
+  typewriter: "off",
+  dimOthers: false,
 };
 
 export const EDITOR_FONTS: Record<EditorFont, { label: string; css: string }> = {
@@ -52,6 +59,12 @@ export const LINE_SPACINGS: Record<LineSpacing, { label: string; value: string }
   compact: { label: "Compact", value: "1.45" },
   normal: { label: "Normal", value: "1.7" },
   relaxed: { label: "Relaxed", value: "2" },
+};
+
+export const TYPEWRITER_MODES: Record<TypewriterMode, { label: string }> = {
+  off: { label: "Off" },
+  center: { label: "Centre" },
+  upper: { label: "Upper third" },
 };
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
@@ -81,6 +94,8 @@ export function sanitizeSettings(raw: unknown): Settings {
     editorSize: clamp(Math.round(num(r.editorSize, d.editorSize)), EDITOR_SIZE_MIN, EDITOR_SIZE_MAX),
     editorWidth: pick(r.editorWidth, Object.keys(EDITOR_WIDTHS) as EditorWidth[], d.editorWidth),
     lineSpacing: pick(r.lineSpacing, Object.keys(LINE_SPACINGS) as LineSpacing[], d.lineSpacing),
+    typewriter: pick(r.typewriter, Object.keys(TYPEWRITER_MODES) as TypewriterMode[], d.typewriter),
+    dimOthers: typeof r.dimOthers === "boolean" ? r.dimOthers : d.dimOthers,
   };
 }
 

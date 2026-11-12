@@ -25,6 +25,7 @@
     installCloseGuard,
   } from "./lib/persistence";
   import { loadUserThemes } from "./lib/userthemes";
+  import { settings, updateSettings } from "./lib/appearance";
   import { startGoals } from "./lib/goalsStore";
 
   import TopBar from "./components/TopBar.svelte";
@@ -101,6 +102,9 @@
       } else if (key === "h") {
         e.preventDefault();
         snapshotsOpen.set(true);
+      } else if (key === "t") {
+        e.preventDefault();
+        updateSettings({ typewriter: $settings.typewriter === "off" ? "center" : "off" });
       }
       return;
     }

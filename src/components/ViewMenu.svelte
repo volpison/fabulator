@@ -7,11 +7,13 @@
     EDITOR_FONTS,
     EDITOR_WIDTHS,
     LINE_SPACINGS,
+    TYPEWRITER_MODES,
     EDITOR_SIZE_MIN,
     EDITOR_SIZE_MAX,
     type EditorFont,
     type EditorWidth,
     type LineSpacing,
+    type TypewriterMode,
     type ThemeChoice,
   } from "../lib/settings";
   import { focusMode, mainView, galleryOpen, themesOpen } from "../lib/stores";
@@ -23,6 +25,7 @@
   const fonts = Object.entries(EDITOR_FONTS) as [EditorFont, { label: string }][];
   const widths = Object.entries(EDITOR_WIDTHS) as [EditorWidth, { label: string }][];
   const spacings = Object.entries(LINE_SPACINGS) as [LineSpacing, { label: string }][];
+  const typewriters = Object.entries(TYPEWRITER_MODES) as [TypewriterMode, { label: string }][];
 
   const swatchOf = (t: ThemeInfo) =>
     `linear-gradient(135deg, ${t.palette["bg"]} 0 45%, ${t.palette["bg-panel"]} 45% 70%, ${t.palette["accent"]} 70%)`;
@@ -182,6 +185,21 @@
             {#each spacings as [id, s]}
               <button class:on={$settings.lineSpacing === id} on:click={() => updateSettings({ lineSpacing: id })}>{s.label}</button>
             {/each}
+          </div>
+        </div>
+        <div class="row">
+          <span class="lbl">Typewriter</span>
+          <div class="seg" title="The line you are writing stays at a fixed height and the text moves instead (Ctrl+Shift+T)">
+            {#each typewriters as [id, t]}
+              <button class:on={$settings.typewriter === id} on:click={() => updateSettings({ typewriter: id })}>{t.label}</button>
+            {/each}
+          </div>
+        </div>
+        <div class="row">
+          <span class="lbl">Dim others</span>
+          <div class="seg" title="Fade every paragraph except the one you are writing">
+            <button class:on={!$settings.dimOthers} on:click={() => updateSettings({ dimOthers: false })}>Off</button>
+            <button class:on={$settings.dimOthers} on:click={() => updateSettings({ dimOthers: true })}>On</button>
           </div>
         </div>
       </section>
