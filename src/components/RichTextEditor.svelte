@@ -6,6 +6,9 @@
   import { MentionHighlight, mentionKey } from "../lib/mentionExtension";
   import { SearchHighlight, searchKey } from "../lib/searchExtension";
   import { AtMention, type AtState } from "../lib/atMentionExtension";
+  import { CurrentBlock } from "../lib/currentBlockExtension";
+  import { settings } from "../lib/appearance";
+  import { typewriterScrollTop, typewriterBottomPadding } from "../lib/typewriter";
   import { buildOptions, tidyNewName, type PickOption } from "../lib/atMention";
   import type { Entity, EntityType, MentionInfo } from "../lib/mentions";
 
@@ -111,6 +114,57 @@
     onPickMention?.(option.type, id);
   }
 
+  // ─── Typewriter scrolling ───
+  // The line being written stays at a fixed height and the text moves instead.
+  let pointerDown = false; // while the mouse is selecting, don't move the text under it
+  let followFrame = 0;
+  let cleanupWriting: (() => void) | null = null;
+
+  function followCaret() {
+    if (!editor || $settings.typewriter === "off" || pointerDown) return;
+    cancelAnimationFrame(followFrame);
+    followFrame = requestAnimationFrame(() => {
+      const mode = $settings.typewriter;
+      // Only while writing here: switching scenes or editing elsewhere must not move the page.
+      if (!editor || mode === "off" || !editor.isFocused) return;
+      let caret: { top: number; bottom: number };
+      try {
+        caret = editor.view.coordsAtPos(editor.state.selection.head);
+      } catch {
+        return;
+      }
+      const target = typewriterScrollTop(
+        {
+          caretTop: caret.top,
+          caretBottom: caret.bottom,
+          viewTop: element.getBoundingClientRect().top,
+          viewHeight: element.clientHeight,
+          scrollTop: element.scrollTop,
+        },
+        mode
+      );
+      if (target === null) return;
+      element.scrollTop = target;
+      // The "@" picker is placed from the cursor's position on screen: place it again.
+      if (at) editor.view.dispatch(editor.state.tr);
+    });
+  }
+
+  /** Room under the text so the last line can reach the typewriter height. */
+  function applyTypewriterPadding() {
+    if (!element) return;
+    const px = typewriterBottomPadding(element.clientHeight, $settings.typewriter);
+    if (px) element.style.setProperty("--tw-bottom", `${px}px`);
+    else element.style.removeProperty("--tw-bottom");
+  }
+
+  // Turning typewriter mode on/off (View menu or shortcut) takes effect right away.
+  $effect(() => {
+    void $settings.typewriter;
+    applyTypewriterPadding();
+    followCaret();
+  });
+
   let lastMentionKey = "";
   let lastTermsKey = "";
 
@@ -185,6 +239,7 @@
           getTerms: () => highlightTerms,
         }),
         AtMention.configure({ onState: onAtState, onKey: onAtKey }),
+        CurrentBlock,
       ],
       content: toEditorContent(content),
       editorProps: {
@@ -198,14 +253,26 @@
         const normalized = html === "<p></p>" ? "" : html;
         onUpdate?.(normalized);
         syncToolbar();
+        followCaret();
       },
       onSelectionUpdate: () => {
         syncToolbar();
+        followCaret();
       },
       onTransaction: () => {
         syncToolbar();
       },
     });
+
+    const onMouseUp = () => (pointerDown = false);
+    window.addEventListener("mouseup", onMouseUp);
+    const resizeObserver = new ResizeObserver(() => applyTypewriterPadding());
+    resizeObserver.observe(element);
+    cleanupWriting = () => {
+      window.removeEventListener("mouseup", onMouseUp);
+      resizeObserver.disconnect();
+      cancelAnimationFrame(followFrame);
+    };
 
     lastMentionKey = mentionKeyOf();
     lastTermsKey = JSON.stringify(highlightTerms);
@@ -232,6 +299,7 @@
   });
 
   onDestroy(() => {
+    cleanupWriting?.();
     editor?.destroy();
     editor = null;
   });
@@ -371,7 +439,9 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="editor-wrap"
+    class:dim-others={$settings.dimOthers}
     bind:this={element}
+    on:mousedown={() => (pointerDown = true)}
     on:mouseover={onEditorMouseOver}
     on:mouseleave={() => (hover = null)}
     on:scroll={() => (hover = null)}
@@ -481,13 +551,26 @@
   .editor-wrap :global(.tiptap-prose) {
     outline: none;
     min-height: 100%;
-    padding: 1.5rem 1.75rem 4rem;
+    padding: 1.5rem 1.75rem var(--tw-bottom, 4rem);
     max-width: var(--editor-width);
     margin: 0 auto;
     font-family: var(--editor-font);
     font-size: var(--editor-size);
     line-height: var(--editor-leading);
     color: var(--text);
+  }
+
+  /* "Dim others": everything but the paragraph being written fades back. */
+  .editor-wrap.dim-others :global(.tiptap-prose > *:not(.is-current-block)) {
+    opacity: 0.38;
+  }
+  .editor-wrap :global(.tiptap-prose > *) {
+    transition: opacity 0.15s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .editor-wrap :global(.tiptap-prose > *) {
+      transition: none;
+    }
   }
 
   .editor-wrap :global(.tiptap-prose p) {

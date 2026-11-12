@@ -93,6 +93,8 @@ old ones you no longer need.
   (90–150%), and for the manuscript: font (serif / sans / mono), text size, line width and
   line spacing. Everything is remembered. All themes are contrast-tested (`npm test`).
 - **Focus mode**: only the manuscript is shown. Esc leaves it.
+- **Typewriter** (View → Writing → *Typewriter*: Off / Centre / Upper third; **Ctrl+Shift+T** toggles Centre): the line you are writing stays at a fixed height and the text moves instead, so your eyes never chase the bottom of the screen. It follows typing and keyboard moves, but not mouse clicks (the page never jumps under the pointer), and it only acts while the editor has the cursor. Extra room is added under the text so the end of a scene can reach that height.
+- **Dim others** (View → Writing): fades every paragraph except the one being written. Combine with Typewriter and Focus mode for a quiet page. Both options are remembered like the other View settings (and work in or out of focus mode).
 - Shortcuts: Ctrl+O open · Ctrl+S save · Ctrl+Shift+S save as · Ctrl+E export · Ctrl+F search ·
   Ctrl+H replace · Ctrl+Shift+H snapshots · Ctrl+1/2/3 Timeline/Manuscript/Cast ·
   Ctrl+\ toggle side panel · Ctrl+Shift+F focus mode. (Cmd instead of Ctrl on macOS.)
