@@ -1,5 +1,6 @@
 /** The empty story a new session starts with (and File → New story creates). */
 import { CURRENT_SCHEMA_VERSION } from "./migrate";
+import { DEFAULT_STORY_FORMAT } from "./formats";
 import type { Project } from "./types";
 
 export function blankProject(newId: (prefix: string) => string): Project {
@@ -7,6 +8,7 @@ export function blankProject(newId: (prefix: string) => string): Project {
   const plotlineId = newId("pl");
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
+    story_format: DEFAULT_STORY_FORMAT,
     id: newId("proj"),
     title: "Untitled story",
     premise: "",

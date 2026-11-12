@@ -1,3 +1,4 @@
+import type { StoryFormatId } from "./formats";
 /** Shared types that mirror the Rust data model */
 
 export interface Plotline {
@@ -103,6 +104,8 @@ export interface Snapshot {
 export interface Project {
   /** File-format version; see migrate.ts. */
   schema_version: number;
+  /** What kind of document this is (see formats.ts). */
+  story_format: StoryFormatId;
   id: string;
   title: string;
   premise: string;

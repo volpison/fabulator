@@ -10,9 +10,10 @@
  */
 import { cleanColor, cleanStatus, defaultStatusFor } from "./labels";
 import { cleanTodos } from "./scenenotes";
+import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 export type MigrationResult = {
   project: Project;
@@ -80,6 +81,11 @@ function v5ToV6(p: Raw): Raw {
   return { ...p, schema_version: 6 };
 }
 
+/** v6 -> v7: the project gains `story_format` (every older project is a novel). */
+function v6ToV7(p: Raw): Raw {
+  return { ...p, schema_version: 7, story_format: DEFAULT_STORY_FORMAT };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -87,6 +93,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   3: v3ToV4,
   4: v4ToV5,
   5: v5ToV6,
+  6: v6ToV7,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -188,6 +195,7 @@ function normalize(p: Raw): Project {
   return {
     ...p,
     schema_version: CURRENT_SCHEMA_VERSION,
+    story_format: readStoryFormat(p.story_format),
     id: str(p.id) || "proj-imported",
     title: str(p.title, "Untitled"),
     premise: str(p.premise),

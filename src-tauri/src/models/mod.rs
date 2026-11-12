@@ -2,11 +2,22 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 6;
+pub const SCHEMA_VERSION: u32 = 7;
+
+/// The format of a project written before formats existed. The frontend decides what formats
+/// exist (src/lib/formats.ts); Rust stores whatever the file says and never interprets it.
+pub const DEFAULT_STORY_FORMAT: &str = "novel";
+
+fn default_story_format() -> String {
+    DEFAULT_STORY_FORMAT.to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub schema_version: u32,
+    /// What kind of document this is: "novel", later "comic", "screenplay".
+    #[serde(default = "default_story_format")]
+    pub story_format: String,
     pub id: String,
     pub title: String,
     pub premise: String,
@@ -136,6 +147,7 @@ impl Project {
     pub fn sample() -> Self {
         Project {
             schema_version: SCHEMA_VERSION,
+            story_format: DEFAULT_STORY_FORMAT.into(),
             id: "proj-boy-who-cried-wolf".into(),
             chapters: (1..=6)
                 .map(|n| Chapter {
@@ -357,5 +369,31 @@ impl Project {
                 },
             ],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_sample_is_a_novel_at_the_current_version() {
+        let p = Project::sample();
+        assert_eq!(p.story_format, "novel");
+        assert_eq!(p.schema_version, SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn a_file_without_a_format_is_a_novel_and_another_format_is_kept_as_written() {
+        let mut json = serde_json::to_value(Project::sample()).unwrap();
+        json.as_object_mut().unwrap().remove("story_format");
+        let old: Project = serde_json::from_value(json.clone()).unwrap();
+        assert_eq!(old.story_format, "novel");
+
+        json["story_format"] = "comic".into();
+        let comic: Project = serde_json::from_value(json).unwrap();
+        assert_eq!(comic.story_format, "comic"); // Rust passes it through untouched
+        let back = serde_json::to_value(&comic).unwrap();
+        assert_eq!(back["story_format"], "comic");
     }
 }

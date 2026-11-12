@@ -163,7 +163,7 @@ test("opening an old-format file backs it up first and marks the upgrade for sav
   assert.ok(fake.state.log.includes("backup C:\\old.fabulator.json"));
   assert.equal(get(currentPath), "C:\\old.fabulator.json");
   assert.equal(get(isDirty), true);
-  assert.equal(get(project)!.schema_version, 6);
+  assert.equal(get(project)!.schema_version, 7);
 });
 
 test("opening a missing file shows an error and keeps the current story", async () => {
