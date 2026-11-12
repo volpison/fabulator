@@ -131,6 +131,7 @@ export function toFolder(p: Project): FolderFile[] {
           format: FOLDER_FORMAT,
           version: FOLDER_VERSION,
           schema_version: p.schema_version,
+          story_format: p.story_format,
           id: p.id,
           title: p.title,
           premise: p.premise,
@@ -335,6 +336,7 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
   try {
     const { project } = migrateProject({
       schema_version: CURRENT_SCHEMA_VERSION,
+      story_format: m.story_format,
       id: typeof m.id === "string" && m.id ? m.id : newId("proj"),
       title: typeof m.title === "string" ? m.title : "Untitled",
       premise: m.premise,

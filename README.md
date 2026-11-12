@@ -213,7 +213,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (now schema v6): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
+- Older projects are upgraded automatically (now schema v7): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -238,7 +238,7 @@ Every scene has a **When** field (under the scene title in the Manuscript, or in
 - **Dates:** `2026-11-10`, `2026-11-10 14:30`, `10/11/2026` (day first), `1342-05-02 evening`
 - **Days:** `Day 3`, `Day 3 evening`, `Day 3, 14:30`, `D3`, `Dia 3 manhã` (dawn, morning, noon, afternoon, evening, night, midnight, and a few Portuguese words)
 
-The Timeline toolbar switches between **Book order** (the chapters × plotlines grid) and **Story time**: scenes listed in story order with the gap to the previous one ("+3 days"), their place in the book (#n), and **↩ out of book order** where the story jumps back (flashbacks). Scenes with no usable time, or written in the other style, are listed separately under *Not placed*. Other text is kept as a label (the field turns amber to say it can't be sorted). Story time is saved in the project (format v6; older files upgrade automatically) and in the Markdown folder export, and is not part of exported stories.
+The Timeline toolbar switches between **Book order** (the chapters × plotlines grid) and **Story time**: scenes listed in story order with the gap to the previous one ("+3 days"), their place in the book (#n), and **↩ out of book order** where the story jumps back (flashbacks). Scenes with no usable time, or written in the other style, are listed separately under *Not placed*. Other text is kept as a label (the field turns amber to say it can't be sorted). Story time is saved in the project (schema v6 and later; older files upgrade automatically) and in the Markdown folder export, and is not part of exported stories.
 
 ## Architecture: the Platform layer
 
@@ -348,7 +348,16 @@ Still on the web view's side: opening a file (it needs the web view's upgrade st
   chapter headers, hover highlights the row and column and describes the cell, the open scene is
   marked, and clicking a name shows that character or place in the side panel.
 
-## Data model (schema v6)
+## Story formats
+
+Every project has a `story_format` (`novel` is the only one so far; Comic and Screenplay are planned, see [ROADMAP.md](ROADMAP.md)). The shared parts (characters, places, notes, plotlines, story time, snapshots, themes, backups, recovery) are the same in every format; the format decides the document itself: its units, editor and Timeline/Manuscript views. `src/lib/formats.ts` is the registry (ids, labels, and each format's words for its units: chapter/scene now, issue/page/panel or act/scene later).
+
+- Older files open as novels; the upgrade makes the usual untouched backup first.
+- A file whose format this version doesn't know (for example a comic opened in an older Fabulator) is **refused with a clear message**, never opened as a novel, so it can't be damaged.
+- Rust stores the format as written and never interprets it; adding a format means new document fields (with a migration and the same fields in `models/mod.rs`) plus its views, not changes to saving, backups or recovery.
+- Nothing looks different yet: Novel mode works exactly as before.
+
+## Data model (schema v7)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.
