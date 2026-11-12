@@ -73,3 +73,17 @@ test("a bad version is refused before anything is written", () => {
   const d = disk();
   assert.throws(() => setVersions("0.2", d.read, () => assert.fail("wrote")), /not a version/);
 });
+
+test("Windows line endings survive: only the version lines change", () => {
+  const d = disk();
+  for (const [f, t] of d.files) d.files.set(f, t.replace(/\r?\n/g, "\r\n"));
+  const before = new Map(d.files);
+  setVersions("0.3.0", d.read, d.write);
+  for (const [f, text] of d.files) {
+    assert.equal(text.split("\n").length, before.get(f)!.split("\n").length, f);
+    assert.ok(!/[^\r]\n/.test(text), `${f} lost its CRLF endings`);
+    const changed = text.split("\n").filter((line, i) => line !== before.get(f)!.split("\n")[i]);
+    assert.ok(changed.length <= 2, `${f}: ${changed.length} lines changed`);
+  }
+  assert.deepEqual(checkTag("v0.3.0", readVersions(d.read)), []);
+});

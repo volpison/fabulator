@@ -67,12 +67,13 @@ export function setVersions(version, read, write) {
     if (t === null) continue;
     put(f, t.replace(/("version"\s*:\s*)"[^"]+"/, `$1"${version}"`)); // the first one is the app's own
   }
+  // package-lock.json is edited as text too (never re-serialised), so its line endings
+  // (Windows checkouts have CRLF) and every other line stay exactly as they were.
   const lockJson = read(FILES.packageLock);
   if (lockJson !== null) {
-    const data = JSON.parse(lockJson);
-    data.version = version;
-    if (data.packages?.[""]) data.packages[""].version = version;
-    put(FILES.packageLock, JSON.stringify(data, null, 2) + "\n");
+    const top = /^(\s*"version"\s*:\s*)"[^"]+"/m; // the file's own version
+    const root = /("packages"\s*:\s*\{\s*""\s*:\s*\{[^}]*?"version"\s*:\s*)"[^"]+"/; // the app's entry
+    put(FILES.packageLock, lockJson.replace(top, `$1"${version}"`).replace(root, `$1"${version}"`));
   }
   const cargo = read(FILES.cargo);
   if (cargo !== null) {
