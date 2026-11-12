@@ -1,5 +1,8 @@
 <script lang="ts">
   import { project } from "../lib/stores";
+
+  /** Which view is missing ("Manuscript"). */
+  export let view = "";
   import { formatOf } from "../lib/formats";
 
   $: format = $project ? formatOf($project) : null;
@@ -10,16 +13,16 @@
 </script>
 
 <section class="not-ready" aria-live="polite">
-  <h2>{format?.label} projects can’t be shown yet</h2>
+  <h2>The {view.toLowerCase()} view for {format?.label.toLowerCase()}s isn’t built yet</h2>
   <p>
     This project is a <strong>{format?.label.toLowerCase()}</strong>:
     {plural(issues, "issue")}, {plural(pages, "page")}, {plural(panels, "panel")}.
     Everything in it is saved safely with the project, but this version of Fabulator
-    can’t show or edit {format?.label.toLowerCase()} pages yet. That part is being built step by step.
+    can’t show or edit its panels and dialogue yet. That part is being built step by step.
   </p>
   <p>
-    You can still use <strong>Cast</strong> and the Characters, Places and Notes panels, and save and open
-    the project as usual.
+    Meanwhile the <strong>Timeline</strong> (pages, plots and stages), <strong>Cast</strong> and the
+    Characters, Places and Notes panels all work, and you can save and open the project as usual.
   </p>
 </section>
 

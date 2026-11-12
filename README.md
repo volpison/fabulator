@@ -361,7 +361,11 @@ Every project has a `story_format` (`novel` today; `comic` has its data but no v
 
 A comic is `issues[]` (ordered) and `pages[]`; a page has a `plot`, an optional `layout` note, a pipeline `stage` (Plot → Art received → Dialogue → Lettered), the same shared fields as a scene (plotline, cast, places, tags, colour, notes, to-dos, story time), and optional `panels[]`, each with a `description` and `lines[]` (dialogue, caption, thought or SFX, with a speaker, text and lettering note). `script_style` is `plot-first` (Marvel method) or `full`; both are the same data at different depths (a plot-first page has only its plot until the art comes back), so changing the style loses nothing. Helpers in `src/lib/comic.ts`: page numbers, left/right pages, spreads, page-turn pages, panel and word counts. Novels carry none of these fields in their files.
 
-Comic is marked **not ready** in `formats.ts`: it is not offered for new stories, and a comic opened in this version shows a short explanation instead of the Timeline/Manuscript (Cast, the side panels, saving and opening work). Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
+Comic is marked **not ready** in `formats.ts` (it has a Timeline but no Manuscript yet): *File → New comic (early preview)* starts one, and its Manuscript view shows a short explanation. Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
+
+### Comic Timeline (pages)
+
+For a comic the Timeline shows each **issue** (rename it in place; an empty issue can be deleted) with its pages grouped **the way a reader sees them**: page 1 alone on the right, then facing pairs (2–3, 4–5…), and a last even page alone on the left. Each page card shows its number and side, **Page turn** on the pages revealed by turning, its title, the start of its plot, the number of panels, the planned layout and a **stage** menu (Plot → Art received → Dialogue → Lettered); the issue header counts pages, panels and pages per stage. Use ◀ ▶ to move a page earlier or later, ✕ to delete it (asks first unless it is empty), **+ Add page** / **+ Add issue** to grow the comic. Click a page to edit its **title, layout, stage, plot and private notes** in the panel below: enough to write a whole plot-first comic. Panels, dialogue and the script views come in the next steps. The rules (adding, moving, deleting, spreads, summaries) are pure functions in `src/lib/comicedit.ts`.
 
 ## Data model (schema v8)
 

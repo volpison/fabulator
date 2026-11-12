@@ -27,6 +27,7 @@
 
   $: fileItems = [
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
+    { label: "New comic (early preview)", action: () => void newProject("comic") },
     { separator: true },
     { label: "Open…", shortcut: "Ctrl+O", action: () => void openProject() },
     { label: "Open recent", children: recentItems },
@@ -52,7 +53,7 @@
   ];
 
   const views: { id: MainView; label: string; hint: string }[] = [
-    { id: "timeline", label: "Timeline", hint: "Plan chapters and scenes (Ctrl+1)" },
+    { id: "timeline", label: "Timeline", hint: "Plan chapters and scenes, or a comic's pages (Ctrl+1)" },
     { id: "manuscript", label: "Manuscript", hint: "Write (Ctrl+2)" },
     { id: "cast", label: "Cast", hint: "Who appears in which scenes (Ctrl+3)" },
   ];

@@ -194,3 +194,52 @@ test("the Markdown folder header records the format", () => {
   const header = JSON.parse(files.find((f) => f.path === "project.json")!.text);
   assert.equal(header.story_format, "comic"); // the format is recorded, so a re-import can refuse or handle it
 });
+
+import { get } from "svelte/store";
+import {
+  project, selectedPageId, isDirty, markClean, addComicIssue, addComicPage, updateComicPage, moveComicPage,
+  deleteComicPage, deleteComicIssue, renameComicIssue, deleteCharacter, addCharacter,
+} from "../src/lib/stores.ts";
+
+test("the comic format has a Timeline but no Manuscript yet", () => {
+  assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: false });
+  assert.deepEqual(STORY_FORMATS.novel.views, { timeline: true, manuscript: true });
+});
+
+test("page and issue edits through the stores mark the project changed, and no-ops do not", () => {
+  project.set(blankComic(newId));
+  markClean();
+  const id = addComicPage();
+  assert.equal(get(isDirty), true);
+  assert.equal(get(selectedPageId), id); // a new page is selected
+  assert.equal(get(project)!.pages.length, 2);
+
+  markClean();
+  updateComicPage(id, { plot: "" }); // already empty: nothing changed
+  moveComicPage(id, get(project)!.pages[1].issue_id, 1); // already there
+  assert.equal(get(isDirty), false);
+
+  updateComicPage(id, { plot: "The wolf appears." });
+  assert.equal(get(isDirty), true);
+  assert.equal(get(project)!.pages[1].plot, "The wolf appears.");
+
+  const issue = addComicIssue("Finale");
+  renameComicIssue(issue, { title: "The Finale" });
+  assert.equal(get(project)!.issues[1].title, "The Finale");
+  assert.equal(deleteComicIssue(get(project)!.issues[0].id), false); // it has pages
+  assert.equal(deleteComicIssue(issue), true);
+
+  deleteComicPage(id);
+  assert.equal(get(selectedPageId), null);
+  assert.equal(get(project)!.pages.length, 1);
+});
+
+test("deleting a character removes them from comic pages too", () => {
+  project.set(blankComic(newId));
+  const c = addCharacter("Mara");
+  const pageId = get(project)!.pages[0].id;
+  project.update((p) => ({ ...p!, pages: p!.pages.map((pg) => ({ ...pg, character_ids: [c] })) }));
+  assert.deepEqual(get(project)!.pages.find((pg) => pg.id === pageId)!.character_ids, [c]);
+  deleteCharacter(c);
+  assert.deepEqual(get(project)!.pages[0].character_ids, []);
+});

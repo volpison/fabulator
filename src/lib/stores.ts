@@ -8,6 +8,17 @@ import {
   scenesInChapter,
   type SceneTarget,
 } from "./model";
+import {
+  addIssue as addIssueTo,
+  updateIssue as updateIssueIn,
+  deleteIssue as deleteIssueFrom,
+  moveIssue as moveIssueIn,
+  addPage as addPageTo,
+  updatePage as updatePageIn,
+  movePage as movePageIn,
+  deletePage as deletePageFrom,
+  removeCastFromPages,
+} from "./comicedit";
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
@@ -59,6 +70,8 @@ export const saveState = writable<SaveState>({
 export const mainView = writable<MainView>("timeline");
 export const sidePanel = writable<SidePanel>("characters");
 export const selectedSceneId = writable<string | null>(null);
+/** The comic page picked in the page Timeline. */
+export const selectedPageId = writable<string | null>(null);
 
 // ─── Search ───────────────────────────────────────────────
 
@@ -287,6 +300,75 @@ export function movePlotline(id: string, delta: number) {
   });
 }
 
+// ─── Comic issues and pages (the rules are in comicedit.ts) ───
+
+/** Apply a pure edit; the project is only marked changed if the edit changed something. */
+function editProject(fn: (p: Project) => Project) {
+  project.update((proj) => {
+    if (!proj) return proj;
+    const next = fn(proj);
+    if (next !== proj) touch();
+    return next;
+  });
+}
+
+export function addComicIssue(title?: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addIssueTo(p, uid, title);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function renameComicIssue(id: string, fields: { title?: string; summary?: string }) {
+  editProject((p) => updateIssueIn(p, id, fields));
+}
+
+/** Only an empty issue can be deleted. Returns whether it was. */
+export function deleteComicIssue(id: string): boolean {
+  let deleted = false;
+  editProject((p) => {
+    const next = deleteIssueFrom(p, id);
+    deleted = next !== p;
+    return next;
+  });
+  return deleted;
+}
+
+export function moveComicIssue(id: string, toIndex: number) {
+  editProject((p) => moveIssueIn(p, id, toIndex));
+}
+
+/** Add a page (to the given issue, or the last one) and select it. Returns its id. */
+export function addComicPage(issueId?: string, atIndex?: number): string {
+  let id = "";
+  editProject((p) => {
+    const r = addPageTo(p, uid, issueId, atIndex);
+    id = r.id;
+    return r.project;
+  });
+  if (id) selectedPageId.set(id);
+  return id;
+}
+
+export function updateComicPage(
+  id: string,
+  fields: Parameters<typeof updatePageIn>[2]
+) {
+  editProject((p) => updatePageIn(p, id, fields));
+}
+
+export function moveComicPage(id: string, issueId: string, index: number) {
+  editProject((p) => movePageIn(p, id, issueId, index));
+}
+
+export function deleteComicPage(id: string) {
+  editProject((p) => deletePageFrom(p, id));
+  selectedPageId.update((cur) => (cur === id ? null : cur));
+}
+
 // ─── Chapters ─────────────────────────────────────────────
 
 /** Append a chapter at the end. Returns its id. */
@@ -495,15 +577,19 @@ export function deleteCharacter(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return {
-      ...proj,
-      characters: proj.characters.filter((c) => c.id !== id),
-      // Also remove from scene references
-      scenes: proj.scenes.map((s) => ({
-        ...s,
-        character_ids: s.character_ids.filter((cid) => cid !== id),
-      })),
-    };
+    return removeCastFromPages(
+      {
+        ...proj,
+        characters: proj.characters.filter((c) => c.id !== id),
+        // Also remove from scene references
+        scenes: proj.scenes.map((s) => ({
+          ...s,
+          character_ids: s.character_ids.filter((cid) => cid !== id),
+        })),
+      },
+      "character",
+      id
+    );
   });
 }
 
@@ -542,14 +628,18 @@ export function deletePlace(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return {
-      ...proj,
-      places: proj.places.filter((p) => p.id !== id),
-      scenes: proj.scenes.map((s) => ({
-        ...s,
-        place_ids: s.place_ids.filter((pid) => pid !== id),
-      })),
-    };
+    return removeCastFromPages(
+      {
+        ...proj,
+        places: proj.places.filter((p) => p.id !== id),
+        scenes: proj.scenes.map((s) => ({
+          ...s,
+          place_ids: s.place_ids.filter((pid) => pid !== id),
+        })),
+      },
+      "place",
+      id
+    );
   });
 }
 
