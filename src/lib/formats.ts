@@ -7,7 +7,7 @@
  * views built on it.
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
- *   comic        issues → pages → panels (plot-first or full script)  ← data and Timeline so far (`ready: false`)
+ *   comic        issues → pages → panels (plot-first or full script)  ← data, Timeline and writing view (`ready: false` until exports)
  *   screenplay   act → scene → slug / action / dialogue (planned)
  *
  * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
@@ -68,7 +68,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     label: "Comic",
     description: "Issues, pages and panels: a plot-first or full script.",
     ready: false,
-    views: { timeline: true, manuscript: false },
+    views: { timeline: true, manuscript: true },
     vocabulary: {
       group: { one: "issue", many: "issues" },
       unit: { one: "page", many: "pages" },
