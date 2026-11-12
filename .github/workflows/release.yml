@@ -25,7 +25,17 @@ jobs:
         with:
           workspaces: src-tauri
 
+      # Stop early if the tag and the app's version disagree (the installer's name comes from the version).
+      - name: Check the tag matches the app version
+        env:
+          TAG: ${{ github.ref_name }} # passed as a variable, never pasted into the command
+        run: node scripts/version.mjs check "$env:TAG"
+
       - run: npm install
+
+      # Never ship an installer from code whose tests fail.
+      - name: JS tests
+        run: npm test
 
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -33,6 +43,10 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Fabulator ${{ github.ref_name }}"
-          releaseBody: "Windows installer. See the README for what is new."
+          releaseBody: |
+            Windows installer (setup .exe or .msi).
+
+            The installer is not code-signed, so Windows SmartScreen may warn on first run:
+            choose "More info", then "Run anyway". See the README for what is new.
           releaseDraft: true
           prerelease: false
