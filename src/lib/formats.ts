@@ -7,8 +7,11 @@
  * views built on it.
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
- *   comic        issue → page → panel          (planned, see ROADMAP.md)
+ *   comic        issues → pages → panels (plot-first or full script)  ← data only so far (`ready: false`)
  *   screenplay   act → scene → slug / action / dialogue (planned)
+ *
+ * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
+ * pages), and the other format's fields are simply empty.
  *
  * A new format is added by: a new id here, its own document fields on `Project` (with a
  * schema migration and the same fields in src-tauri/src/models/mod.rs), and its views.
@@ -19,7 +22,7 @@
 import type { Project } from "./types";
 
 /** The ids this version of Fabulator can open. */
-export const STORY_FORMAT_IDS = ["novel"] as const;
+export const STORY_FORMAT_IDS = ["novel", "comic"] as const;
 export type StoryFormatId = (typeof STORY_FORMAT_IDS)[number];
 
 /** The format of every project written before formats existed, and of a new story. */
@@ -32,6 +35,11 @@ export type StoryFormat = {
   /** Shown to the person (a format chooser, the project's details). */
   label: string;
   description: string;
+  /**
+   * Can the app show and edit this format yet? A format that is not ready can be saved and
+   * opened (its data is kept safe) but is not offered for new stories, and its views say so.
+   */
+  ready: boolean;
   /** What the format calls its units, for labels like "Add chapter". */
   vocabulary: {
     /** The big unit that groups the small ones: a chapter, an issue, an act. */
@@ -46,12 +54,26 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     id: "novel",
     label: "Novel",
     description: "Chapters and scenes of long prose.",
+    ready: true,
     vocabulary: {
       group: { one: "chapter", many: "chapters" },
       unit: { one: "scene", many: "scenes" },
     },
   },
+  comic: {
+    id: "comic",
+    label: "Comic",
+    description: "Issues, pages and panels: a plot-first or full script.",
+    ready: false,
+    vocabulary: {
+      group: { one: "issue", many: "issues" },
+      unit: { one: "page", many: "pages" },
+    },
+  },
 };
+
+/** The formats a person can start a new story in. */
+export const readyFormats = (): StoryFormat[] => STORY_FORMAT_IDS.map((id) => STORY_FORMATS[id]).filter((f) => f.ready);
 
 export function isStoryFormatId(x: unknown): x is StoryFormatId {
   return typeof x === "string" && (STORY_FORMAT_IDS as readonly string[]).includes(x);

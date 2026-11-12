@@ -213,7 +213,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (now schema v7): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
+- Older projects are upgraded automatically (now schema v8): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -350,14 +350,20 @@ Still on the web view's side: opening a file (it needs the web view's upgrade st
 
 ## Story formats
 
-Every project has a `story_format` (`novel` is the only one so far; Comic and Screenplay are planned, see [ROADMAP.md](ROADMAP.md)). The shared parts (characters, places, notes, plotlines, story time, snapshots, themes, backups, recovery) are the same in every format; the format decides the document itself: its units, editor and Timeline/Manuscript views. `src/lib/formats.ts` is the registry (ids, labels, and each format's words for its units: chapter/scene now, issue/page/panel or act/scene later).
+Every project has a `story_format` (`novel` today; `comic` has its data but no views yet; Screenplay is planned, see [ROADMAP.md](ROADMAP.md)). The shared parts (characters, places, notes, plotlines, story time, snapshots, themes, backups, recovery) are the same in every format; the format decides the document itself: its units, editor and Timeline/Manuscript views. `src/lib/formats.ts` is the registry (ids, labels, and each format's words for its units: chapter/scene now, issue/page/panel or act/scene later).
 
 - Older files open as novels; the upgrade makes the usual untouched backup first.
 - A file whose format this version doesn't know (for example a comic opened in an older Fabulator) is **refused with a clear message**, never opened as a novel, so it can't be damaged.
 - Rust stores the format as written and never interprets it; adding a format means new document fields (with a migration and the same fields in `models/mod.rs`) plus its views, not changes to saving, backups or recovery.
-- Nothing looks different yet: Novel mode works exactly as before.
+- Nothing looks different for novels: Novel mode works exactly as before.
 
-## Data model (schema v7)
+### Comic data (schema v8; views come in later steps)
+
+A comic is `issues[]` (ordered) and `pages[]`; a page has a `plot`, an optional `layout` note, a pipeline `stage` (Plot → Art received → Dialogue → Lettered), the same shared fields as a scene (plotline, cast, places, tags, colour, notes, to-dos, story time), and optional `panels[]`, each with a `description` and `lines[]` (dialogue, caption, thought or SFX, with a speaker, text and lettering note). `script_style` is `plot-first` (Marvel method) or `full`; both are the same data at different depths (a plot-first page has only its plot until the art comes back), so changing the style loses nothing. Helpers in `src/lib/comic.ts`: page numbers, left/right pages, spreads, page-turn pages, panel and word counts. Novels carry none of these fields in their files.
+
+Comic is marked **not ready** in `formats.ts`: it is not offered for new stories, and a comic opened in this version shows a short explanation instead of the Timeline/Manuscript (Cast, the side panels, saving and opening work). Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
+
+## Data model (schema v8)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.

@@ -11,9 +11,10 @@
 import { cleanColor, cleanStatus, defaultStatusFor } from "./labels";
 import { cleanTodos } from "./scenenotes";
 import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
+import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 export type MigrationResult = {
   project: Project;
@@ -86,6 +87,11 @@ function v6ToV7(p: Raw): Raw {
   return { ...p, schema_version: 7, story_format: DEFAULT_STORY_FORMAT };
 }
 
+/** v7 -> v8: comic documents (`issues`, `pages`, `script_style`); every older project has none. */
+function v7ToV8(p: Raw): Raw {
+  return { ...p, schema_version: 8 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -94,6 +100,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   4: v4ToV5,
   5: v5ToV6,
   6: v6ToV7,
+  7: v7ToV8,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -192,10 +199,19 @@ function normalize(p: Raw): Project {
     [...list].sort((a, b) => a.order - b.order).forEach((s, i) => (s.order = i));
   }
 
-  return {
+  const storyFormat = readStoryFormat(p.story_format);
+
+  // Comic documents (empty in a novel). Pages always need an issue to live in.
+  let issues = cleanIssues(p.issues);
+  if (issues.length === 0 && arr(p.pages).some(isObject)) {
+    issues = [{ id: "is-1", title: "Issue 1", summary: "" }];
+  }
+  const pages = cleanPages(p.pages, issues);
+
+  const project: Project = {
     ...p,
     schema_version: CURRENT_SCHEMA_VERSION,
-    story_format: readStoryFormat(p.story_format),
+    story_format: storyFormat,
     id: str(p.id) || "proj-imported",
     title: str(p.title, "Untitled"),
     premise: str(p.premise),
@@ -203,12 +219,18 @@ function normalize(p: Raw): Project {
     theme: str(p.theme),
     chapters,
     scenes,
+    issues,
+    pages,
     snapshots: cleanSnapshots(p.snapshots),
     characters: withAliases(p.characters) as Project["characters"],
     places: withAliases(p.places) as Project["places"],
     notes: arr(p.notes) as Project["notes"],
     plotlines: arr(p.plotlines) as Project["plotlines"],
   };
+  // The scripting style only means something in a comic.
+  if (storyFormat === "comic") project.script_style = cleanScriptStyle(p.script_style);
+  else delete project.script_style;
+  return project;
 }
 
 export function migrateProject(raw: unknown): MigrationResult {
