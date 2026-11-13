@@ -367,11 +367,26 @@ Comic is **ready** in `formats.ts`: *File → New comic* starts one. Exporting a
 
 A screenplay is `acts[]` (ordered) and `script_scenes[]`. A scene has a **slug line** kept as parts (`int_ext` INT / EXT / INT/EXT, `location`, `time`; "INT. KITCHEN - DAY" is built from them, and `parseSlug` reads typed text back into them), an optional working `title`, a `summary`, the same shared fields as a novel's scene (status, plotline, cast, places, tags, colour, notes, to-dos, story time), and ordered `elements[]`: **action**, **dialogue** (a speaker, an optional extension such as V.O./O.S., an optional parenthetical, the words), **transition** (CUT TO:) and private **note** (never exported). Dialogue is structured, so a character's lines can be found, counted and renamed without parsing text; "(CONT'D)" is derived (`needsContd`: the same character speaks again with only action between), never stored. `src/lib/screenplay.ts` also has the **page estimate** (about 55 lines of 12 pt Courier per page, action about 60 characters wide, dialogue about 35, counted in eighths of a page; one page ≈ one minute as a rule of thumb) and word counts that leave out notes and the slug. Other formats carry none of these fields in their files.
 
-Screenplay is marked **not ready** in `formats.ts` (it has its Timeline; the writing view comes next): *File → New screenplay (early preview)* starts one, and its writing view says it is not ready yet. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
+Screenplay is marked **not ready** in `formats.ts` (it has its Timeline and writing view; exports and the shared tools come next): *File → New screenplay (early preview)* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
 
 ### Screenplay Timeline (scenes)
 
-For a screenplay the Timeline shows each **act** (rename it in place; an empty act can be deleted) with its **scenes** as cards numbered through the whole script. A card shows the **slug line** in script style (`INT. KITCHEN - DAY`), the working title, the start of the summary, the **estimated page length** (in eighths, "1 3/8 pg") and word count, a **status** menu (Idea / Draft / Revised / Final) and an optional colour strip. Use ◀ ▶ to move a scene earlier or later in its act, ✕ to delete it (asks first unless it is empty), **+ Add scene** / **+ Add act** to grow the script. The toolbar shows the whole script's length ("about N min": one page ≈ one minute is a rule of thumb, not a timing). Click a scene to edit its **INT/EXT, location, time** (suggestions from your Places and common times of day), status, working title, plotline, colour, summary and private notes in the panel below. The action and dialogue are written in the writing view (next step). The rules (adding, moving, deleting, summaries) are pure functions in `src/lib/screenplayedit.ts`. Deleting a scene does not keep a copy yet (screenplay snapshots come with the shared tools).
+For a screenplay the Timeline shows each **act** (rename it in place; an empty act can be deleted) with its **scenes** as cards numbered through the whole script. A card shows the **slug line** in script style (`INT. KITCHEN - DAY`), the working title, the start of the summary, the **estimated page length** (in eighths, "1 3/8 pg") and word count, a **status** menu (Idea / Draft / Revised / Final) and an optional colour strip. Use ◀ ▶ to move a scene earlier or later in its act, ✕ to delete it (asks first unless it is empty), **+ Add scene** / **+ Add act** to grow the script. The toolbar shows the whole script's length ("about N min": one page ≈ one minute is a rule of thumb, not a timing). Click a scene to edit its **INT/EXT, location, time** (suggestions from your Places and common times of day), status, working title, plotline, colour, summary and private notes in the panel below. Double-click a scene (or press Enter on it) to write it. The rules (adding, moving, deleting, summaries) are pure functions in `src/lib/screenplayedit.ts`. Deleting a scene does not keep a copy yet (screenplay snapshots come with the shared tools).
+
+### Screenplay writing view (Manuscript)
+
+For a screenplay the Manuscript view lists the scenes on the left (number, slug line, estimated pages) and writes one scene on the right, on a monospace "script page". Above it: the **slug line** (INT/EXT, location, time; a location that matches a Place in your Cast puts that place on the scene), the status, the scene's page length and word count, and a collapsible summary.
+
+The scene is a list of **elements**: *action*, *dialogue*, *transition* and private *notes* (a yellow dashed box; never exported). Dialogue shows the character, the extension (V.O., O.S.…), an optional parenthetical and the words; "(CONT'D)" appears by itself when the same character speaks again with only action between. Writing is keyboard-first:
+
+- **Enter** adds the next element (an action); **Shift+Enter** is a new line inside one.
+- **Ctrl+Enter** adds a dialogue for the *other* speaker (the nearest earlier one), for quick back-and-forth.
+- **Backspace** on an empty element removes it; **↑ / ↓** at the start or end of an element move to the previous or next one.
+- Each element has a type menu and ▲ ▼ ✕ (shown when you point at it).
+- Typing a **new name** in a dialogue's character box creates that character (and puts them on the scene's cast); an existing name or alias picks them. ALL-CAPS names are stored as "Maria".
+- The first words written in an *Idea* scene make it a *Draft*.
+
+Not for screenplays yet: Search, Find & replace, Snapshots, goals, and every export.
 
 ### Comic Timeline (pages)
 

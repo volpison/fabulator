@@ -2,6 +2,7 @@
   import {
     project,
     selectedScriptSceneId,
+    mainView,
     addScreenplayAct,
     renameScreenplayAct,
     deleteScreenplayAct,
@@ -45,11 +46,20 @@
     selectedScriptSceneId.set(id);
   }
 
+  /** Double-click (or Enter on the card) opens the scene in the writing view. */
+  function open(id: string) {
+    selectedScriptSceneId.set(id);
+    mainView.set("manuscript");
+  }
+
   function onCardKey(id: string, e: KeyboardEvent) {
     if (e.target !== e.currentTarget) return; // keys typed in the card's own controls are theirs
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === " ") {
       e.preventDefault();
       select(id);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      open(id);
     }
   }
 
@@ -94,7 +104,7 @@
       <span class="length" title="About 55 lines of 12 pt Courier per page; one page is roughly one minute on screen">
         {formatPages(total.pages)} page{total.pages === 1 ? "" : "s"} · about {total.minutes} min
       </span>
-      <span class="hint">Click a scene to edit its slug line, summary and notes · Page lengths are estimates (the usual script rule of thumb)</span>
+      <span class="hint">Click a scene to edit its slug line and summary · Double-click (or Enter) to write it · Page lengths are estimates (the usual script rule of thumb)</span>
     </div>
 
     <div class="scroll">
@@ -136,6 +146,7 @@
                 aria-pressed={sc.id === $selectedScriptSceneId}
                 aria-label="Scene {numbers.get(sc.id)}{slugLine(sc) ? ': ' + slugLine(sc) : ''}"
                 on:click={() => select(sc.id)}
+                on:dblclick={() => open(sc.id)}
                 on:keydown={(e) => onCardKey(sc.id, e)}
               >
                 <div class="card-top">
@@ -243,7 +254,7 @@
           <textarea
             rows="4"
             value={sc.summary}
-            placeholder="What happens in this scene, in your own words. The writing view (coming next) is where the action and dialogue go."
+            placeholder="What happens in this scene, in your own words. Double-click the scene to write its action and dialogue."
             on:input={(e) => setField(sc.id, "summary", e)}
           ></textarea>
         </label>

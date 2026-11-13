@@ -3,8 +3,18 @@
  * each returns a new project, or the very same object when nothing would change (so callers can
  * tell). The stores wrap these and mark the project as changed.
  */
-import type { Act, Project, ScriptScene, SlugPlace } from "./types";
-import { cleanSlugPlace, newScriptScene, pagesFromLines, sceneLines, sceneWordCount, scenesInAct, type NewId } from "./screenplay";
+import type { Act, ElementKind, Project, ScriptElement, ScriptScene, SlugPlace } from "./types";
+import {
+  ELEMENT_KINDS,
+  cleanSlugPlace,
+  newElement,
+  newScriptScene,
+  pagesFromLines,
+  sceneLines,
+  sceneWordCount,
+  scenesInAct,
+  type NewId,
+} from "./screenplay";
 import { SCENE_STATUSES, cleanColor } from "./labels";
 
 // ─── Acts ───
@@ -84,7 +94,34 @@ export function updateScene(p: Project, id: string, fields: SceneFields): Projec
   const next = { ...scene, ...clean };
   const same = (Object.keys(clean) as (keyof SceneFields)[]).every((k) => next[k] === scene[k]);
   if (same) return p;
+  // A slug location that names a Place in the Cast puts that place on the scene (continuity).
+  if (clean.location !== undefined) {
+    const place = placeNamed(p, clean.location);
+    if (place && !next.place_ids.includes(place)) next.place_ids = [...next.place_ids, place];
+  }
   return { ...p, script_scenes: p.script_scenes.map((s) => (s.id === id ? next : s)) };
+}
+
+const fold = (t: string) => t.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+/** The id of the Place whose name or alias is exactly this text (ignoring case and accents), or "". */
+export function placeNamed(p: Pick<Project, "places">, text: string): string {
+  const want = fold(text);
+  if (!want) return "";
+  for (const pl of p.places) {
+    if (fold(pl.name) === want || (pl.aliases ?? []).some((a) => fold(a) === want)) return pl.id;
+  }
+  return "";
+}
+
+/** The id of the Character whose name or alias is exactly this text (ignoring case and accents), or "". */
+export function characterNamed(p: Pick<Project, "characters">, text: string): string {
+  const want = fold(text);
+  if (!want) return "";
+  for (const c of p.characters) {
+    if (fold(c.name) === want || (c.aliases ?? []).some((a) => fold(a) === want)) return c.id;
+  }
+  return "";
 }
 
 /**
@@ -132,6 +169,93 @@ export function removeCastFromScenes(p: Project, kind: "character" | "place", id
 /** Does the scene hold anything worth asking about before it is deleted? */
 export const sceneIsEmpty = (s: ScriptScene): boolean =>
   s.elements.every((e) => !e.text.trim()) && !s.summary.trim() && !s.notes.trim() && !s.title.trim() && !s.location.trim();
+
+// ─── Elements (the writing view) ───
+
+function editScene(p: Project, sceneId: string, fn: (sc: ScriptScene) => ScriptScene): Project {
+  const sc = p.script_scenes.find((x) => x.id === sceneId);
+  if (!sc) return p;
+  const next = fn(sc);
+  return next === sc ? p : { ...p, script_scenes: p.script_scenes.map((x) => (x.id === sceneId ? next : x)) };
+}
+
+/** Insert an element at `atIndex` (the end by default). A new dialogue may already have its speaker. */
+export function addElement(
+  p: Project,
+  newId: NewId,
+  sceneId: string,
+  kind: ElementKind = "action",
+  atIndex?: number,
+  speakerId = ""
+): { project: Project; id: string } {
+  const sc = p.script_scenes.find((x) => x.id === sceneId);
+  if (!sc || !(ELEMENT_KINDS as readonly string[]).includes(kind)) return { project: p, id: "" };
+  const el = newElement(newId, kind, speakerId);
+  const at = atIndex === undefined ? sc.elements.length : Math.max(0, Math.min(sc.elements.length, Math.floor(atIndex)));
+  const elements = [...sc.elements];
+  elements.splice(at, 0, el);
+  const cast = el.speaker_id && !sc.character_ids.includes(el.speaker_id) ? [...sc.character_ids, el.speaker_id] : sc.character_ids;
+  return { project: editScene(p, sceneId, (s) => ({ ...s, elements, character_ids: cast })), id: el.id };
+}
+
+export type ElementFields = Partial<Pick<ScriptElement, "kind" | "speaker_id" | "extension" | "parenthetical" | "text">>;
+
+/**
+ * Change an element. Only dialogue has a speaker, extension and parenthetical (changing the kind away
+ * from dialogue clears them). A speaker joins the scene's cast. The first words written in an "Idea"
+ * scene make it a "Draft".
+ */
+export function updateElement(p: Project, sceneId: string, elementId: string, fields: ElementFields): Project {
+  if (fields.kind !== undefined && !(ELEMENT_KINDS as readonly string[]).includes(fields.kind)) return p;
+  return editScene(p, sceneId, (sc) => {
+    const at = sc.elements.findIndex((e) => e.id === elementId);
+    if (at === -1) return sc;
+    const el = sc.elements[at];
+    const kind = fields.kind ?? el.kind;
+    let next: ScriptElement = { ...el, ...fields, kind };
+    if (kind !== "dialogue") next = { ...next, speaker_id: "", extension: "", parenthetical: "" };
+    else next = { ...next, extension: next.extension.trim(), parenthetical: next.parenthetical.trim().replace(/^\((.*)\)$/s, "$1") };
+    const unchanged = (Object.keys(next) as (keyof ScriptElement)[]).every((k) => next[k] === el[k]);
+    if (unchanged) return sc;
+    const elements = sc.elements.map((e, i) => (i === at ? next : e));
+    const cast = next.speaker_id && !sc.character_ids.includes(next.speaker_id) ? [...sc.character_ids, next.speaker_id] : sc.character_ids;
+    const status = sc.status === "idea" && next.kind !== "note" && next.text.trim() ? "draft" : sc.status;
+    return { ...sc, elements, character_ids: cast, status };
+  });
+}
+
+/** Put an element at position `toIndex` (clamped) in its scene. */
+export function moveElement(p: Project, sceneId: string, elementId: string, toIndex: number): Project {
+  return editScene(p, sceneId, (sc) => {
+    const from = sc.elements.findIndex((e) => e.id === elementId);
+    if (from === -1) return sc;
+    const to = Math.max(0, Math.min(sc.elements.length - 1, Math.floor(toIndex)));
+    if (to === from) return sc;
+    const elements = [...sc.elements];
+    const [moved] = elements.splice(from, 1);
+    elements.splice(to, 0, moved);
+    return { ...sc, elements };
+  });
+}
+
+export function deleteElement(p: Project, sceneId: string, elementId: string): Project {
+  return editScene(p, sceneId, (sc) =>
+    sc.elements.some((e) => e.id === elementId) ? { ...sc, elements: sc.elements.filter((e) => e.id !== elementId) } : sc
+  );
+}
+
+/**
+ * Who answers? For the dialogue at `index`: the nearest earlier speaker in the scene who is not the
+ * same character ("" when nobody else has spoken yet). Used by "reply" (Ctrl+Enter).
+ */
+export function replySpeaker(elements: ScriptElement[], index: number): string {
+  const current = elements[index]?.kind === "dialogue" ? elements[index].speaker_id : "";
+  for (let i = Math.min(index, elements.length) - 1; i >= 0; i--) {
+    const e = elements[i];
+    if (e.kind === "dialogue" && e.speaker_id && e.speaker_id !== current) return e.speaker_id;
+  }
+  return "";
+}
 
 // ─── Summaries ───
 
