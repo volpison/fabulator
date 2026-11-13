@@ -1,6 +1,8 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { project, selectedScene, exportOpen } from "../lib/stores";
+  import { project, selectedScene, selectedPageId, exportOpen } from "../lib/stores";
+  import { COMIC_EXPORT_KINDS, type ComicExportKind } from "../lib/export/comic";
+  import { pageNumber } from "../lib/comic";
   import {
     DEFAULT_OPTIONS,
     exportPreview,
@@ -31,6 +33,8 @@
   let sceneBreak: SceneBreak = saved.sceneBreak ?? DEFAULT_OPTIONS.sceneBreak;
   let pageSize: "a4" | "letter" = saved.pageSize ?? "a4";
   let language = saved.language ?? "en";
+  let comicKind: ComicExportKind = saved.comicKind === "plot" ? "plot" : "script";
+  let comicPlot = saved.comicPlot ?? true;
 
   let busy = false;
   let message = "";
@@ -46,17 +50,24 @@
   $: options = {
     format,
     scope,
-    sceneId: $selectedScene?.id ?? null,
+    sceneId: isComic ? (selectedPage?.id ?? null) : ($selectedScene?.id ?? null),
     author,
     chapterHeadings,
     sceneTitles,
     sceneBreak,
     pageSize,
     language: language.trim() || "en",
+    comicKind,
+    comicPlot,
   } as ExportOptions;
 
+  $: isComic = $project?.story_format === "comic";
+  $: selectedPage = isComic ? ($project?.pages.find((p) => p.id === $selectedPageId) ?? null) : null;
+  $: unitOne = isComic ? "page" : "scene";
+  $: groupOne = isComic ? "issue" : "chapter";
+
   $: counts = $project ? exportPreview($project, options) : { scenes: 0, chapters: 0 };
-  $: canChooseScope = !!$selectedScene;
+  $: canChooseScope = isComic ? !!selectedPage : !!$selectedScene;
   $: if (!canChooseScope) scope = "all";
 
   function close() {
@@ -79,7 +90,7 @@
       try {
         localStorage.setItem(
           STORE_KEY,
-          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language })
+          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language, comicKind, comicPlot })
         );
       } catch {
         /* remembering options is optional */
@@ -97,7 +108,7 @@
         return; // cancelled
       }
       await platform().writeBytes(path, result.bytes);
-      message = `Exported ${result.scenes} scene${result.scenes === 1 ? "" : "s"} to ${path}`;
+      message = `Exported ${result.scenes} ${unitOne}${result.scenes === 1 ? "" : "s"} to ${path}`;
     } catch (e) {
       failed = true;
       message = `Export failed: ${e}`;
@@ -131,6 +142,21 @@
         </div>
       </fieldset>
 
+      {#if isComic}
+        <fieldset>
+          <legend>Kind of export</legend>
+          <div class="formats">
+            {#each COMIC_EXPORT_KINDS as k}
+              <label class="format" class:active={comicKind === k.id}>
+                <input type="radio" bind:group={comicKind} value={k.id} />
+                <span class="name">{k.label}</span>
+                <span class="hint">{k.hint}</span>
+              </label>
+            {/each}
+          </div>
+        </fieldset>
+      {/if}
+
       <fieldset>
         <legend>What to export</legend>
         <label class="row">
@@ -138,11 +164,15 @@
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="chapter" disabled={!canChooseScope} />
-          The chapter of the selected scene
+          {isComic ? "The issue of the selected page" : "The chapter of the selected scene"}
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="scene" disabled={!canChooseScope} />
-          Only the selected scene{$selectedScene ? ` (“${$selectedScene.title || "Untitled"}”)` : ""}
+          {#if isComic}
+            Only the selected page{selectedPage ? ` (page ${pageNumber(selectedPage)}${selectedPage.title ? `: “${selectedPage.title}”` : ""})` : ""}
+          {:else}
+            Only the selected scene{$selectedScene ? ` (“${$selectedScene.title || "Untitled"}”)` : ""}
+          {/if}
         </label>
       </fieldset>
 
@@ -152,16 +182,22 @@
           Author
           <input type="text" bind:value={author} placeholder="Shown under the title" />
         </label>
-        <label class="row"><input type="checkbox" bind:checked={chapterHeadings} /> Chapter headings</label>
-        <label class="row"><input type="checkbox" bind:checked={sceneTitles} /> Scene titles (instead of scene breaks)</label>
-        <label class="field" class:disabled={sceneTitles}>
-          Between scenes
-          <select bind:value={sceneBreak} disabled={sceneTitles}>
-            <option value="ornament">* * *</option>
-            <option value="blank">Blank line</option>
-            <option value="none">Nothing</option>
-          </select>
-        </label>
+        {#if isComic}
+          {#if comicKind === "script"}
+            <label class="row"><input type="checkbox" bind:checked={comicPlot} /> Show each page's plot above its panels</label>
+          {/if}
+        {:else}
+          <label class="row"><input type="checkbox" bind:checked={chapterHeadings} /> Chapter headings</label>
+          <label class="row"><input type="checkbox" bind:checked={sceneTitles} /> Scene titles (instead of scene breaks)</label>
+          <label class="field" class:disabled={sceneTitles}>
+            Between scenes
+            <select bind:value={sceneBreak} disabled={sceneTitles}>
+              <option value="ornament">* * *</option>
+              <option value="blank">Blank line</option>
+              <option value="none">Nothing</option>
+            </select>
+          </label>
+        {/if}
         {#if format === "docx"}
           <label class="field">
             Page size
@@ -186,8 +222,8 @@
 
     <footer>
       <span class="count">
-        {counts.scenes} scene{counts.scenes === 1 ? "" : "s"} in {counts.chapters}
-        chapter{counts.chapters === 1 ? "" : "s"}{counts.scenes === 0 ? " — nothing with text to export" : ""}
+        {counts.scenes} {unitOne}{counts.scenes === 1 ? "" : "s"} in {counts.chapters}
+        {groupOne}{counts.chapters === 1 ? "" : "s"}{counts.scenes === 0 ? " — nothing with text to export" : ""}
       </span>
       <button class="primary" on:click={doExport} disabled={busy || counts.scenes === 0}>
         {busy ? "Exporting…" : "Export…"}

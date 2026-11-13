@@ -51,7 +51,7 @@ export function renderDocx(book: Book, now: Date = new Date()): Uint8Array {
         afterBreak = true;
       }
       for (const b of sc.blocks) {
-        body.push(blockXml(b, afterBreak));
+        body.push(blockXml(b, afterBreak, book.layout === "script"));
         afterBreak = b.type !== "p";
       }
     });
@@ -67,6 +67,7 @@ export function renderDocx(book: Book, now: Date = new Date()): Uint8Array {
 <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="${lang}"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:firstLine="720"/></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="FirstParagraph"><w:name w:val="First Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:firstLine="0"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Script"><w:name w:val="Script"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:ind w:firstLine="0"/></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="4000" w:after="240"/><w:ind w:firstLine="0"/><w:jc w:val="center"/></w:pPr><w:rPr><w:b/><w:sz w:val="52"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:firstLine="0"/><w:jc w:val="center"/></w:pPr><w:rPr><w:i/><w:sz w:val="28"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="FirstParagraph"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="2400" w:after="480"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/></w:rPr></w:style>
@@ -94,13 +95,13 @@ export function renderDocx(book: Book, now: Date = new Date()): Uint8Array {
   );
 }
 
-function blockXml(b: Block, afterBreak: boolean): string {
+function blockXml(b: Block, afterBreak: boolean, script = false): string {
   switch (b.type) {
     case "hr": return para("SceneBreak", plain(ORNAMENT));
     case "h": return para(b.level === 2 ? "Heading2" : "Heading3", runsXml(b.runs));
     case "quote": return para("Quote", runsXml(b.runs));
     case "li":
       return para("ListParagraph", plain(b.ordered ? `${b.index}.\t` : "•\t") + runsXml(b.runs));
-    default: return para(afterBreak ? "FirstParagraph" : null, runsXml(b.runs));
+    default: return para(script ? "Script" : afterBreak ? "FirstParagraph" : null, runsXml(b.runs));
   }
 }

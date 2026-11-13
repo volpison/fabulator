@@ -2,6 +2,7 @@
 import type { Project } from "../types";
 import { readingOrder } from "../model";
 import { htmlToBlocks, type Block } from "./html";
+import { buildComicBook, type ComicExportKind } from "./comic";
 
 export type ExportFormat = "markdown" | "text" | "docx" | "epub";
 export type ExportScope = "all" | "chapter" | "scene";
@@ -18,6 +19,10 @@ export type ExportOptions = {
   sceneBreak: SceneBreak;
   pageSize?: "a4" | "letter";
   language?: string;
+  /** Comics only: which export (full script, or the plot for the artist). */
+  comicKind?: ComicExportKind;
+  /** Comics only: put each page's plot above its panels in the full script. */
+  comicPlot?: boolean;
 };
 
 export const DEFAULT_OPTIONS: ExportOptions = {
@@ -41,11 +46,16 @@ export type Book = {
   language: string;
   chapters: BookChapter[];
   options: ExportOptions;
+  /** "script": no first-line indents (comics, later screenplays). Default is prose. */
+  layout?: "prose" | "script";
+  /** Added to the file name: "Title (script).docx". */
+  fileStem?: string;
 };
 
 export const ORNAMENT = "* * *";
 
 export function buildBook(project: Project, options: ExportOptions): Book {
+  if (project.story_format === "comic") return buildComicBook(project, options);
   let scenes = readingOrder(project);
   if (options.scope !== "all") {
     const target = scenes.find((s) => s.id === options.sceneId);
@@ -80,8 +90,9 @@ export const sceneCount = (b: Book) => b.chapters.reduce((n, c) => n + c.scenes.
 
 export function suggestedFileName(b: Book): string {
   const base = (b.title || "story").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim() || "story";
+  const stem = b.fileStem ? `${base} (${b.fileStem})` : base;
   const ext = { markdown: "md", text: "txt", docx: "docx", epub: "epub" }[b.options.format];
-  return `${base}.${ext}`;
+  return `${stem}.${ext}`;
 }
 
 /** Remove characters XML 1.0 forbids. */
