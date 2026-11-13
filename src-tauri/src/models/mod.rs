@@ -533,6 +533,8 @@ impl Project {
             ],
             issues: vec![],
             pages: vec![],
+            acts: vec![],
+            script_scenes: vec![],
             script_style: None,
         }
     }
