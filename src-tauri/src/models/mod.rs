@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 8;
+pub const SCHEMA_VERSION: u32 = 9;
 
 /// The format of a project written before formats existed. The frontend decides what formats
 /// exist (src/lib/formats.ts); Rust stores whatever the file says and never interprets it.
@@ -185,6 +185,9 @@ pub struct Snapshot {
     pub character_ids: Vec<String>,
     pub place_ids: Vec<String>,
     pub tags: Vec<String>,
+    /// Comics: the whole page as it was (then `scene_id` holds the page id and `content` is empty).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<ComicPage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

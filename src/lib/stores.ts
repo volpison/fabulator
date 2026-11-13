@@ -16,7 +16,6 @@ import {
   addPage as addPageTo,
   updatePage as updatePageIn,
   movePage as movePageIn,
-  deletePage as deletePageFrom,
   addPanel as addPanelTo,
   updatePanel as updatePanelIn,
   movePanel as movePanelIn,
@@ -32,6 +31,9 @@ import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
 import {
   applyRestore,
+  autoSnapshotPages,
+  deletePageKeeping,
+  makePageSnapshot,
   hasContent,
   makeSnapshot,
   maybeAutoSnapshot,
@@ -99,6 +101,13 @@ export function openSearchHit(hit: SearchHit, terms: string[]) {
       selectedSceneId.set(hit.id);
       sceneHighlight.set({ sceneId: hit.id, terms });
       mainView.set("manuscript");
+      break;
+    case "page":
+      selectedPageId.set(hit.id);
+      mainView.set("manuscript");
+      break;
+    case "issue":
+      mainView.set("timeline");
       break;
     case "character":
       sidePanel.set("characters");
@@ -315,7 +324,8 @@ export function movePlotline(id: string, delta: number) {
 function editProject(fn: (p: Project) => Project) {
   project.update((proj) => {
     if (!proj) return proj;
-    const next = fn(proj);
+    // A page whose writing changed gets an auto snapshot of how it was (at most every 30 minutes).
+    const next = autoSnapshotPages(proj, fn(proj), Date.now(), () => uid("snap"));
     if (next !== proj) touch();
     return next;
   });
@@ -374,7 +384,8 @@ export function moveComicPage(id: string, issueId: string, index: number) {
 }
 
 export function deleteComicPage(id: string) {
-  editProject((p) => deletePageFrom(p, id));
+  // The page is kept in Snapshots → Deleted pages, like a deleted scene with text.
+  editProject((p) => deletePageKeeping(p, id, Date.now(), () => uid("snap")));
   selectedPageId.update((cur) => (cur === id ? null : cur));
 }
 
@@ -542,14 +553,17 @@ export function takeSnapshot(sceneId: string, label: string): string | null {
   project.update((proj) => {
     if (!proj) return proj;
     const scene = proj.scenes.find((s) => s.id === sceneId);
-    if (!scene) return proj;
+    const page = scene ? undefined : proj.pages.find((pg) => pg.id === sceneId);
+    if (!scene && !page) return proj;
     touch();
     taken = true;
     return {
       ...proj,
       snapshots: [
         ...proj.snapshots,
-        makeSnapshot(scene, "manual", label.trim(), Date.now(), id),
+        scene
+          ? makeSnapshot(scene, "manual", label.trim(), Date.now(), id)
+          : makePageSnapshot(page!, "manual", label.trim(), Date.now(), id),
       ],
     };
   });

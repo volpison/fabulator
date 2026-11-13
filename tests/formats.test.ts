@@ -45,7 +45,7 @@ test("a file from before formats opens as a novel, and the upgrade is reported",
   assert.equal(r.migratedFrom, 6);
   assert.equal(r.project.story_format, "novel");
   assert.equal(r.project.schema_version, CURRENT_SCHEMA_VERSION);
-  assert.equal(CURRENT_SCHEMA_VERSION, 8);
+  assert.equal(CURRENT_SCHEMA_VERSION, 9);
 });
 
 test("every older version reaches the current one as a novel", () => {

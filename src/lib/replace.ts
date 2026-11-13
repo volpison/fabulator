@@ -13,11 +13,12 @@
  * not match "Jose"), because replacing the wrong thing silently is worse
  * than missing something; the search dialog is the accent-insensitive tool.
  */
-import type { Project, Scene } from "./types";
+import type { ComicPage, Project, Scene } from "./types";
+import { comicReadingOrder, pageNumber } from "./comic";
 import { readingOrder } from "./model";
 import { decodeEntities, looksLikeHtml } from "./export/html";
 import { htmlToPlainText } from "./mentions";
-import { hasContent, makeSnapshot } from "./snapshots";
+import { hasContent, makePageSnapshot, makeSnapshot, pageHasContent, pageToText } from "./snapshots";
 
 export type ReplaceOptions = { matchCase: boolean; wholeWord: boolean };
 export type ReplaceFields = { content: boolean; title: boolean; summary: boolean };
@@ -168,6 +169,89 @@ function snipOf(text: string, re: RegExp, replacement: string): Snip | null {
   };
 }
 
+// ─── comic pages ───
+// For a comic, "text" is the page's writing (plot, panel descriptions, lines and lettering notes);
+// "title" is the page title; there is no separate synopsis (the plot is part of the writing).
+
+function replaceInPageText(pg: ComicPage, re: RegExp, replacement: string): { page: ComicPage; count: number } {
+  let count = 0;
+  const one = (t: string) => {
+    const r = replaceInPlain(t, re, replacement);
+    count += r.count;
+    return r.text;
+  };
+  const plot = one(pg.plot);
+  const panels = pg.panels.map((pn) => ({
+    ...pn,
+    description: one(pn.description),
+    lines: pn.lines.map((ln) => ({ ...ln, text: one(ln.text), note: one(ln.note) })),
+  }));
+  return count === 0 ? { page: pg, count: 0 } : { page: { ...pg, plot, panels }, count };
+}
+
+function planReplaceComic(
+  project: Project,
+  re: RegExp,
+  replacement: string,
+  fields: ReplaceFields,
+  onlyId?: string | null
+): ReplacePlan {
+  const issueLabel = new Map(project.issues.map((i, n) => [i.id, `Issue ${n + 1}${i.title ? ` · ${i.title}` : ""}`]));
+  const changes: SceneChange[] = [];
+  for (const pg of comicReadingOrder(project)) {
+    if (onlyId && pg.id !== onlyId) continue;
+    const counts = {
+      content: fields.content ? replaceInPageText(pg, re, replacement).count : 0,
+      title: fields.title ? replaceInPlain(pg.title, re, replacement).count : 0,
+      summary: 0,
+    };
+    const total = counts.content + counts.title;
+    if (total === 0) continue;
+    const snippet =
+      (counts.content && snipOf(pageToText(pg), re, replacement)) ||
+      (counts.title && snipOf(pg.title, re, replacement)) ||
+      null;
+    changes.push({
+      sceneId: pg.id,
+      title: pg.title || `Page ${pageNumber(pg)}`,
+      chapterLabel: `${issueLabel.get(pg.issue_id) ?? ""} · Page ${pageNumber(pg)}`.replace(/^ · /, ""),
+      counts,
+      total,
+      snippet,
+    });
+  }
+  return { changes, total: changes.reduce((n, c) => n + c.total, 0), scenes: changes.length };
+}
+
+function applyReplaceComic(
+  project: Project,
+  re: RegExp,
+  find: string,
+  replacement: string,
+  fields: ReplaceFields,
+  ids: Set<string>,
+  now: number,
+  newId: () => string
+): { project: Project; scenes: number; replacements: number } {
+  const label = `Before replace “${find}” → “${replacement}”`;
+  const snapshots = [...project.snapshots];
+  let scenes = 0;
+  let replacements = 0;
+  const pages = project.pages.map((pg): ComicPage => {
+    if (!ids.has(pg.id)) return pg;
+    const c = fields.content ? replaceInPageText(pg, re, replacement) : { page: pg, count: 0 };
+    const t = fields.title ? replaceInPlain(pg.title, re, replacement) : { text: pg.title, count: 0 };
+    const n = c.count + t.count;
+    if (n === 0) return pg;
+    scenes++;
+    replacements += n;
+    if (pageHasContent(pg) || pg.title) snapshots.push(makePageSnapshot(pg, "safety", label, now, newId()));
+    return { ...c.page, title: t.text };
+  });
+  if (scenes === 0) return { project, scenes: 0, replacements: 0 };
+  return { project: { ...project, pages, snapshots }, scenes, replacements };
+}
+
 /** What a replace would change, scene by scene (nothing is modified). */
 export function planReplace(
   project: Project,
@@ -179,6 +263,7 @@ export function planReplace(
 ): ReplacePlan {
   const re = buildMatcher(find, opts);
   if (!re) return { changes: [], total: 0, scenes: 0 };
+  if (project.story_format === "comic") return planReplaceComic(project, re, replacement, fields, onlySceneId);
   const chapterLabel = new Map(project.chapters.map((c, i) => [c.id, `Ch ${i + 1} · ${c.title}`]));
   const changes: SceneChange[] = [];
 
@@ -225,6 +310,7 @@ export function applyReplace(
 ): { project: Project; scenes: number; replacements: number } {
   const re = buildMatcher(find, opts);
   if (!re || sceneIds.size === 0) return { project, scenes: 0, replacements: 0 };
+  if (project.story_format === "comic") return applyReplaceComic(project, re, find, replacement, fields, sceneIds, now, newId);
 
   const label = `Before replace “${find}” → “${replacement}”`;
   const snapshots = [...project.snapshots];
