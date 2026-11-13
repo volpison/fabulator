@@ -163,7 +163,7 @@ test("opening an old-format file backs it up first and marks the upgrade for sav
   assert.ok(fake.state.log.includes("backup C:\\old.fabulator.json"));
   assert.equal(get(currentPath), "C:\\old.fabulator.json");
   assert.equal(get(isDirty), true);
-  assert.equal(get(project)!.schema_version, 9);
+  assert.equal(get(project)!.schema_version, 10);
 });
 
 test("opening a missing file shows an error and keeps the current story", async () => {
@@ -449,4 +449,25 @@ test("a comic is not written as a Markdown folder (which could not hold its page
   await exportFolder();
   assert.equal(fake.state.folders.size, 0);
   assert.match(fake.state.notices.join("\n"), /comic.*not supported yet/i);
+});
+
+test("a new screenplay can be started, saved and reopened with all its scenes", async () => {
+  fakeBrowserGlobals();
+  await loadInitialProject();
+  await newProject("screenplay");
+  const p = get(project)!;
+  assert.equal(p.story_format, "screenplay");
+  assert.equal(p.script_scenes.length, 1);
+
+  fake.state.saveAnswers.push("C:\\Stories\\s.fabulator.json");
+  assert.equal(await manualSave(), true);
+  const onDisk = fake.state.files.get("C:\\Stories\\s.fabulator.json") as any;
+  assert.equal(onDisk.story_format, "screenplay");
+  assert.equal(onDisk.acts.length, 1);
+
+  await newProject();
+  assert.equal(get(project)!.story_format, "novel");
+  await openRecent(toLocation("C:\\Stories\\s.fabulator.json"));
+  assert.equal(get(project)!.story_format, "screenplay");
+  assert.deepEqual(get(project)!.script_scenes, p.script_scenes);
 });

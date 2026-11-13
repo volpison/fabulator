@@ -147,7 +147,7 @@ test("schema 9: page snapshots survive save, reopen and patches; a malformed pag
   const p = sample();
   p.snapshots = [makePageSnapshot(p.pages[0], "manual", "v1", 1, "snap-1")];
   const reopened = migrateProject(clone(p)).project;
-  assert.equal(reopened.schema_version, 9);
+  assert.equal(reopened.schema_version, 10);
   assert.deepEqual(reopened.snapshots[0].page, p.pages[0]);
   const delta = diffProject({ ...p, snapshots: [] }, p);
   assert.equal(delta.kind, "patch");

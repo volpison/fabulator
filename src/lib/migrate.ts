@@ -12,9 +12,10 @@ import { cleanColor, cleanStatus, defaultStatusFor } from "./labels";
 import { cleanTodos } from "./scenenotes";
 import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
 import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
+import { cleanActs, cleanScriptScenes } from "./screenplay";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;
 
 export type MigrationResult = {
   project: Project;
@@ -97,6 +98,11 @@ function v8ToV9(p: Raw): Raw {
   return { ...p, schema_version: 9 };
 }
 
+/** v9 -> v10: screenplay documents (`acts`, `script_scenes`); every older project has none. */
+function v9ToV10(p: Raw): Raw {
+  return { ...p, schema_version: 10 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -107,6 +113,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   6: v6ToV7,
   7: v7ToV8,
   8: v8ToV9,
+  9: v9ToV10,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -222,6 +229,13 @@ function normalize(p: Raw): Project {
   }
   const pages = cleanPages(p.pages, issues);
 
+  // Screenplay documents (empty elsewhere). Scenes always need an act to live in.
+  let acts = cleanActs(p.acts);
+  if (acts.length === 0 && arr(p.script_scenes).some(isObject)) {
+    acts = [{ id: "act-1", title: "Act 1", summary: "" }];
+  }
+  const script_scenes = cleanScriptScenes(p.script_scenes, acts);
+
   const project: Project = {
     ...p,
     schema_version: CURRENT_SCHEMA_VERSION,
@@ -235,6 +249,8 @@ function normalize(p: Raw): Project {
     scenes,
     issues,
     pages,
+    acts,
+    script_scenes,
     snapshots: cleanSnapshots(p.snapshots),
     characters: withAliases(p.characters) as Project["characters"],
     places: withAliases(p.places) as Project["places"],

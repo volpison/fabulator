@@ -166,6 +166,63 @@ export interface Snapshot {
   page?: ComicPage;
 }
 
+// ─── Screenplay documents (story_format "screenplay": act → scene → elements) ───
+
+/** What the camera sees first: inside, outside, or both. "" = not set yet. */
+export type SlugPlace = "INT" | "EXT" | "INT/EXT" | "";
+/** A script element. Dialogue carries its speaker (and an optional parenthetical); `note` is never exported. */
+export type ElementKind = "action" | "dialogue" | "transition" | "note";
+
+/** An act (like a chapter): ordered, groups scenes. */
+export interface Act {
+  id: string;
+  title: string;
+  summary: string;
+}
+
+export interface ScriptElement {
+  id: string;
+  kind: ElementKind;
+  /** Dialogue: the character who speaks (a Character id). */
+  speaker_id: string;
+  /** Dialogue: how the voice is heard ("V.O.", "O.S.", "O.C."…), free text, shown after the name. */
+  extension: string;
+  /** Dialogue: a short direction between the name and the words ("beat", "whispering"), without brackets. */
+  parenthetical: string;
+  /** Action text, the spoken words, the transition ("CUT TO:") or the private note. */
+  text: string;
+}
+
+/**
+ * A screenplay scene: a slug line (INT./EXT. + location + time of day) and its elements.
+ * The shared fields behave exactly as they do on a novel's scene.
+ */
+export interface ScriptScene {
+  id: string;
+  /** Which act this scene belongs to (see Project.acts). */
+  act_id: string;
+  /** Position inside its act (0-based). */
+  order: number;
+  /** Optional working name for the Timeline ("The bridge fight"). Never exported. */
+  title: string;
+  int_ext: SlugPlace;
+  /** The slug's location ("KITCHEN", "Maria's car"). */
+  location: string;
+  /** The slug's time ("DAY", "NIGHT", "LATER"). */
+  time: string;
+  summary: string;
+  elements: ScriptElement[];
+  status: "idea" | "draft" | "revised" | "final";
+  plotline_id: string;
+  character_ids: string[];
+  place_ids: string[];
+  tags: string[];
+  color: string;
+  notes: string;
+  todos: SceneTodo[];
+  when: string;
+}
+
 export interface Project {
   /** File-format version; see migrate.ts. */
   schema_version: number;
@@ -182,6 +239,9 @@ export interface Project {
   /** Comic documents only (empty in a novel): issues in order, and their pages. */
   issues: Issue[];
   pages: ComicPage[];
+  /** Screenplay documents only (empty in other formats): acts in order, and their scenes. */
+  acts: Act[];
+  script_scenes: ScriptScene[];
   /** Comic only: which scripting style the project favours. */
   script_style?: ScriptStyle;
   /** Saved scene versions (see Snapshot). */

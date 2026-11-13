@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 9;
+pub const SCHEMA_VERSION: u32 = 10;
 
 /// The format of a project written before formats existed. The frontend decides what formats
 /// exist (src/lib/formats.ts); Rust stores whatever the file says and never interprets it.
@@ -31,6 +31,11 @@ pub struct Project {
     pub issues: Vec<Issue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pages: Vec<ComicPage>,
+    /// Screenplay documents only (empty, and left out of the file, elsewhere): acts in order and their scenes.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub acts: Vec<Act>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub script_scenes: Vec<ScriptScene>,
     /// Comic only: "plot-first" or "full". Rust stores it as written.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script_style: Option<String>,
@@ -124,6 +129,77 @@ pub struct ComicPage {
 
 fn default_stage() -> String {
     "plot".into()
+}
+
+/// A screenplay act (like a chapter): ordered, groups scenes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Act {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub summary: String,
+}
+
+/// One element of a screenplay scene. `kind` is "action", "dialogue", "transition" or "note".
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScriptElement {
+    pub id: String,
+    pub kind: String,
+    /// Dialogue: a Character id.
+    #[serde(default)]
+    pub speaker_id: String,
+    /// Dialogue: "V.O.", "O.S."… (free text).
+    #[serde(default)]
+    pub extension: String,
+    /// Dialogue: a short direction, without brackets.
+    #[serde(default)]
+    pub parenthetical: String,
+    #[serde(default)]
+    pub text: String,
+}
+
+/// A screenplay scene: a slug line and its elements. The shared fields behave exactly as on a novel's scene.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScriptScene {
+    pub id: String,
+    pub act_id: String,
+    /// Position inside its act (0-based).
+    pub order: u32,
+    #[serde(default)]
+    pub title: String,
+    /// "INT", "EXT", "INT/EXT" or empty.
+    #[serde(default)]
+    pub int_ext: String,
+    #[serde(default)]
+    pub location: String,
+    #[serde(default)]
+    pub time: String,
+    #[serde(default)]
+    pub summary: String,
+    #[serde(default)]
+    pub elements: Vec<ScriptElement>,
+    #[serde(default = "default_scene_status")]
+    pub status: String,
+    #[serde(default)]
+    pub plotline_id: String,
+    #[serde(default)]
+    pub character_ids: Vec<String>,
+    #[serde(default)]
+    pub place_ids: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub color: String,
+    #[serde(default)]
+    pub notes: String,
+    #[serde(default)]
+    pub todos: Vec<SceneTodo>,
+    #[serde(default)]
+    pub when: String,
+}
+
+fn default_scene_status() -> String {
+    "idea".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -457,6 +533,8 @@ impl Project {
             ],
             issues: vec![],
             pages: vec![],
+            acts: vec![],
+            script_scenes: vec![],
             script_style: None,
         }
     }

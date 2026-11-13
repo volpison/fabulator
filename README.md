@@ -213,7 +213,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (now schema v9): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
+- Older projects are upgraded automatically (now schema v10): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -361,7 +361,13 @@ Every project has a `story_format` (`novel` today; `comic` has its data but no v
 
 A comic is `issues[]` (ordered) and `pages[]`; a page has a `plot`, an optional `layout` note, a pipeline `stage` (Plot → Art received → Dialogue → Lettered), the same shared fields as a scene (plotline, cast, places, tags, colour, notes, to-dos, story time), and optional `panels[]`, each with a `description` and `lines[]` (dialogue, caption, thought or SFX, with a speaker, text and lettering note). `script_style` is `plot-first` (Marvel method) or `full`; both are the same data at different depths (a plot-first page has only its plot until the art comes back), so changing the style loses nothing. Helpers in `src/lib/comic.ts`: page numbers, left/right pages, spreads, page-turn pages, panel and word counts. Novels carry none of these fields in their files.
 
-Comic is marked **not ready** in `formats.ts` (it has its Timeline and writing view, but no export yet): *File → New comic (early preview)* starts one. Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
+Comic is **ready** in `formats.ts`: *File → New comic* starts one. Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
+
+### Screenplay data (schema v10; views come in later steps)
+
+A screenplay is `acts[]` (ordered) and `script_scenes[]`. A scene has a **slug line** kept as parts (`int_ext` INT / EXT / INT/EXT, `location`, `time`; "INT. KITCHEN - DAY" is built from them, and `parseSlug` reads typed text back into them), an optional working `title`, a `summary`, the same shared fields as a novel's scene (status, plotline, cast, places, tags, colour, notes, to-dos, story time), and ordered `elements[]`: **action**, **dialogue** (a speaker, an optional extension such as V.O./O.S., an optional parenthetical, the words), **transition** (CUT TO:) and private **note** (never exported). Dialogue is structured, so a character's lines can be found, counted and renamed without parsing text; "(CONT'D)" is derived (`needsContd`: the same character speaks again with only action between), never stored. `src/lib/screenplay.ts` also has the **page estimate** (about 55 lines of 12 pt Courier per page, action about 60 characters wide, dialogue about 35, counted in eighths of a page; one page ≈ one minute as a rule of thumb) and word counts that leave out notes and the slug. Other formats carry none of these fields in their files.
+
+Screenplay is marked **not ready** in `formats.ts` (data only so far): it is not offered for new stories, and its Timeline and writing view say so. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
 
 ### Comic Timeline (pages)
 
@@ -390,7 +396,7 @@ Still not for comics: the "Export as folder (Markdown)" command.
 
 In the other kinds, empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported.
 
-## Data model (schema v9)
+## Data model (schema v10)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.

@@ -2,6 +2,7 @@
 import { CURRENT_SCHEMA_VERSION } from "./migrate";
 import { DEFAULT_STORY_FORMAT, type StoryFormatId } from "./formats";
 import { DEFAULT_SCRIPT_STYLE, newPage } from "./comic";
+import { newScriptScene } from "./screenplay";
 import type { Project } from "./types";
 
 export function blankProject(newId: (prefix: string) => string): Project {
@@ -38,6 +39,8 @@ export function blankProject(newId: (prefix: string) => string): Project {
     ],
     issues: [],
     pages: [],
+    acts: [],
+    script_scenes: [],
     snapshots: [],
     characters: [],
     places: [],
@@ -62,6 +65,34 @@ export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SC
     scenes: [],
     issues: [{ id: issueId, title: "Issue 1", summary: "" }],
     pages: [newPage(newId, issueId, 0, plotlineId)],
+    acts: [],
+    script_scenes: [],
+    plotlines: [{ id: plotlineId, name: "Main Plot", color: "#3b82f6" }],
+    snapshots: [],
+    characters: [],
+    places: [],
+    notes: [],
+  };
+}
+
+/** The empty screenplay a new screenplay starts with: one act with one scene. */
+export function blankScreenplay(newId: (prefix: string) => string): Project {
+  const actId = newId("act");
+  const plotlineId = newId("pl");
+  return {
+    schema_version: CURRENT_SCHEMA_VERSION,
+    story_format: "screenplay",
+    id: newId("proj"),
+    title: "Untitled screenplay",
+    premise: "",
+    genre: "",
+    theme: "",
+    chapters: [],
+    scenes: [],
+    issues: [],
+    pages: [],
+    acts: [{ id: actId, title: "Act 1", summary: "" }],
+    script_scenes: [newScriptScene(newId, actId, 0, plotlineId)],
     plotlines: [{ id: plotlineId, name: "Main Plot", color: "#3b82f6" }],
     snapshots: [],
     characters: [],
@@ -72,5 +103,7 @@ export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SC
 
 /** A new, empty project in the given format. */
 export function blankProjectFor(format: StoryFormatId, newId: (prefix: string) => string): Project {
-  return format === "comic" ? blankComic(newId) : blankProject(newId);
+  if (format === "comic") return blankComic(newId);
+  if (format === "screenplay") return blankScreenplay(newId);
+  return blankProject(newId);
 }
