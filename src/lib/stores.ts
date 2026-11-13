@@ -26,6 +26,17 @@ import {
   deleteLine as deleteLineFrom,
   removeCastFromPages,
 } from "./comicedit";
+import {
+  addAct as addActTo,
+  updateAct as updateActIn,
+  deleteAct as deleteActFrom,
+  moveAct as moveActIn,
+  addScene as addScriptSceneTo,
+  updateScene as updateScriptSceneIn,
+  moveScene as moveScriptSceneIn,
+  deleteScene as deleteScriptSceneFrom,
+  removeCastFromScenes,
+} from "./screenplayedit";
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
@@ -83,6 +94,8 @@ export const sidePanel = writable<SidePanel>("characters");
 export const selectedSceneId = writable<string | null>(null);
 /** The comic page picked in the page Timeline. */
 export const selectedPageId = writable<string | null>(null);
+/** The selected scene of a screenplay. */
+export const selectedScriptSceneId = writable<string | null>(null);
 
 // ─── Search ───────────────────────────────────────────────
 
@@ -389,6 +402,62 @@ export function deleteComicPage(id: string) {
   selectedPageId.update((cur) => (cur === id ? null : cur));
 }
 
+// Screenplay: acts and scenes (the Timeline).
+
+export function addScreenplayAct(title?: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addActTo(p, uid, title);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function renameScreenplayAct(id: string, fields: { title?: string; summary?: string }) {
+  editProject((p) => updateActIn(p, id, fields));
+}
+
+/** Only an empty act can be deleted. Returns whether it was. */
+export function deleteScreenplayAct(id: string): boolean {
+  let deleted = false;
+  editProject((p) => {
+    const next = deleteActFrom(p, id);
+    deleted = next !== p;
+    return next;
+  });
+  return deleted;
+}
+
+export function moveScreenplayAct(id: string, toIndex: number) {
+  editProject((p) => moveActIn(p, id, toIndex));
+}
+
+/** Add a scene (to the given act, or the last one) and select it. Returns its id. */
+export function addScreenplayScene(actId?: string, atIndex?: number): string {
+  let id = "";
+  editProject((p) => {
+    const r = addScriptSceneTo(p, uid, actId, atIndex);
+    id = r.id;
+    return r.project;
+  });
+  if (id) selectedScriptSceneId.set(id);
+  return id;
+}
+
+export function updateScreenplayScene(id: string, fields: Parameters<typeof updateScriptSceneIn>[2]) {
+  editProject((p) => updateScriptSceneIn(p, id, fields));
+}
+
+export function moveScreenplayScene(id: string, actId: string, index: number) {
+  editProject((p) => moveScriptSceneIn(p, id, actId, index));
+}
+
+export function deleteScreenplayScene(id: string) {
+  editProject((p) => deleteScriptSceneFrom(p, id));
+  selectedScriptSceneId.update((cur) => (cur === id ? null : cur));
+}
+
 // Panels and lines of the selected comic page (the writing view).
 
 export function addComicPanel(pageId: string, atIndex?: number): string {
@@ -644,7 +713,7 @@ export function deleteCharacter(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return removeCastFromPages(
+    return removeCastFromScenes(removeCastFromPages(
       {
         ...proj,
         characters: proj.characters.filter((c) => c.id !== id),
@@ -656,7 +725,7 @@ export function deleteCharacter(id: string) {
       },
       "character",
       id
-    );
+    ), "character", id);
   });
 }
 
@@ -695,7 +764,7 @@ export function deletePlace(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return removeCastFromPages(
+    return removeCastFromScenes(removeCastFromPages(
       {
         ...proj,
         places: proj.places.filter((p) => p.id !== id),
@@ -706,7 +775,7 @@ export function deletePlace(id: string) {
       },
       "place",
       id
-    );
+    ), "place", id);
   });
 }
 

@@ -8,7 +8,7 @@
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
  *   comic        issues → pages → panels (plot-first or full script)  ← data, Timeline, writing view, search, replace, snapshots, goals, exports
- *   screenplay   acts → scenes → slug line + elements (action, dialogue, transition)  ← data only so far (`ready: false`)
+ *   screenplay   acts → scenes → slug line + elements (action, dialogue, transition)  ← data and Timeline so far (`ready: false`)
  *
  * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
  * pages; screenplay: acts + script_scenes), and the other format's fields are simply empty.
@@ -79,7 +79,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     label: "Screenplay",
     description: "Acts and scenes with slug lines, action, dialogue and transitions.",
     ready: false,
-    views: { timeline: false, manuscript: false },
+    views: { timeline: true, manuscript: false },
     vocabulary: {
       group: { one: "act", many: "acts" },
       unit: { one: "scene", many: "scenes" },
