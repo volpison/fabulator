@@ -5,6 +5,7 @@
     project,
     selectedScene,
     selectedSceneId,
+    selectedPageId,
     mainView,
     replaceOpen,
     replaceInScenes,
@@ -45,14 +46,18 @@
 
   onMount(() => findInput?.focus());
 
+  $: isComic = $project?.story_format === "comic";
+  $: unit = isComic ? "page" : "scene";
+  /** The selected scene (novel) or page (comic). */
+  $: selectedItemId = isComic ? $selectedPageId : ($selectedScene?.id ?? null);
   $: options = { matchCase, wholeWord } as ReplaceOptions;
   $: fields = { content: inText, title: inTitles, summary: inSynopsis } as ReplaceFields;
   $: plan = $project
-    ? planReplace($project, find, replacement, options, fields, onlyThisScene ? $selectedScene?.id : null)
+    ? planReplace($project, find, replacement, options, fields, onlyThisScene ? selectedItemId : null)
     : { changes: [], total: 0, scenes: 0 };
   $: chosen = plan.changes.filter((c) => !excluded.has(c.sceneId));
   $: chosenTotal = chosen.reduce((n, c) => n + c.total, 0);
-  $: noField = !inText && !inTitles && !inSynopsis;
+  $: noField = !inText && !inTitles && (isComic || !inSynopsis);
   // A new search starts with everything ticked again.
   $: find, matchCase, wholeWord, (excluded = new Set(), (message = ""));
 
@@ -75,14 +80,15 @@
   }
 
   function open(id: string) {
-    selectedSceneId.set(id);
+    if (isComic) selectedPageId.set(id);
+    else selectedSceneId.set(id);
     mainView.set("manuscript");
   }
 
   async function apply() {
     if (chosen.length === 0) return;
     const ok = await platform().confirm(
-      `Replace “${find}” with “${replacement}” — ${chosenTotal} time${chosenTotal === 1 ? "" : "s"} in ${chosen.length} scene${chosen.length === 1 ? "" : "s"}?\n\nEach changed scene is saved as a snapshot first, so you can undo it from Snapshots.`,
+      `Replace “${find}” with “${replacement}” — ${chosenTotal} time${chosenTotal === 1 ? "" : "s"} in ${chosen.length} ${unit}${chosen.length === 1 ? "" : "s"}?\n\nEach changed ${unit} is saved as a snapshot first, so you can undo it from Snapshots.`,
       { title: "Replace", kind: "warning", okLabel: "Replace", cancelLabel: "Cancel" }
     );
     if (!ok) return;
@@ -92,7 +98,7 @@
       /* optional */
     }
     const r = replaceInScenes(find, replacement, options, fields, chosen.map((c) => c.sceneId));
-    message = `Replaced ${r.replacements} time${r.replacements === 1 ? "" : "s"} in ${r.scenes} scene${r.scenes === 1 ? "" : "s"}. Undo any scene from Snapshots.`;
+    message = `Replaced ${r.replacements} time${r.replacements === 1 ? "" : "s"} in ${r.scenes} ${unit}${r.scenes === 1 ? "" : "s"}. Undo any ${unit} from Snapshots.`;
     excluded = new Set();
   }
 
@@ -127,12 +133,14 @@
         <label class="chk"><input type="checkbox" bind:checked={matchCase} /> Match case</label>
         <label class="chk"><input type="checkbox" bind:checked={wholeWord} /> Whole word</label>
         <span class="sep"></span>
-        <label class="chk"><input type="checkbox" bind:checked={inText} /> Text</label>
+        <label class="chk"><input type="checkbox" bind:checked={inText} /> {isComic ? "Plot, panels and lettering" : "Text"}</label>
         <label class="chk"><input type="checkbox" bind:checked={inTitles} /> Titles</label>
-        <label class="chk"><input type="checkbox" bind:checked={inSynopsis} /> Synopses</label>
+        {#if !isComic}
+          <label class="chk"><input type="checkbox" bind:checked={inSynopsis} /> Synopses</label>
+        {/if}
         <span class="sep"></span>
-        <label class="chk" class:disabled={!$selectedScene}>
-          <input type="checkbox" bind:checked={onlyThisScene} disabled={!$selectedScene} /> Only the selected scene
+        <label class="chk" class:disabled={!selectedItemId}>
+          <input type="checkbox" bind:checked={onlyThisScene} disabled={!selectedItemId} /> Only the selected {unit}
         </label>
       </div>
     </div>
@@ -141,7 +149,7 @@
       {#if !find}
         <p class="empty">Type what to find. Only the visible text is changed, never formatting.</p>
       {:else if noField}
-        <p class="empty">Choose where to replace: text, titles or synopses.</p>
+        <p class="empty">Choose where to replace: {isComic ? "writing or titles" : "text, titles or synopses"}.</p>
       {:else if plan.changes.length === 0}
         <p class="empty">No matches.</p>
       {:else}
@@ -155,7 +163,7 @@
             />
             <div class="body">
               <div class="line1">
-                <button class="link" on:click={() => open(c.sceneId)} title="Open this scene">{c.title}</button>
+                <button class="link" on:click={() => open(c.sceneId)} title="Open this {unit}">{c.title}</button>
                 <span class="sub">{c.chapterLabel}</span>
                 <span class="n">{c.total}×</span>
               </div>
@@ -175,7 +183,7 @@
         {#if message}
           {message}
         {:else if plan.changes.length > 0}
-          {chosenTotal} replacement{chosenTotal === 1 ? "" : "s"} in {chosen.length} of {plan.scenes} scene{plan.scenes === 1 ? "" : "s"}
+          {chosenTotal} replacement{chosenTotal === 1 ? "" : "s"} in {chosen.length} of {plan.scenes} {unit}{plan.scenes === 1 ? "" : "s"}
         {/if}
       </span>
       <button class="primary" on:click={apply} disabled={chosen.length === 0}>Replace all</button>

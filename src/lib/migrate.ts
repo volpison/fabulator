@@ -14,7 +14,7 @@ import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
 import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 export type MigrationResult = {
   project: Project;
@@ -92,6 +92,11 @@ function v7ToV8(p: Raw): Raw {
   return { ...p, schema_version: 8 };
 }
 
+/** v8 -> v9: a snapshot may hold a whole comic page (`page`); every older snapshot is of a scene. */
+function v8ToV9(p: Raw): Raw {
+  return { ...p, schema_version: 9 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -101,6 +106,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   5: v5ToV6,
   6: v6ToV7,
   7: v7ToV8,
+  8: v8ToV9,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -128,7 +134,12 @@ function cleanSnapshots(list: unknown): Snapshot[] {
     const scene_id = str(raw.scene_id);
     if (!id || !scene_id || seen.has(id)) continue; // unusable without these
     seen.add(id);
-    out.push({
+    // A comic page kept whole: repaired like any page, or dropped if it is not one.
+    const pageIssue = isObject(raw.page) ? str(raw.page.issue_id) : "";
+    const page = isObject(raw.page)
+      ? cleanPages([raw.page], [{ id: pageIssue, title: "", summary: "" }])[0]
+      : undefined;
+    const snap: Snapshot = {
       ...raw,
       id,
       scene_id,
@@ -143,7 +154,10 @@ function cleanSnapshots(list: unknown): Snapshot[] {
       character_ids: arr(raw.character_ids).filter((x): x is string => typeof x === "string"),
       place_ids: arr(raw.place_ids).filter((x): x is string => typeof x === "string"),
       tags: arr(raw.tags).filter((x): x is string => typeof x === "string"),
-    });
+    };
+    if (page) snap.page = page;
+    else delete snap.page;
+    out.push(snap);
   }
   return out;
 }

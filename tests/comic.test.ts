@@ -35,9 +35,9 @@ function sampleComic(): Project {
   return p;
 }
 
-test("the comic format exists but is not ready: it is not offered for new stories", () => {
-  assert.equal(STORY_FORMATS.comic.ready, false);
-  assert.deepEqual(readyFormats().map((f) => f.id), ["novel"]);
+test("the comic format is ready: offered for new stories next to the novel", () => {
+  assert.equal(STORY_FORMATS.comic.ready, true);
+  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic"]);
   const p = sampleComic();
   assert.equal(formatOf(p).label, "Comic");
   assert.equal(noun(p, "group", 2), "issues");
@@ -201,9 +201,9 @@ import {
   deleteComicPage, deleteComicIssue, renameComicIssue, deleteCharacter, addCharacter,
 } from "../src/lib/stores.ts";
 
-test("the comic format has its Timeline and writing view, but is not ready until it can be exported", () => {
+test("the comic format has its Timeline and writing view", () => {
   assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: true });
-  assert.equal(STORY_FORMATS.comic.ready, false);
+  assert.equal(STORY_FORMATS.comic.ready, true);
   assert.deepEqual(STORY_FORMATS.novel.views, { timeline: true, manuscript: true });
 });
 

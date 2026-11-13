@@ -162,6 +162,8 @@ export interface Snapshot {
   character_ids: string[];
   place_ids: string[];
   tags: string[];
+  /** Comics: the whole page as it was (then `scene_id` holds the page id and `content` is empty). */
+  page?: ComicPage;
 }
 
 export interface Project {

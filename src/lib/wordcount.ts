@@ -7,7 +7,7 @@
  * "word—word" is two. Unicode-aware, so accents and non-Latin scripts count.
  * HTML tags are not words, and neither are the gaps between paragraphs.
  */
-import type { Project, Scene } from "./types";
+import type { ComicPage, Project, Scene } from "./types";
 import { htmlToPlainText } from "./mentions";
 
 const WORD = /\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}]+(?:['’\u2010-][\p{L}\p{N}]+)*/gu;
@@ -39,16 +39,34 @@ export function sceneWords(scene: Pick<Scene, "id" | "content">): number {
   return words;
 }
 
+/** Words a comic page's writer has written: the plot, every panel description and every line (SFX too). */
+export function pageWords(pg: Pick<ComicPage, "plot" | "panels">): number {
+  let n = countWordsInText(pg.plot);
+  for (const pn of pg.panels) {
+    n += countWordsInText(pn.description);
+    for (const ln of pn.lines) n += countWordsInText(ln.text);
+  }
+  return n;
+}
+
 export type WordStats = {
   total: number;
   byScene: Map<string, number>;
   byChapter: Map<string, number>;
 };
 
-export function wordStats(project: Pick<Project, "scenes" | "chapters">): WordStats {
+/** Per scene (a comic page counts as one) and per chapter (a comic issue counts as one). */
+export function wordStats(project: Pick<Project, "scenes" | "chapters"> & Partial<Pick<Project, "pages" | "issues">>): WordStats {
   const byScene = new Map<string, number>();
   const byChapter = new Map<string, number>(project.chapters.map((c) => [c.id, 0]));
   let total = 0;
+  for (const i of project.issues ?? []) byChapter.set(i.id, 0);
+  for (const pg of project.pages ?? []) {
+    const n = pageWords(pg);
+    byScene.set(pg.id, n);
+    byChapter.set(pg.issue_id, (byChapter.get(pg.issue_id) ?? 0) + n);
+    total += n;
+  }
   for (const s of project.scenes) {
     const n = sceneWords(s);
     byScene.set(s.id, n);

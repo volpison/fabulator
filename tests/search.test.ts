@@ -42,7 +42,7 @@ test("finds across kinds; scenes come in reading order; counts are per kind", ()
   const r = search(proj(), "wolf");
   assert.deepEqual(r.hits.filter((h) => h.kind === "scene").map((h) => h.id), ["mid", "late"]); // title hit ranks first
   assert.deepEqual(r.hits.map((h) => h.kind), ["scene", "scene", "character", "note", "chapter"]);
-  assert.deepEqual(r.counts, { scene: 2, character: 1, place: 0, note: 1, chapter: 1 });
+  assert.deepEqual(r.counts, { scene: 2, page: 0, character: 1, place: 0, note: 1, chapter: 1, issue: 0 });
 });
 
 test("case-, accent- and substring-insensitive", () => {

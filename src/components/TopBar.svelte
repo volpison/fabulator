@@ -27,7 +27,7 @@
 
   $: fileItems = [
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
-    { label: "New comic (early preview)", action: () => void newProject("comic") },
+    { label: "New comic", action: () => void newProject("comic") },
     { separator: true },
     { label: "Open…", shortcut: "Ctrl+O", action: () => void openProject() },
     { label: "Open recent", children: recentItems },

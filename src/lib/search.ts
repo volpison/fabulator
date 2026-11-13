@@ -6,10 +6,12 @@
  * - Several words = all of them must appear in the same item, in any of its
  *   fields. Use "double quotes" for an exact phrase.
  * - Searches scene titles, synopses, text and tags; characters, places,
- *   notes and chapters (names, aliases, descriptions, notes…).
+ *   notes and chapters (names, aliases, descriptions, notes…). In a comic:
+ *   pages (title, plot, every panel's description and lettering, tags) and issues.
  */
 import type { Project } from "./types";
 import { readingOrder } from "./model";
+import { comicReadingOrder, pageNumber } from "./comic";
 import {
   blockTextWithPositions,
   foldText,
@@ -17,23 +19,27 @@ import {
   type BlockLike,
 } from "./mentions";
 
-export type SearchKind = "scene" | "character" | "place" | "note" | "chapter";
+export type SearchKind = "scene" | "page" | "character" | "place" | "note" | "chapter" | "issue";
 
 /** Display order of result groups. */
 export const KIND_ORDER: SearchKind[] = [
   "scene",
+  "page",
   "character",
   "place",
   "note",
   "chapter",
+  "issue",
 ];
 
 export const KIND_LABEL: Record<SearchKind, string> = {
   scene: "Scenes",
+  page: "Pages",
   character: "Characters",
   place: "Places",
   note: "Notes",
   chapter: "Chapters",
+  issue: "Issues",
 };
 
 export type Snippet = { before: string; match: string; after: string };
@@ -190,13 +196,13 @@ export function search(
 ): SearchResult {
   const terms = parseQuery(query);
   const counts: Record<SearchKind, number> = {
-    scene: 0, character: 0, place: 0, note: 0, chapter: 0,
+    scene: 0, page: 0, character: 0, place: 0, note: 0, chapter: 0, issue: 0,
   };
   if (terms.length === 0) return { hits: [], counts, terms };
 
   const foldedTerms = terms.map((t) => foldText(t).folded);
   const byKind: Record<SearchKind, { hit: SearchHit; score: number }[]> = {
-    scene: [], character: [], place: [], note: [], chapter: [],
+    scene: [], page: [], character: [], place: [], note: [], chapter: [], issue: [],
   };
 
   const consider = (
@@ -229,6 +235,28 @@ export function search(
       { label: "Tags", text: s.tags.join(", ") },
     ]);
   }
+  // Comic pages: plot, then each panel (its description and its lettering), then tags.
+  const issues = project.issues ?? [];
+  const issueIndex = new Map(issues.map((i, n) => [i.id, n + 1]));
+  const names = new Map(project.characters.map((c) => [c.id, c.name]));
+  for (const pg of comicReadingOrder({ issues, pages: project.pages ?? [] })) {
+    const panelFields: Field[] = pg.panels.map((pn, k) => ({
+      label: `Panel ${k + 1}`,
+      text: [
+        pn.description,
+        ...pn.lines.map((ln) => {
+          const who = ln.kind === "sfx" ? "SFX" : ln.kind === "caption" ? "Caption" : names.get(ln.speaker_id) ?? "";
+          return [who, ln.text, ln.note].filter(Boolean).join(": ");
+        }),
+      ].filter(Boolean).join("\n"),
+    }));
+    consider("page", pg.id, pg.title || `Page ${pageNumber(pg)}`, `Issue ${issueIndex.get(pg.issue_id) ?? "?"} · Page ${pageNumber(pg)}`, [
+      { label: "Title", text: pg.title, isTitle: true },
+      { label: "Plot", text: pg.plot },
+      ...panelFields,
+      { label: "Tags", text: pg.tags.join(", ") },
+    ]);
+  }
   for (const c of project.characters) {
     consider("character", c.id, c.name, [c.role, c.category].filter(Boolean).join(" · "), [
       { label: "Name", text: c.name, isTitle: true },
@@ -257,6 +285,13 @@ export function search(
   }
   project.chapters.forEach((c, i) => {
     consider("chapter", c.id, c.title, `Chapter ${i + 1}`, [
+      { label: "Title", text: c.title, isTitle: true },
+      { label: "Summary", text: c.summary },
+    ]);
+  });
+
+  issues.forEach((c, i) => {
+    consider("issue", c.id, c.title, `Issue ${i + 1}`, [
       { label: "Title", text: c.title, isTitle: true },
       { label: "Summary", text: c.summary },
     ]);

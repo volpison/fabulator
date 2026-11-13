@@ -5,6 +5,7 @@
     project,
     selectedScene,
     selectedSceneId,
+    selectedPageId,
     mainView,
     snapshotsOpen,
     takeSnapshot,
@@ -15,16 +16,36 @@
   import {
     snapshotsFor,
     deletedScenes,
-    wordsOf,
+    snapshotText,
+    snapshotWords,
+    pageToText,
     timeAgo,
   } from "../lib/snapshots";
   import { diffText } from "../lib/diff";
   import { htmlToPlainText } from "../lib/mentions";
+  import { pageWords, wordsOfHtml } from "../lib/wordcount";
+  import { pageNumber } from "../lib/comic";
   import type { SnapshotKind } from "../lib/types";
 
   type Tab = "scene" | "deleted";
 
-  let tab: Tab = $selectedScene ? "scene" : "deleted";
+  $: isComic = $project?.story_format === "comic";
+  $: unit = isComic ? "page" : "scene";
+  $: names = new Map(($project?.characters ?? []).map((c) => [c.id, c.name]));
+  $: nameOf = (id: string) => names.get(id) ?? "";
+  /** What the snapshots are of right now: the selected scene, or the selected comic page. */
+  $: subject = isComic
+    ? (() => {
+        const pg = $project?.pages.find((x) => x.id === $selectedPageId);
+        return pg
+          ? { id: pg.id, title: pg.title || `Page ${pageNumber(pg)}`, text: pageToText(pg, nameOf), words: pageWords(pg), shownTitle: pg.title }
+          : null;
+      })()
+    : $selectedScene
+      ? { id: $selectedScene.id, title: $selectedScene.title || "Untitled", text: htmlToPlainText($selectedScene.content), words: wordsOfHtml($selectedScene.content), shownTitle: $selectedScene.title }
+      : null;
+
+  let tab: Tab = subject ? "scene" : "deleted";
   let label = "";
   let expandedId: string | null = null;
   let now = Date.now();
@@ -47,15 +68,11 @@
   };
 
   $: if ($project) now = Date.now();
-  $: items =
-    $project && $selectedScene ? snapshotsFor($project.snapshots, $selectedScene.id) : [];
+  $: items = $project && subject ? snapshotsFor($project.snapshots, subject.id) : [];
   $: deleted = $project ? deletedScenes($project) : [];
 
   $: expanded = items.find((s) => s.id === expandedId) ?? null;
-  $: diff =
-    expanded && $selectedScene
-      ? diffText(htmlToPlainText(expanded.content), htmlToPlainText($selectedScene.content))
-      : null;
+  $: diff = expanded && subject ? diffText(snapshotText(expanded, nameOf), subject.text) : null;
 
   function close() {
     snapshotsOpen.set(false);
@@ -69,8 +86,8 @@
   }
 
   function onTake() {
-    if (!$selectedScene) return;
-    takeSnapshot($selectedScene.id, label);
+    if (!subject) return;
+    takeSnapshot(subject.id, label);
     label = "";
   }
 
@@ -83,10 +100,10 @@
 
   async function onRestore(id: string, name: string, sceneExists: boolean) {
     const message = sceneExists
-      ? `Restore “${name}”? Your current version of this scene is saved as a snapshot first, so you can undo this.`
-      : `Bring back the deleted scene “${name}”?`;
+      ? `Restore “${name}”? Your current version of this ${unit} is saved as a snapshot first, so you can undo this.`
+      : `Bring back the deleted ${unit} “${name}”?`;
     const ok = await platform().confirm(message, {
-      title: sceneExists ? "Restore snapshot" : "Restore scene",
+      title: sceneExists ? "Restore snapshot" : `Restore ${unit}`,
       kind: "info",
       okLabel: "Restore",
       cancelLabel: "Cancel",
@@ -94,7 +111,8 @@
     if (!ok) return;
     const sceneId = restoreSnapshot(id);
     if (sceneId) {
-      selectedSceneId.set(sceneId);
+      if (isComic) selectedPageId.set(sceneId);
+      else selectedSceneId.set(sceneId);
       mainView.set("manuscript");
       close();
     }
@@ -116,18 +134,22 @@
   async function onForget(sceneId: string, name: string) {
     const ok = await platform().confirm(
       `Permanently forget “${name}” and all its saved versions? This cannot be undone.`,
-      { title: "Forget deleted scene", kind: "warning", okLabel: "Forget", cancelLabel: "Cancel" }
+      { title: `Forget deleted ${unit}`, kind: "warning", okLabel: "Forget", cancelLabel: "Cancel" }
     );
     if (ok) deleteSceneSnapshots(sceneId);
   }
 
   function chapterName(chapterId: string): string {
+    if (isComic) {
+      const n = $project?.issues.findIndex((c) => c.id === chapterId) ?? -1;
+      return n === -1 || !$project ? "—" : `Issue ${n + 1}${$project.issues[n].title ? ` · ${$project.issues[n].title}` : ""}`;
+    }
     const i = $project?.chapters.findIndex((c) => c.id === chapterId) ?? -1;
     return i === -1 || !$project ? "—" : `Ch ${i + 1} · ${$project.chapters[i].title}`;
   }
 
-  function wordDelta(snapshotHtml: string, currentHtml: string): string {
-    const d = wordsOf(currentHtml) - wordsOf(snapshotHtml);
+  function wordDelta(snapshotWordCount: number, currentWordCount: number): string {
+    const d = currentWordCount - snapshotWordCount;
     return d === 0 ? "same length as now" : `${d > 0 ? "+" : "−"}${Math.abs(d)} words vs now`;
   }
 </script>
@@ -139,10 +161,10 @@
     <header>
       <div class="tabs">
         <button class:active={tab === "scene"} on:click={() => (tab = "scene")}>
-          This scene
+          This {unit}
         </button>
         <button class:active={tab === "deleted"} on:click={() => (tab = "deleted")}>
-          Deleted scenes
+          Deleted {unit}s
           {#if deleted.length > 0}<span class="badge">{deleted.length}</span>{/if}
         </button>
       </div>
@@ -150,11 +172,11 @@
     </header>
 
     {#if tab === "scene"}
-      {#if !$selectedScene}
-        <p class="hint">Select a scene first (Timeline or Manuscript) to see its snapshots.</p>
+      {#if !subject}
+        <p class="hint">Select a {unit} first (Timeline or Manuscript) to see its snapshots.</p>
       {:else}
         <div class="take">
-          <div class="scene-name">“{$selectedScene.title || "Untitled"}”</div>
+          <div class="scene-name">“{subject.title}”</div>
           <div class="take-row">
             <input
               type="text"
@@ -172,7 +194,7 @@
 
         <div class="list">
           {#if items.length === 0}
-            <p class="hint">No snapshots of this scene yet.</p>
+            <p class="hint">No snapshots of this {unit} yet.</p>
           {/if}
 
           {#each items as s (s.id)}
@@ -184,7 +206,7 @@
                   {timeAgo(now, s.created_at)}
                 </span>
                 <span class="meta">
-                  {wordsOf(s.content)} words · {wordDelta(s.content, $selectedScene.content)}
+                  {snapshotWords(s)} words · {wordDelta(snapshotWords(s), subject.words)}
                 </span>
                 <span class="actions">
                   <button
@@ -209,7 +231,7 @@
                     {:else}
                       No differences in the text.
                     {/if}
-                    {#if s.title !== $selectedScene.title}
+                    {#if s.title !== subject.shownTitle}
                       · title was “{s.title}”
                     {/if}
                     <span class="legend">
@@ -227,7 +249,7 @@
       <div class="list">
         {#if deleted.length === 0}
           <p class="hint">
-            No deleted scenes to recover. When you delete a scene that has text,
+            No deleted {unit}s to recover. When you delete a {unit} that has {isComic ? "writing" : "text"},
             Fabulator keeps a copy here.
           </p>
         {/if}
@@ -239,7 +261,7 @@
                 saved {timeAgo(now, d.snapshot.created_at)}
               </span>
               <span class="meta">
-                {chapterName(d.snapshot.chapter_id)} · {wordsOf(d.snapshot.content)} words ·
+                {chapterName(d.snapshot.chapter_id)} · {snapshotWords(d.snapshot)} words ·
                 {d.versions} version{d.versions === 1 ? "" : "s"}
               </span>
               <span class="actions">
@@ -247,7 +269,7 @@
                   class="restore"
                   on:click={() => onRestore(d.snapshot.id, d.snapshot.title || "Untitled", false)}
                 >
-                  Restore scene
+                  Restore {unit}
                 </button>
                 <button
                   class="del"

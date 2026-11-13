@@ -213,7 +213,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (now schema v8): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
+- Older projects are upgraded automatically (now schema v9): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -357,7 +357,7 @@ Every project has a `story_format` (`novel` today; `comic` has its data but no v
 - Rust stores the format as written and never interprets it; adding a format means new document fields (with a migration and the same fields in `models/mod.rs`) plus its views, not changes to saving, backups or recovery.
 - Nothing looks different for novels: Novel mode works exactly as before.
 
-### Comic data (schema v8; views come in later steps)
+### Comic data (schema v8; snapshots of pages are schema v9)
 
 A comic is `issues[]` (ordered) and `pages[]`; a page has a `plot`, an optional `layout` note, a pipeline `stage` (Plot → Art received → Dialogue → Lettered), the same shared fields as a scene (plotline, cast, places, tags, colour, notes, to-dos, story time), and optional `panels[]`, each with a `description` and `lines[]` (dialogue, caption, thought or SFX, with a speaker, text and lettering note). `script_style` is `plot-first` (Marvel method) or `full`; both are the same data at different depths (a plot-first page has only its plot until the art comes back), so changing the style loses nothing. Helpers in `src/lib/comic.ts`: page numbers, left/right pages, spreads, page-turn pages, panel and word counts. Novels carry none of these fields in their files.
 
@@ -369,7 +369,14 @@ For a comic the Timeline shows each **issue** (rename it in place; an empty issu
 
 ### Comic writing view (Manuscript)
 
-For a comic the Manuscript view lists the pages on the left (with stage dots) and edits one page on the right. The page's **plot** comes first; in a *full script* comic it folds into a short "Page summary" once there are panels. Below it, the **panels**: each has a description (what the artist draws) and an ordered list of **lines**: dialogue, caption, thought or SFX, with a speaker (characters already on the page are listed first), the text and a lettering note. The line order is the balloon reading order (numbered). Move panels and lines with ▲ ▼, delete with ✕ (a panel with content asks first). Giving a line to a character also adds them to the page's cast, so the continuity tools stay true. Gentle warnings (never blocks): a balloon over 25 words, a panel with over 45 words of lettering, a page with over 9 panels. Sound effects don't count as words. Not covered for comics yet: Search, Find & replace, Snapshots, word-count goals.
+For a comic the Manuscript view lists the pages on the left (with stage dots) and edits one page on the right. The page's **plot** comes first; in a *full script* comic it folds into a short "Page summary" once there are panels. Below it, the **panels**: each has a description (what the artist draws) and an ordered list of **lines**: dialogue, caption, thought or SFX, with a speaker (characters already on the page are listed first), the text and a lettering note. The line order is the balloon reading order (numbered). Move panels and lines with ▲ ▼, delete with ✕ (a panel with content asks first). Giving a line to a character also adds them to the page's cast, so the continuity tools stay true. Gentle warnings (never blocks): a balloon over 25 words, a panel with over 45 words of lettering, a page with over 9 panels. Sound effects don't count as words. The rest of the shared tools work on pages too:
+
+- **Search** finds pages (title, plot, every panel's description and lettering, speaker names, tags) and issues. Opening a hit goes to the page in the writing view (search words are not highlighted inside the page yet).
+- **Find & replace** changes the plot, panel descriptions, dialogue/caption/SFX text and lettering notes (and, if ticked, page titles). Each changed page is saved as a safety snapshot first.
+- **Snapshots** keep a whole page (plot, panels, lines): yours, automatic (when the writing changes, at most every 30 minutes) and safety copies before a restore, a replace or a delete. Compare shows the page as readable text; *Deleted pages* brings a deleted page back at the end of its issue.
+- **Goals and word counts** count the plot, panel descriptions and every line (SFX too). "By issue" replaces "By chapter".
+
+Still not for comics: the "Export as folder (Markdown)" command.
 
 ### Comic exports
 
@@ -380,7 +387,7 @@ For a comic the Manuscript view lists the pages on the left (with stage dots) an
 
 Empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported. Not yet: a lettering-only script and a page thumbnail sheet.
 
-## Data model (schema v8)
+## Data model (schema v9)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.
