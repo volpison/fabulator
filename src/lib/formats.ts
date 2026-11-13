@@ -8,10 +8,10 @@
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
  *   comic        issues → pages → panels (plot-first or full script)  ← data, Timeline, writing view, search, replace, snapshots, goals, exports
- *   screenplay   act → scene → slug / action / dialogue (planned)
+ *   screenplay   acts → scenes → slug line + elements (action, dialogue, transition)  ← data only so far (`ready: false`)
  *
  * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
- * pages), and the other format's fields are simply empty.
+ * pages; screenplay: acts + script_scenes), and the other format's fields are simply empty.
  *
  * A new format is added by: a new id here, its own document fields on `Project` (with a
  * schema migration and the same fields in src-tauri/src/models/mod.rs), and its views.
@@ -22,7 +22,7 @@
 import type { Project } from "./types";
 
 /** The ids this version of Fabulator can open. */
-export const STORY_FORMAT_IDS = ["novel", "comic"] as const;
+export const STORY_FORMAT_IDS = ["novel", "comic", "screenplay"] as const;
 export type StoryFormatId = (typeof STORY_FORMAT_IDS)[number];
 
 /** The format of every project written before formats existed, and of a new story. */
@@ -72,6 +72,17 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     vocabulary: {
       group: { one: "issue", many: "issues" },
       unit: { one: "page", many: "pages" },
+    },
+  },
+  screenplay: {
+    id: "screenplay",
+    label: "Screenplay",
+    description: "Acts and scenes with slug lines, action, dialogue and transitions.",
+    ready: false,
+    views: { timeline: false, manuscript: false },
+    vocabulary: {
+      group: { one: "act", many: "acts" },
+      unit: { one: "scene", many: "scenes" },
     },
   },
 };

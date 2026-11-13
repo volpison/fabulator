@@ -21,6 +21,8 @@ export const LIST_FIELDS = [
   "scenes",
   "issues",
   "pages",
+  "acts",
+  "script_scenes",
   "snapshots",
   "characters",
   "places",
