@@ -33,7 +33,7 @@
   let sceneBreak: SceneBreak = saved.sceneBreak ?? DEFAULT_OPTIONS.sceneBreak;
   let pageSize: "a4" | "letter" = saved.pageSize ?? "a4";
   let language = saved.language ?? "en";
-  let comicKind: ComicExportKind = saved.comicKind === "plot" ? "plot" : "script";
+  let comicKind: ComicExportKind = COMIC_EXPORT_KINDS.some((k) => k.id === saved.comicKind) ? (saved.comicKind as ComicExportKind) : "script";
   let comicPlot = saved.comicPlot ?? true;
 
   let busy = false;
@@ -62,6 +62,8 @@
   } as ExportOptions;
 
   $: isComic = $project?.story_format === "comic";
+  /** The thumbnail sheet is always a printable HTML page: no file format, no Word layout options. */
+  $: isSheet = isComic && comicKind === "thumbnails";
   $: selectedPage = isComic ? ($project?.pages.find((p) => p.id === $selectedPageId) ?? null) : null;
   $: unitOne = isComic ? "page" : "scene";
   $: groupOne = isComic ? "issue" : "chapter";
@@ -129,6 +131,7 @@
     </header>
 
     <div class="content">
+      {#if !isSheet}
       <fieldset>
         <legend>Format</legend>
         <div class="formats">
@@ -141,6 +144,7 @@
           {/each}
         </div>
       </fieldset>
+      {/if}
 
       {#if isComic}
         <fieldset>
@@ -198,7 +202,7 @@
             </select>
           </label>
         {/if}
-        {#if format === "docx"}
+        {#if format === "docx" && !isSheet}
           <label class="field">
             Page size
             <select bind:value={pageSize}>
@@ -207,7 +211,7 @@
             </select>
           </label>
         {/if}
-        {#if format === "docx" || format === "epub"}
+        {#if (format === "docx" || format === "epub") && !isSheet}
           <label class="field">
             Language code
             <input type="text" bind:value={language} placeholder="en, pt-BR, es…" />

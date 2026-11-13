@@ -380,12 +380,15 @@ Still not for comics: the "Export as folder (Markdown)" command.
 
 ### Comic exports
 
-**File → Export…** on a comic offers two kinds, in Word, EPUB, Markdown or plain text, for the whole story, the issue of the selected page, or just that page:
+**File → Export…** on a comic offers four kinds, for the whole story, the issue of the selected page, or just that page (the first three in Word, EPUB, Markdown or plain text):
 
 - **Full script**: for each page, its heading (number, title, panel count, a note when it is a page-turn reveal), optionally the page plot, then each panel with its description and its lettering in order: `NAME: text`, `NAME (thought): text`, `CAPTION: text`, `SFX: text`, with lettering notes in parentheses. A balloon with no speaker shows as `UNKNOWN`.
 - **Plot for the artist** (Marvel-style): each page's plot, who is on it and where, and no dialogue. A page without a plot uses its panel descriptions instead.
 
-Empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported. Not yet: a lettering-only script and a page thumbnail sheet.
+- **Lettering script**: for the letterer, only the balloons, captions and SFX. Each panel lists its lines numbered in reading order (`1. MARA (whisper): text`); panels and pages with no lettering are left out.
+- **Thumbnail sheet**: a printable HTML page for the artist (open it in a browser, print or save as PDF). Every page is a blank 2:3 frame laid out as a reader sees it (page 1 alone on the right, then spreads 2–3, 4–5, …, page-turn pages marked), with the title, layout note, plot (or the panel descriptions when there is no plot), characters and places. No dialogue. Empty pages get a frame too, so the whole issue can be sketched. It is always HTML, so the format choice is hidden.
+
+In the other kinds, empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported.
 
 ## Data model (schema v9)
 
