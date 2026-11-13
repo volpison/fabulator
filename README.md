@@ -1,6 +1,6 @@
 # Fabulator v0.1
 
-Story planning + manuscript writing tool.
+Pre-production writing suite.
 
 Where the project is going: see [ROADMAP.md](ROADMAP.md).
 
