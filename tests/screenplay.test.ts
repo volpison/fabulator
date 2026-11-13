@@ -29,9 +29,9 @@ function sample(): Project {
   return p;
 }
 
-test("the screenplay format exists but is not ready: not offered, views say so", () => {
+test("the screenplay format has its Timeline, but is not ready: not offered, the writing view says so", () => {
   assert.equal(STORY_FORMATS.screenplay.ready, false);
-  assert.deepEqual(STORY_FORMATS.screenplay.views, { timeline: false, manuscript: false });
+  assert.deepEqual(STORY_FORMATS.screenplay.views, { timeline: true, manuscript: false });
   assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic"]);
   const p = sample();
   assert.equal(formatOf(p).label, "Screenplay");
