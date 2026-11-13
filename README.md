@@ -369,7 +369,16 @@ For a comic the Timeline shows each **issue** (rename it in place; an empty issu
 
 ### Comic writing view (Manuscript)
 
-For a comic the Manuscript view lists the pages on the left (with stage dots) and edits one page on the right. The page's **plot** comes first; in a *full script* comic it folds into a short "Page summary" once there are panels. Below it, the **panels**: each has a description (what the artist draws) and an ordered list of **lines**: dialogue, caption, thought or SFX, with a speaker (characters already on the page are listed first), the text and a lettering note. The line order is the balloon reading order (numbered). Move panels and lines with ▲ ▼, delete with ✕ (a panel with content asks first). Giving a line to a character also adds them to the page's cast, so the continuity tools stay true. Gentle warnings (never blocks): a balloon over 25 words, a panel with over 45 words of lettering, a page with over 9 panels. Sound effects don't count as words. Not covered for comics yet: Search, Find & replace, Snapshots, word-count goals, Export.
+For a comic the Manuscript view lists the pages on the left (with stage dots) and edits one page on the right. The page's **plot** comes first; in a *full script* comic it folds into a short "Page summary" once there are panels. Below it, the **panels**: each has a description (what the artist draws) and an ordered list of **lines**: dialogue, caption, thought or SFX, with a speaker (characters already on the page are listed first), the text and a lettering note. The line order is the balloon reading order (numbered). Move panels and lines with ▲ ▼, delete with ✕ (a panel with content asks first). Giving a line to a character also adds them to the page's cast, so the continuity tools stay true. Gentle warnings (never blocks): a balloon over 25 words, a panel with over 45 words of lettering, a page with over 9 panels. Sound effects don't count as words. Not covered for comics yet: Search, Find & replace, Snapshots, word-count goals.
+
+### Comic exports
+
+**File → Export…** on a comic offers two kinds, in Word, EPUB, Markdown or plain text, for the whole story, the issue of the selected page, or just that page:
+
+- **Full script**: for each page, its heading (number, title, panel count, a note when it is a page-turn reveal), optionally the page plot, then each panel with its description and its lettering in order: `NAME: text`, `NAME (thought): text`, `CAPTION: text`, `SFX: text`, with lettering notes in parentheses. A balloon with no speaker shows as `UNKNOWN`.
+- **Plot for the artist** (Marvel-style): each page's plot, who is on it and where, and no dialogue. A page without a plot uses its panel descriptions instead.
+
+Empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported. Not yet: a lettering-only script and a page thumbnail sheet.
 
 ## Data model (schema v8)
 

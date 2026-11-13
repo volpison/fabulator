@@ -88,7 +88,7 @@ export function renderEpub(book: Book, now: Date = new Date()): Uint8Array {
       { name: "OEBPS/content.opf", data: opf },
       { name: "OEBPS/nav.xhtml", data: nav },
       { name: "OEBPS/toc.ncx", data: ncx },
-      { name: "OEBPS/style.css", data: CSS },
+      { name: "OEBPS/style.css", data: book.layout === "script" ? CSS + "\np{text-indent:0;text-align:left;margin:0 0 .6em}\n" : CSS },
       { name: "OEBPS/title.xhtml", data: titleHtml },
       ...chapters.map((c) => ({ name: `OEBPS/${c.file}`, data: c.html })),
     ],
