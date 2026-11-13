@@ -113,3 +113,51 @@ test("a novel exports exactly as before (no comic fields leak in)", () => {
   const novel = { ...sample(), story_format: "novel", chapters: [], scenes: [], issues: [], pages: [] } as unknown as Project;
   assert.deepEqual(exportPreview(novel, opts()), { scenes: 0, chapters: 0 });
 });
+
+test("lettering script: only balloons, captions and SFX, numbered per panel in reading order", () => {
+  const t = text(sample(), { comicKind: "lettering" });
+  assert.match(t, /Page 1/);
+  assert.match(t, /Panel 1\n\n1\. MARA \(shouting\): Hold on!\n\n2\. OLD TOM \(thought\): Not again\.\n\n3\. CAPTION: Three hours earlier\.\n\n4\. SFX: KRAK\n\n5\. UNKNOWN: Who\?/);
+  assert.doesNotMatch(t, /Wide shot|bridge collapses|Close on her hand/); // no plot, no descriptions
+  assert.doesNotMatch(t, /Panel 2/); // a panel with no lettering is left out
+  assert.doesNotMatch(t, /Page 2/); // a page with no lettering is left out
+  assert.deepEqual(exportPreview(sample(), opts({ comicKind: "lettering" })), { scenes: 1, chapters: 1 });
+  assert.equal(exportProject(sample(), opts({ comicKind: "lettering" })).fileName, "The Bridge (lettering).txt");
+});
+
+test("thumbnail sheet: printable HTML with every page in spreads, no dialogue, everything escaped", () => {
+  const p = sample();
+  p.title = "A <b>Bridge</b> & Co";
+  p.pages[0].layout = "3 tiers: 2/1/3";
+  p.pages[1].title = "Quiet <script>x</script>";
+  const r = exportProject(p, opts({ comicKind: "thumbnails", format: "docx" }));
+  assert.equal(r.fileName, "A b Bridge b & Co (thumbnails).html"); // characters a file name cannot hold become spaces, as for every export
+  const html = new TextDecoder().decode(r.bytes);
+  assert.match(html, /^<!doctype html>/);
+  assert.doesNotMatch(html, /<script>|<b>Bridge<\/b>/); // user text never becomes markup
+  assert.match(html, /&lt;b&gt;Bridge&lt;\/b&gt; &amp; Co/);
+  assert.match(html, /Layout:<\/b> 3 tiers: 2\/1\/3/);
+  assert.match(html, /Characters:<\/b> Mara, Old Tom/);
+  assert.match(html, /Places:<\/b> The old bridge/);
+  assert.match(html, /class="spread alone-right"/); // page 1 alone on the right
+  assert.match(html, /<span class="turn">page turn<\/span>/); // page 2
+  assert.doesNotMatch(html, /Hold on|KRAK/); // no dialogue
+  // page 3 (empty) still gets a frame; counts include empty pages
+  assert.match(html, /<span class="no">3<\/span>/);
+  assert.deepEqual(exportPreview(p, opts({ comicKind: "thumbnails" })), { scenes: 4, chapters: 2 });
+  assert.deepEqual(exportPreview(p, opts({ comicKind: "thumbnails", scope: "scene", sceneId: p.pages[3].id })), { scenes: 1, chapters: 1 });
+});
+
+test("a novel ignores the comic kinds", () => {
+  const novel = { ...sample(), story_format: "novel", chapters: [], scenes: [], issues: [], pages: [] } as unknown as Project;
+  assert.deepEqual(exportPreview(novel, opts({ comicKind: "thumbnails" })), { scenes: 0, chapters: 0 });
+});
+
+test("an issue titled only \"Issue N\" is not shown as \"Issue N: Issue N\"", () => {
+  const p = sample();
+  p.issues[1].title = "issue 2";
+  const t = text(p);
+  assert.match(t, /^Issue 2$/m);
+  assert.doesNotMatch(t, /Issue 2: /);
+  assert.match(t, /Issue 1: Falling/);
+});
