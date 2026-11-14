@@ -34,7 +34,6 @@ import {
   addScene as addScriptSceneTo,
   updateScene as updateScriptSceneIn,
   moveScene as moveScriptSceneIn,
-  deleteScene as deleteScriptSceneFrom,
   addElement as addScriptElementTo,
   updateElement as updateScriptElementIn,
   moveElement as moveScriptElementIn,
@@ -47,6 +46,9 @@ import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace
 import {
   applyRestore,
   autoSnapshotPages,
+  autoSnapshotScriptScenes,
+  makeScriptSnapshot,
+  deleteScriptSceneKeeping,
   deletePageKeeping,
   makePageSnapshot,
   hasContent,
@@ -124,7 +126,12 @@ export function openSearchHit(hit: SearchHit, terms: string[]) {
       selectedPageId.set(hit.id);
       mainView.set("manuscript");
       break;
+    case "script_scene":
+      selectedScriptSceneId.set(hit.id);
+      mainView.set("manuscript");
+      break;
     case "issue":
+    case "act":
       mainView.set("timeline");
       break;
     case "character":
@@ -343,7 +350,9 @@ function editProject(fn: (p: Project) => Project) {
   project.update((proj) => {
     if (!proj) return proj;
     // A page whose writing changed gets an auto snapshot of how it was (at most every 30 minutes).
-    const next = autoSnapshotPages(proj, fn(proj), Date.now(), () => uid("snap"));
+    const edited = fn(proj);
+    const id = () => uid("snap");
+    const next = autoSnapshotScriptScenes(proj, autoSnapshotPages(proj, edited, Date.now(), id), Date.now(), id);
     if (next !== proj) touch();
     return next;
   });
@@ -459,7 +468,7 @@ export function moveScreenplayScene(id: string, actId: string, index: number) {
 }
 
 export function deleteScreenplayScene(id: string) {
-  editProject((p) => deleteScriptSceneFrom(p, id));
+  editProject((p) => deleteScriptSceneKeeping(p, id, Date.now(), () => uid("snap")));
   selectedScriptSceneId.update((cur) => (cur === id ? null : cur));
 }
 
@@ -657,7 +666,8 @@ export function takeSnapshot(sceneId: string, label: string): string | null {
     if (!proj) return proj;
     const scene = proj.scenes.find((s) => s.id === sceneId);
     const page = scene ? undefined : proj.pages.find((pg) => pg.id === sceneId);
-    if (!scene && !page) return proj;
+    const script = scene || page ? undefined : proj.script_scenes.find((x) => x.id === sceneId);
+    if (!scene && !page && !script) return proj;
     touch();
     taken = true;
     return {
@@ -666,7 +676,9 @@ export function takeSnapshot(sceneId: string, label: string): string | null {
         ...proj.snapshots,
         scene
           ? makeSnapshot(scene, "manual", label.trim(), Date.now(), id)
-          : makePageSnapshot(page!, "manual", label.trim(), Date.now(), id),
+          : page
+            ? makePageSnapshot(page, "manual", label.trim(), Date.now(), id)
+            : makeScriptSnapshot(script!, "manual", label.trim(), Date.now(), id),
       ],
     };
   });

@@ -78,7 +78,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     id: "screenplay",
     label: "Screenplay",
     description: "Acts and scenes with slug lines, action, dialogue and transitions.",
-    ready: false,
+    ready: true,
     views: { timeline: true, manuscript: true },
     vocabulary: {
       group: { one: "act", many: "acts" },

@@ -7,10 +7,12 @@
  * together with the story.
  */
 import { defaultStatusFor } from "./labels";
-import type { ComicPage, Project, Scene, Snapshot, SnapshotKind } from "./types";
+import type { ComicPage, Project, Scene, ScriptScene, Snapshot, SnapshotKind } from "./types";
 import { pageWords, wordsOfHtml } from "./wordcount";
 import { pagesInIssue } from "./comic";
 import { deletePage } from "./comicedit";
+import { sceneWordCount, slugLine } from "./screenplay";
+import { deleteScene as deleteScriptSceneFrom } from "./screenplayedit";
 import { htmlToPlainText } from "./mentions";
 
 /** An auto snapshot is taken at most this often per scene. */
@@ -97,12 +99,126 @@ export function pageToText(pg: Pick<ComicPage, "plot" | "panels" | "title">, nam
   return out.join("\n\n");
 }
 
-/** The text of what a snapshot holds (scene text, or a page as readable text). */
+// ─── Screenplay scenes ───
+
+const cloneScript = (sc: ScriptScene): ScriptScene => JSON.parse(JSON.stringify(sc));
+
+/** Does the scene hold anything worth protecting (written elements, or a summary)? */
+export function scriptSceneHasContent(sc: Pick<ScriptScene, "elements" | "summary">): boolean {
+  return sc.summary.trim() !== "" || sc.elements.some((e) => e.text.trim() !== "" || e.parenthetical.trim() !== "");
+}
+
+/** A snapshot of a whole screenplay scene. `scene_id` holds the scene id so every list of snapshots works unchanged. */
+export function makeScriptSnapshot(sc: ScriptScene, kind: SnapshotKind, label: string, now: number, id: string): Snapshot {
+  return {
+    id,
+    scene_id: sc.id,
+    kind,
+    label,
+    created_at: now,
+    title: sc.title,
+    summary: sc.summary,
+    content: "",
+    chapter_id: sc.act_id,
+    plotline_id: sc.plotline_id,
+    character_ids: [...sc.character_ids],
+    place_ids: [...sc.place_ids],
+    tags: [...sc.tags],
+    script_scene: cloneScript(sc),
+  };
+}
+
+/** The scene as readable text (slug, then each element): what Compare shows. */
+export function scriptSceneToText(
+  sc: Pick<ScriptScene, "int_ext" | "location" | "time" | "elements" | "summary">,
+  nameOf: (id: string) => string = () => ""
+): string {
+  const out: string[] = [];
+  const slug = slugLine(sc);
+  if (slug) out.push(slug);
+  if (sc.summary.trim()) out.push(`Summary: ${sc.summary.trim()}`);
+  for (const e of sc.elements) {
+    const text = e.text.trim();
+    if (e.kind === "dialogue") {
+      const who = [nameOf(e.speaker_id), e.extension.trim() && `(${e.extension.trim()})`].filter(Boolean).join(" ");
+      const par = e.parenthetical.trim() ? ` (${e.parenthetical.trim()})` : "";
+      if (text || par) out.push(`${who}${par}${text ? `: ${text}` : ""}`.trim());
+    } else if (text) out.push(e.kind === "note" ? `Note: ${text}` : text);
+  }
+  return out.join("\n\n");
+}
+
+/** What changing a scene's writing means for snapshots: the part that counts. */
+const scriptWriting = (sc: ScriptScene) => JSON.stringify([sc.title, sc.summary, sc.int_ext, sc.location, sc.time, sc.elements]);
+
+/** Like maybeAutoPageSnapshot, for a screenplay scene that is about to change from `before`. */
+export function maybeAutoScriptSnapshot(snapshots: Snapshot[], before: ScriptScene, now: number, newId: () => string): Snapshot[] {
+  if (!scriptSceneHasContent(before)) return snapshots;
+  let latest: Snapshot | null = null;
+  for (const s of snapshots) if (s.scene_id === before.id && (!latest || s.created_at > latest.created_at)) latest = s;
+  if (latest) {
+    if (now - latest.created_at < AUTO_INTERVAL_MS) return snapshots;
+    if (latest.script_scene && scriptWriting(latest.script_scene) === scriptWriting(before)) return snapshots;
+  }
+  return pruneAuto([...snapshots, makeScriptSnapshot(before, "auto", "Autosaved version", now, newId())]);
+}
+
+/** After an edit: give every screenplay scene whose writing changed an auto snapshot of how it was. Same object when none. */
+export function autoSnapshotScriptScenes(before: Project, after: Project, now: number, newId: () => string): Project {
+  if (before.script_scenes === after.script_scenes) return after;
+  const old = new Map(before.script_scenes.map((sc) => [sc.id, sc]));
+  let snapshots = after.snapshots;
+  for (const sc of after.script_scenes) {
+    const was = old.get(sc.id);
+    if (!was || was === sc || scriptWriting(was) === scriptWriting(sc)) continue;
+    snapshots = maybeAutoScriptSnapshot(snapshots, was, now, newId);
+  }
+  return snapshots === after.snapshots ? after : { ...after, snapshots };
+}
+
+/** Delete a screenplay scene, first keeping a safety copy. */
+export function deleteScriptSceneKeeping(p: Project, sceneId: string, now: number, newId: () => string): Project {
+  const sc = p.script_scenes.find((x) => x.id === sceneId);
+  if (!sc) return p;
+  const kept = scriptSceneHasContent(sc) ? [...p.snapshots, makeScriptSnapshot(sc, "safety", "Deleted scene", now, newId())] : p.snapshots;
+  return { ...deleteScriptSceneFrom(p, sceneId), snapshots: kept };
+}
+
+/** The scene with its writing (title, summary, slug, elements) taken from a snapshot; cast, colour and notes stay. */
+export function restoreScriptSceneInto(sc: ScriptScene, snap: Snapshot): ScriptScene {
+  const was = snap.script_scene;
+  if (!was) return sc;
+  const c = cloneScript(was);
+  return { ...sc, title: c.title, summary: c.summary, int_ext: c.int_ext, location: c.location, time: c.time, elements: c.elements };
+}
+
+/** A scene rebuilt from a snapshot of a deleted scene: back at the end of its act (or the first one). */
+export function recreateScriptScene(
+  project: Pick<Project, "acts" | "plotlines" | "script_scenes" | "characters" | "places">,
+  snap: Snapshot,
+  freshId: () => string
+): ScriptScene {
+  const was = cloneScript(snap.script_scene as ScriptScene);
+  const actId = project.acts.some((a) => a.id === was.act_id) ? was.act_id : (project.acts[0]?.id ?? was.act_id);
+  return {
+    ...was,
+    id: project.script_scenes.some((x) => x.id === was.id) ? freshId() : was.id,
+    act_id: actId,
+    order: project.script_scenes.filter((x) => x.act_id === actId).length,
+    plotline_id: project.plotlines.some((x) => x.id === was.plotline_id) ? was.plotline_id : "",
+    character_ids: was.character_ids.filter((c) => project.characters.some((x) => x.id === c)),
+    place_ids: was.place_ids.filter((c) => project.places.some((x) => x.id === c)),
+  };
+}
+
+/** The text of what a snapshot holds (scene text, a page or a screenplay scene as readable text). */
 export function snapshotText(snap: Snapshot, nameOf?: (id: string) => string): string {
+  if (snap.script_scene) return scriptSceneToText(snap.script_scene, nameOf);
   return snap.page ? pageToText(snap.page, nameOf) : htmlToPlainText(snap.content);
 }
 
 export function snapshotWords(snap: Snapshot): number {
+  if (snap.script_scene) return sceneWordCount(snap.script_scene);
   return snap.page ? pageWords(snap.page) : wordsOfHtml(snap.content);
 }
 
@@ -321,6 +437,27 @@ export function applyRestore(
     return { sceneId: page.id, project: { ...project, issues, pages: [...project.pages, page] } };
   }
 
+  if (snap.script_scene) {
+    // A screenplay scene: `sceneId` in the result is the scene id.
+    const here = project.script_scenes.find((x) => x.id === snap.scene_id);
+    if (here) {
+      const was = restoreScriptSceneInto(here, snap);
+      if (scriptWriting(here) === scriptWriting(was)) return { project, sceneId: here.id };
+      const safety = makeScriptSnapshot(here, "safety", `Before restoring “${snap.label || "a snapshot"}”`, now, newId("snap"));
+      return {
+        sceneId: here.id,
+        project: {
+          ...project,
+          snapshots: [...project.snapshots, safety],
+          script_scenes: project.script_scenes.map((x) => (x.id === here.id ? was : x)),
+        },
+      };
+    }
+    const acts = project.acts.length > 0 ? project.acts : [{ id: newId("ch"), title: "Act 1", summary: "" }];
+    const scene = recreateScriptScene({ ...project, acts }, snap, () => newId("sc"));
+    return { sceneId: scene.id, project: { ...project, acts, script_scenes: [...project.script_scenes, scene] } };
+  }
+
   const existing = project.scenes.find((s) => s.id === snap.scene_id);
   if (existing) {
     const identical =
@@ -366,8 +503,12 @@ export type DeletedScene = {
 };
 
 /** Scenes that no longer exist but still have snapshots, most recently saved first. */
-export function deletedScenes(project: Pick<Project, "scenes" | "snapshots"> & Partial<Pick<Project, "pages">>): DeletedScene[] {
-  const alive = new Set([...project.scenes.map((s) => s.id), ...(project.pages ?? []).map((pg) => pg.id)]);
+export function deletedScenes(project: Pick<Project, "scenes" | "snapshots"> & Partial<Pick<Project, "pages" | "script_scenes">>): DeletedScene[] {
+  const alive = new Set([
+    ...project.scenes.map((s) => s.id),
+    ...(project.pages ?? []).map((pg) => pg.id),
+    ...(project.script_scenes ?? []).map((x) => x.id),
+  ]);
   const by = new Map<string, Snapshot[]>();
   for (const s of project.snapshots) {
     if (alive.has(s.scene_id)) continue;

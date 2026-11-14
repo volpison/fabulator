@@ -6,6 +6,7 @@
     selectedScene,
     selectedSceneId,
     selectedPageId,
+    selectedScriptSceneId,
     mainView,
     snapshotsOpen,
     takeSnapshot,
@@ -19,22 +20,32 @@
     snapshotText,
     snapshotWords,
     pageToText,
+    scriptSceneToText,
     timeAgo,
   } from "../lib/snapshots";
   import { diffText } from "../lib/diff";
   import { htmlToPlainText } from "../lib/mentions";
   import { pageWords, wordsOfHtml } from "../lib/wordcount";
   import { pageNumber } from "../lib/comic";
+  import { sceneWordCount, slugLine } from "../lib/screenplay";
   import type { SnapshotKind } from "../lib/types";
 
   type Tab = "scene" | "deleted";
 
   $: isComic = $project?.story_format === "comic";
+  $: isScreenplay = $project?.story_format === "screenplay";
   $: unit = isComic ? "page" : "scene";
   $: names = new Map(($project?.characters ?? []).map((c) => [c.id, c.name]));
   $: nameOf = (id: string) => names.get(id) ?? "";
   /** What the snapshots are of right now: the selected scene, or the selected comic page. */
-  $: subject = isComic
+  $: subject = isScreenplay
+    ? (() => {
+        const sc = $project?.script_scenes.find((x) => x.id === $selectedScriptSceneId);
+        return sc
+          ? { id: sc.id, title: slugLine(sc) || sc.title || "Untitled", text: scriptSceneToText(sc, nameOf), words: sceneWordCount(sc), shownTitle: sc.title }
+          : null;
+      })()
+    : isComic
     ? (() => {
         const pg = $project?.pages.find((x) => x.id === $selectedPageId);
         return pg
@@ -112,6 +123,7 @@
     const sceneId = restoreSnapshot(id);
     if (sceneId) {
       if (isComic) selectedPageId.set(sceneId);
+      else if (isScreenplay) selectedScriptSceneId.set(sceneId);
       else selectedSceneId.set(sceneId);
       mainView.set("manuscript");
       close();
@@ -139,7 +151,14 @@
     if (ok) deleteSceneSnapshots(sceneId);
   }
 
+  const deletedName = (s: { script_scene?: Parameters<typeof slugLine>[0]; title: string }) =>
+    (s.script_scene && slugLine(s.script_scene)) || s.title || "Untitled";
+
   function chapterName(chapterId: string): string {
+    if (isScreenplay) {
+      const n = $project?.acts.findIndex((c) => c.id === chapterId) ?? -1;
+      return n === -1 || !$project ? "—" : `Act ${n + 1}${$project.acts[n].title ? ` · ${$project.acts[n].title}` : ""}`;
+    }
     if (isComic) {
       const n = $project?.issues.findIndex((c) => c.id === chapterId) ?? -1;
       return n === -1 || !$project ? "—" : `Issue ${n + 1}${$project.issues[n].title ? ` · ${$project.issues[n].title}` : ""}`;
@@ -256,7 +275,7 @@
         {#each deleted as d (d.sceneId)}
           <div class="row">
             <div class="main">
-              <span class="label">{d.snapshot.title || "Untitled"}</span>
+              <span class="label">{deletedName(d.snapshot)}</span>
               <span class="when" title={new Date(d.snapshot.created_at).toLocaleString()}>
                 saved {timeAgo(now, d.snapshot.created_at)}
               </span>
@@ -267,14 +286,14 @@
               <span class="actions">
                 <button
                   class="restore"
-                  on:click={() => onRestore(d.snapshot.id, d.snapshot.title || "Untitled", false)}
+                  on:click={() => onRestore(d.snapshot.id, deletedName(d.snapshot), false)}
                 >
                   Restore {unit}
                 </button>
                 <button
                   class="del"
                   title="Forget this scene's saved versions"
-                  on:click={() => onForget(d.sceneId, d.snapshot.title || "Untitled")}>✕</button
+                  on:click={() => onForget(d.sceneId, deletedName(d.snapshot))}>✕</button
                 >
               </span>
             </div>

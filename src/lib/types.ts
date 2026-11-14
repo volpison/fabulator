@@ -164,6 +164,8 @@ export interface Snapshot {
   tags: string[];
   /** Comics: the whole page as it was (then `scene_id` holds the page id and `content` is empty). */
   page?: ComicPage;
+  /** Screenplays: the whole scene as it was (then `scene_id` holds the scene id and `content` is empty). */
+  script_scene?: ScriptScene;
 }
 
 // ─── Screenplay documents (story_format "screenplay": act → scene → elements) ───

@@ -15,7 +15,7 @@ import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import { cleanActs, cleanScriptScenes } from "./screenplay";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 export type MigrationResult = {
   project: Project;
@@ -103,6 +103,11 @@ function v9ToV10(p: Raw): Raw {
   return { ...p, schema_version: 10 };
 }
 
+/** v10 -> v11: a snapshot may hold a whole screenplay scene (`script_scene`); every older snapshot is not. */
+function v10ToV11(p: Raw): Raw {
+  return { ...p, schema_version: 11 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -114,6 +119,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   7: v7ToV8,
   8: v8ToV9,
   9: v9ToV10,
+  10: v10ToV11,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -146,6 +152,11 @@ function cleanSnapshots(list: unknown): Snapshot[] {
     const page = isObject(raw.page)
       ? cleanPages([raw.page], [{ id: pageIssue, title: "", summary: "" }])[0]
       : undefined;
+    // A screenplay scene kept whole: repaired like any scene, or dropped if it is not one.
+    const sceneAct = isObject(raw.script_scene) ? str(raw.script_scene.act_id) : "";
+    const script_scene = isObject(raw.script_scene)
+      ? cleanScriptScenes([raw.script_scene], [{ id: sceneAct, title: "", summary: "" }])[0]
+      : undefined;
     const snap: Snapshot = {
       ...raw,
       id,
@@ -164,6 +175,8 @@ function cleanSnapshots(list: unknown): Snapshot[] {
     };
     if (page) snap.page = page;
     else delete snap.page;
+    if (script_scene) snap.script_scene = script_scene;
+    else delete snap.script_scene;
     out.push(snap);
   }
   return out;

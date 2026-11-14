@@ -9,6 +9,7 @@
  */
 import type { ComicPage, Project, Scene } from "./types";
 import { htmlToPlainText } from "./mentions";
+import { sceneWordCount } from "./screenplay";
 
 const WORD = /\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}]+(?:['’\u2010-][\p{L}\p{N}]+)*/gu;
 
@@ -56,11 +57,18 @@ export type WordStats = {
 };
 
 /** Per scene (a comic page counts as one) and per chapter (a comic issue counts as one). */
-export function wordStats(project: Pick<Project, "scenes" | "chapters"> & Partial<Pick<Project, "pages" | "issues">>): WordStats {
+export function wordStats(project: Pick<Project, "scenes" | "chapters"> & Partial<Pick<Project, "pages" | "issues" | "script_scenes" | "acts">>): WordStats {
   const byScene = new Map<string, number>();
   const byChapter = new Map<string, number>(project.chapters.map((c) => [c.id, 0]));
   let total = 0;
   for (const i of project.issues ?? []) byChapter.set(i.id, 0);
+  for (const a of project.acts ?? []) byChapter.set(a.id, 0);
+  for (const sc of project.script_scenes ?? []) {
+    const n = sceneWordCount(sc);
+    byScene.set(sc.id, n);
+    byChapter.set(sc.act_id, (byChapter.get(sc.act_id) ?? 0) + n);
+    total += n;
+  }
   for (const pg of project.pages ?? []) {
     const n = pageWords(pg);
     byScene.set(pg.id, n);
