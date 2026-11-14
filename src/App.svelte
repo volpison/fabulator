@@ -32,6 +32,7 @@
   import FormatNotReady from "./components/FormatNotReady.svelte";
   import ComicTimeline from "./components/ComicTimeline.svelte";
   import ScreenplayTimeline from "./components/ScreenplayTimeline.svelte";
+  import ScreenplayManuscript from "./components/ScreenplayManuscript.svelte";
   import ComicManuscript from "./components/ComicManuscript.svelte";
   import { formatOf } from "./lib/formats";
   import StatusBar from "./components/StatusBar.svelte";
@@ -172,6 +173,8 @@
           <FormatNotReady view="Manuscript" />
         {:else if $project.story_format === "comic"}
           <ComicManuscript />
+        {:else if $project.story_format === "screenplay"}
+          <ScreenplayManuscript />
         {:else}
           <ManuscriptView />
         {/if}

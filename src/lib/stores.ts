@@ -35,6 +35,10 @@ import {
   updateScene as updateScriptSceneIn,
   moveScene as moveScriptSceneIn,
   deleteScene as deleteScriptSceneFrom,
+  addElement as addScriptElementTo,
+  updateElement as updateScriptElementIn,
+  moveElement as moveScriptElementIn,
+  deleteElement as deleteScriptElementFrom,
   removeCastFromScenes,
 } from "./screenplayedit";
 import type { SearchHit } from "./search";
@@ -50,6 +54,7 @@ import {
   maybeAutoSnapshot,
 } from "./snapshots";
 import type {
+  ElementKind,
   Project,
   MainView,
   SidePanel,
@@ -456,6 +461,35 @@ export function moveScreenplayScene(id: string, actId: string, index: number) {
 export function deleteScreenplayScene(id: string) {
   editProject((p) => deleteScriptSceneFrom(p, id));
   selectedScriptSceneId.update((cur) => (cur === id ? null : cur));
+}
+
+// Elements of a screenplay scene (the writing view).
+
+export function addScreenplayElement(
+  sceneId: string,
+  kind: ElementKind = "action",
+  atIndex?: number,
+  speakerId = ""
+): string {
+  let id = "";
+  editProject((p) => {
+    const r = addScriptElementTo(p, uid, sceneId, kind, atIndex, speakerId);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateScreenplayElement(sceneId: string, elementId: string, fields: Parameters<typeof updateScriptElementIn>[3]) {
+  editProject((p) => updateScriptElementIn(p, sceneId, elementId, fields));
+}
+
+export function moveScreenplayElement(sceneId: string, elementId: string, toIndex: number) {
+  editProject((p) => moveScriptElementIn(p, sceneId, elementId, toIndex));
+}
+
+export function deleteScreenplayElement(sceneId: string, elementId: string) {
+  editProject((p) => deleteScriptElementFrom(p, sceneId, elementId));
 }
 
 // Panels and lines of the selected comic page (the writing view).

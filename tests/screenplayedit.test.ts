@@ -158,3 +158,115 @@ test("deleting a character or a place removes them from screenplay scenes too", 
   deletePlace(pl);
   assert.deepEqual(get(project)!.script_scenes[0].place_ids, []);
 });
+
+import {
+  addElement, updateElement, moveElement, deleteElement, replySpeaker, placeNamed, characterNamed,
+} from "../src/lib/screenplayedit.ts";
+import {
+  addScreenplayElement, updateScreenplayElement, moveScreenplayElement, deleteScreenplayElement,
+} from "../src/lib/stores.ts";
+import { needsContd } from "../src/lib/screenplay.ts";
+
+function scene(p: Project) { return p.script_scenes[0]; }
+
+test("elements: add at an index, change, move and delete; orders and ids stay sound", () => {
+  let p = blankScreenplay(newId);
+  const sid = scene(p).id;
+  const a = addElement(p, newId, sid, "action"); p = a.project;
+  const d = addElement(p, newId, sid, "dialogue", undefined, "ch-maria"); p = d.project;
+  const t = addElement(p, newId, sid, "transition", 1); p = t.project; // between the two
+  assert.deepEqual(scene(p).elements.map((e) => e.id), [a.id, t.id, d.id]);
+  assert.deepEqual(scene(p).character_ids, ["ch-maria"]); // the speaker is in the scene
+  assert.equal(addElement(p, newId, "nope").id, "");
+  assert.equal(addElement(p, newId, sid, "dance" as never).project, p);
+
+  const moved = moveElement(p, sid, d.id, 0);
+  assert.deepEqual(scene(moved).elements.map((e) => e.id), [d.id, a.id, t.id]);
+  assert.equal(moveElement(p, sid, a.id, 0), p); // already there
+  assert.equal(moveElement(p, sid, "nope", 0), p);
+  assert.deepEqual(scene(deleteElement(p, sid, t.id)).elements.map((e) => e.id), [a.id, d.id]);
+  assert.equal(deleteElement(p, sid, "nope"), p);
+});
+
+test("updating an element: only dialogue keeps speaker, extension and parenthetical; no-ops return the same project", () => {
+  let p = blankScreenplay(newId);
+  const sid = scene(p).id;
+  const d = addElement(p, newId, sid, "dialogue"); p = d.project;
+  const r = updateElement(p, sid, d.id, { speaker_id: "ch-1", extension: " V.O. ", parenthetical: "(beat)", text: "Hello." });
+  const el = scene(r).elements[0];
+  assert.deepEqual([el.speaker_id, el.extension, el.parenthetical, el.text], ["ch-1", "V.O.", "beat", "Hello."]);
+  assert.deepEqual(scene(r).character_ids, ["ch-1"]);
+  assert.equal(updateElement(r, sid, d.id, { text: "Hello." }), r);
+  assert.equal(updateElement(r, sid, "nope", { text: "x" }), r);
+  assert.equal(updateElement(r, sid, d.id, { kind: "dance" as never }), r);
+  // dialogue -> action drops the speaker stuff but keeps the words
+  const act = updateElement(r, sid, d.id, { kind: "action" });
+  assert.deepEqual([scene(act).elements[0].speaker_id, scene(act).elements[0].extension, scene(act).elements[0].parenthetical, scene(act).elements[0].text], ["", "", "", "Hello."]);
+  // fields that only dialogue has are ignored on an action
+  const ignored = updateElement(act, sid, d.id, { speaker_id: "ch-9" });
+  assert.equal(ignored, act);
+});
+
+test("the first words make an Idea scene a Draft; a note does not", () => {
+  let p = blankScreenplay(newId);
+  const sid = scene(p).id;
+  assert.equal(scene(p).status, "idea");
+  const n = addElement(p, newId, sid, "note"); p = n.project;
+  p = updateElement(p, sid, n.id, { text: "fix this later" });
+  assert.equal(scene(p).status, "idea");
+  const a = addElement(p, newId, sid, "action"); p = a.project;
+  p = updateElement(p, sid, a.id, { text: "A door opens." });
+  assert.equal(scene(p).status, "draft");
+  // a status chosen by the writer is never overridden
+  const fin = updateScene(p, sid, { status: "final" });
+  assert.equal(scene(updateElement(fin, sid, a.id, { text: "A door slams." })).status, "final");
+});
+
+test("reply speaker: the nearest earlier speaker who is not the current one", () => {
+  const mk = (s: string, kind: "dialogue" | "action" = "dialogue") => ({ ...newElement(newId, kind, s), text: "x" });
+  const els = [mk("a"), mk("b"), mk("", "action"), mk("b")];
+  assert.equal(replySpeaker(els, 3), "a"); // b is speaking: a answers
+  assert.equal(replySpeaker(els, 1), "a");
+  assert.equal(replySpeaker(els, 0), ""); // nobody before
+  assert.equal(replySpeaker(els, 2), "b"); // after an action: the last speaker
+  assert.equal(replySpeaker([mk("a")], 5), "a");
+  // and CONT'D follows from the same structure
+  assert.equal(needsContd(els, 3), true); // b spoke at 1, only an action between
+});
+
+test("a slug location that names a Place (or alias) links it to the scene; unknown names do not", () => {
+  const p = { ...blankScreenplay(newId), places: [{ id: "pl-k", name: "Kitchen", aliases: ["La Cocina"] }, { id: "pl-c", name: "Café", aliases: [] }] } as unknown as Project;
+  const sid = scene(p).id;
+  assert.equal(placeNamed(p, "KITCHEN"), "pl-k");
+  assert.equal(placeNamed(p, "la cocina"), "pl-k");
+  assert.equal(placeNamed(p, "CAFE"), "pl-c"); // accents do not matter
+  assert.equal(placeNamed(p, "Garden"), "");
+  assert.equal(placeNamed(p, ""), "");
+  const r = updateScene(p, sid, { location: "KITCHEN" });
+  assert.deepEqual(scene(r).place_ids, ["pl-k"]);
+  assert.deepEqual(scene(updateScene(r, sid, { location: "GARDEN" })).place_ids, ["pl-k"]); // never removed automatically
+  assert.deepEqual(scene(updateScene(r, sid, { location: "CAFÉ" })).place_ids, ["pl-k", "pl-c"]);
+  assert.deepEqual(scene(updateScene(p, sid, { location: "GARDEN" })).place_ids, []);
+  const q = { ...p, characters: [{ id: "c1", name: "María", aliases: ["Mami"] }] } as unknown as Project;
+  assert.equal(characterNamed(q, "maria"), "c1");
+  assert.equal(characterNamed(q, " MAMI "), "c1");
+  assert.equal(characterNamed(q, "Pedro"), "");
+});
+
+test("writing through the stores marks the project changed; no-ops do not", () => {
+  project.set(blankScreenplay(newId));
+  markClean();
+  const sid = get(project)!.script_scenes[0].id;
+  const el = addScreenplayElement(sid, "dialogue", 0);
+  assert.equal(get(isDirty), true);
+  markClean();
+  updateScreenplayElement(sid, el, { text: "" });
+  moveScreenplayElement(sid, el, 0);
+  assert.equal(get(isDirty), false);
+  updateScreenplayElement(sid, el, { text: "Where were you?", speaker_id: "ch-1" });
+  assert.equal(get(isDirty), true);
+  assert.equal(get(project)!.script_scenes[0].elements[0].text, "Where were you?");
+  assert.equal(get(project)!.script_scenes[0].status, "draft");
+  deleteScreenplayElement(sid, el);
+  assert.equal(get(project)!.script_scenes[0].elements.length, 0);
+});
