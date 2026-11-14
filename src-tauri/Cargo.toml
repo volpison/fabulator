@@ -1,6 +1,6 @@
 [package]
 name = "fabulator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Fabulator – story planning + manuscript writing"
 authors = ["you"]
 edition = "2024"
