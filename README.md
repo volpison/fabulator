@@ -1,6 +1,8 @@
-# Fabulator v0.1
+# Fabulator
 
-Pre-production writing suite.
+**Pre-production writing suite.**
+
+Fabulator is where a project is planned and written down *before* it is made. It keeps the whole world of a story in one place (characters, places, notes, continuity, a timeline) and lets you write it as a **Novel**, a **Comic** or a **Screenplay**. A fourth mode, **Game Prototyping** (side-quests and conditional rules), is planned. It plans and writes; it does not produce images, video or audio.
 
 Where the project is going: see [ROADMAP.md](ROADMAP.md).
 
