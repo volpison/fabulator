@@ -52,4 +52,4 @@ Questions to settle when Comic starts: full-script versus plot-first (Marvel-met
 
 ## Already done
 
-The groundwork for formats and for other front ends: a Platform layer (all machine access behind one interface), open/backup/recovery rules in Rust, and Rust holding the current project with small patches and saves from its own copy. See "Architecture" in the README.
+The groundwork for formats and for other front ends: a Platform layer (all machine access behind one interface), open/backup/recovery rules in Rust, and Rust holding the current project with small patches and saves from its own copy. See [Architecture](docs/technical/architecture.md).
