@@ -397,7 +397,11 @@ The scene is a list of **elements**: *action*, *dialogue*, *transition* and priv
 - **Snapshots** keep a whole scene (slug, summary, elements): take one by hand, get automatic ones while you write (at most one every 30 minutes per scene), a safety copy before a restore, a replace or a delete. A deleted scene with writing can be brought back from *Deleted scenes*, at the end of its act. Restoring brings back the writing (title, summary, slug, elements); cast, colour and notes stay as they are.
 - **Goals and word counts** include screenplays: the status bar counts action, dialogue and transitions (not private notes or slug lines), and the Goals panel lists words by act.
 
-Not for screenplays yet: reports (scene, character and location), and exporting a Markdown folder.
+### Screenplay reports
+
+*Tools → Reports…* (screenplays only) has three tabs, all worked out from the script and always current: **Scenes** (number, slug line, act, estimated pages, words, who speaks; click a slug line to go to the scene), **Characters** (scenes, scenes where they speak, lines and words of dialogue, scene numbers; the one with most dialogue first, characters only listed on a scene's cast come last) and **Locations** (grouped by location name regardless of capitals: INT/EXT, times of day, scenes, pages, so you can see what a shoot needs most). *Save as CSV…* writes the tab you are on for Excel, Numbers or Sheets. The rules are in `src/lib/screenplayreports.ts`.
+
+Not for screenplays yet: exporting a Markdown folder.
 
 ### Comic Timeline (pages)
 

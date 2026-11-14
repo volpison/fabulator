@@ -6,6 +6,8 @@
     snapshotsOpen,
     exportOpen,
     replaceOpen,
+    reportsOpen,
+    project,
   } from "../lib/stores";
   import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, loadSample, newProject } from "../lib/persistence";
   import { recentFiles, clearRecents } from "../lib/recentStore";
@@ -46,12 +48,13 @@
     },
   ] as MenuItem[];
 
-  const toolItems: MenuItem[] = [
+  $: toolItems = [
     { label: "Search…", shortcut: "Ctrl+F", action: () => searchOpen.set(true) },
     { label: "Find & replace…", shortcut: "Ctrl+H", action: () => replaceOpen.set(true) },
     { separator: true },
     { label: "Snapshots…", shortcut: "Ctrl+Shift+H", action: () => snapshotsOpen.set(true) },
-  ];
+    ...($project?.story_format === "screenplay" ? [{ separator: true }, { label: "Reports…", action: () => reportsOpen.set(true) }] : []),
+  ] as MenuItem[];
 
   const views: { id: MainView; label: string; hint: string }[] = [
     { id: "timeline", label: "Timeline", hint: "Plan chapters and scenes, or a comic's pages (Ctrl+1)" },

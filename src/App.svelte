@@ -12,6 +12,7 @@
     galleryOpen,
     themesOpen,
     replaceOpen,
+    reportsOpen,
     focusMode,
   } from "./lib/stores";
   import {
@@ -45,6 +46,7 @@
   import ThemeGallery from "./components/ThemeGallery.svelte";
   import ThemesDialog from "./components/ThemesDialog.svelte";
   import ReplaceDialog from "./components/ReplaceDialog.svelte";
+  import ReportsDialog from "./components/ReportsDialog.svelte";
   import SidePanel from "./components/SidePanel.svelte";
 
   onMount(() => {
@@ -80,7 +82,7 @@
   });
 
   const anyDialogOpen = () =>
-    $searchOpen || $snapshotsOpen || $exportOpen || $replaceOpen || $galleryOpen || $themesOpen;
+    $searchOpen || $snapshotsOpen || $exportOpen || $replaceOpen || $reportsOpen || $galleryOpen || $themesOpen;
 
   // Leaving the manuscript always leaves focus mode (its chrome is hidden there).
   $: if ($mainView !== "manuscript") focusMode.set(false);
@@ -207,6 +209,10 @@
 
     {#if $replaceOpen}
       <ReplaceDialog />
+    {/if}
+
+    {#if $reportsOpen}
+      <ReportsDialog />
     {/if}
 
     {#if $galleryOpen}
