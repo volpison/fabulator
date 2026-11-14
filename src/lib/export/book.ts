@@ -4,7 +4,7 @@ import { readingOrder } from "../model";
 import { htmlToBlocks, type Block } from "./html";
 import { buildComicBook, type ComicExportKind } from "./comic";
 
-export type ExportFormat = "markdown" | "text" | "docx" | "epub";
+export type ExportFormat = "markdown" | "text" | "docx" | "epub" | "pdf" | "fountain";
 export type ExportScope = "all" | "chapter" | "scene";
 export type SceneBreak = "ornament" | "blank" | "none";
 
@@ -23,6 +23,9 @@ export type ExportOptions = {
   comicKind?: ComicExportKind;
   /** Comics only: put each page's plot above its panels in the full script. */
   comicPlot?: boolean;
+  /** Screenplays only: a title page, and scene numbers (a shooting script). */
+  spTitlePage?: boolean;
+  spSceneNumbers?: boolean;
 };
 
 export const DEFAULT_OPTIONS: ExportOptions = {
@@ -35,6 +38,8 @@ export const DEFAULT_OPTIONS: ExportOptions = {
   sceneBreak: "ornament",
   pageSize: "a4",
   language: "en",
+  spTitlePage: true,
+  spSceneNumbers: false,
 };
 
 export type BookScene = { title: string; blocks: Block[] };
@@ -91,7 +96,7 @@ export const sceneCount = (b: Book) => b.chapters.reduce((n, c) => n + c.scenes.
 export function suggestedFileName(b: Book): string {
   const base = (b.title || "story").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim() || "story";
   const stem = b.fileStem ? `${base} (${b.fileStem})` : base;
-  const ext = { markdown: "md", text: "txt", docx: "docx", epub: "epub" }[b.options.format];
+  const ext = { markdown: "md", text: "txt", docx: "docx", epub: "epub", pdf: "pdf", fountain: "fountain" }[b.options.format];
   return `${stem}.${ext}`;
 }
 

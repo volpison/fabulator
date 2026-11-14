@@ -367,7 +367,7 @@ Comic is **ready** in `formats.ts`: *File → New comic* starts one. Exporting a
 
 A screenplay is `acts[]` (ordered) and `script_scenes[]`. A scene has a **slug line** kept as parts (`int_ext` INT / EXT / INT/EXT, `location`, `time`; "INT. KITCHEN - DAY" is built from them, and `parseSlug` reads typed text back into them), an optional working `title`, a `summary`, the same shared fields as a novel's scene (status, plotline, cast, places, tags, colour, notes, to-dos, story time), and ordered `elements[]`: **action**, **dialogue** (a speaker, an optional extension such as V.O./O.S., an optional parenthetical, the words), **transition** (CUT TO:) and private **note** (never exported). Dialogue is structured, so a character's lines can be found, counted and renamed without parsing text; "(CONT'D)" is derived (`needsContd`: the same character speaks again with only action between), never stored. `src/lib/screenplay.ts` also has the **page estimate** (about 55 lines of 12 pt Courier per page, action about 60 characters wide, dialogue about 35, counted in eighths of a page; one page ≈ one minute as a rule of thumb) and word counts that leave out notes and the slug. Other formats carry none of these fields in their files.
 
-Screenplay is marked **not ready** in `formats.ts` (it has its Timeline and writing view; exports and the shared tools come next): *File → New screenplay (early preview)* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
+Screenplay is marked **not ready** in `formats.ts` (it has its Timeline, writing view and exports; the shared tools come next): *File → New screenplay (early preview)* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
 
 ### Screenplay Timeline (scenes)
 
@@ -386,7 +386,11 @@ The scene is a list of **elements**: *action*, *dialogue*, *transition* and priv
 - Typing a **new name** in a dialogue's character box creates that character (and puts them on the scene's cast); an existing name or alias picks them. ALL-CAPS names are stored as "Maria".
 - The first words written in an *Idea* scene make it a *Draft*.
 
-Not for screenplays yet: Search, Find & replace, Snapshots, goals, and every export.
+### Screenplay exports
+
+*File → Export…* offers three formats for a screenplay. **PDF** is written by Fabulator itself (no extra software): standard script pages in 12 pt Courier, 55 lines a page, 1.5 in left margin, page numbers from page 2, the slug line at the margin, dialogue and parentheticals indented, transitions at the right, a slug line never alone at the bottom of a page, and long dialogue split with **(MORE)** and **NAME (CONT'D)**. **Word** uses the same layout through real paragraph styles (Scene Heading, Action, Character, Parenthetical, Dialogue, Transition), so it can be edited. **Fountain** is plain text for Final Draft, Highland, Fade In and others (a forced slug `.` when INT/EXT is not set, `>` transitions, `!` for all-capital action lines). Options: **title page**, **scene numbers** (shooting script) and the scope: whole script, the act of the selected scene, or just that scene (numbers stay those of the whole script). Private notes and scenes with nothing in them are left out; "(CONT'D)" is worked out from the dialogue, never stored. The layout is `src/lib/export/screenplayLayout.ts`, the PDF writer `pdf.ts`. PDF text uses the standard Courier font, so characters outside Western European alphabets show as "?" (use Word or Fountain for those).
+
+Not for screenplays yet: Search, Find & replace, Snapshots and goals; exporting a Markdown folder.
 
 ### Comic Timeline (pages)
 

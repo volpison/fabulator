@@ -1,6 +1,6 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { project, selectedScene, selectedPageId, exportOpen } from "../lib/stores";
+  import { project, selectedScene, selectedPageId, selectedScriptSceneId, exportOpen } from "../lib/stores";
   import { COMIC_EXPORT_KINDS, type ComicExportKind } from "../lib/export/comic";
   import { pageNumber } from "../lib/comic";
   import {
@@ -35,22 +35,32 @@
   let language = saved.language ?? "en";
   let comicKind: ComicExportKind = COMIC_EXPORT_KINDS.some((k) => k.id === saved.comicKind) ? (saved.comicKind as ComicExportKind) : "script";
   let comicPlot = saved.comicPlot ?? true;
+  let spTitlePage = saved.spTitlePage ?? true;
+  let spSceneNumbers = saved.spSceneNumbers ?? false;
 
   let busy = false;
   let message = "";
   let failed = false;
 
-  const formats: { id: ExportFormat; label: string; hint: string }[] = [
+  const scriptFormats: { id: ExportFormat; label: string; hint: string }[] = [
+    { id: "pdf", label: "PDF", hint: "Standard script pages, ready to send or print" },
+    { id: "docx", label: "Word (.docx)", hint: "Script layout you can still edit" },
+    { id: "fountain", label: "Fountain (.fountain)", hint: "Plain text for Final Draft, Highland, Fade In…" },
+  ];
+  const novelFormats: { id: ExportFormat; label: string; hint: string }[] = [
     { id: "docx", label: "Word (.docx)", hint: "For editors, printing, submitting" },
     { id: "epub", label: "EPUB", hint: "For e-readers" },
     { id: "markdown", label: "Markdown (.md)", hint: "Plain text with light formatting" },
     { id: "text", label: "Plain text (.txt)", hint: "No formatting at all" },
   ];
+  $: formats = isScreenplay ? scriptFormats : novelFormats;
+  // A format left over from another kind of story falls back to the first one that exists here.
+  $: if (!formats.some((f) => f.id === format)) format = formats[0].id;
 
   $: options = {
     format,
     scope,
-    sceneId: isComic ? (selectedPage?.id ?? null) : ($selectedScene?.id ?? null),
+    sceneId: isComic ? (selectedPage?.id ?? null) : (isScreenplay ? ($selectedScriptSceneId ?? null) : ($selectedScene?.id ?? null)),
     author,
     chapterHeadings,
     sceneTitles,
@@ -59,17 +69,22 @@
     language: language.trim() || "en",
     comicKind,
     comicPlot,
+    spTitlePage,
+    spSceneNumbers,
   } as ExportOptions;
+
+  $: isScreenplay = $project?.story_format === "screenplay";
 
   $: isComic = $project?.story_format === "comic";
   /** The thumbnail sheet is always a printable HTML page: no file format, no Word layout options. */
   $: isSheet = isComic && comicKind === "thumbnails";
   $: selectedPage = isComic ? ($project?.pages.find((p) => p.id === $selectedPageId) ?? null) : null;
   $: unitOne = isComic ? "page" : "scene";
-  $: groupOne = isComic ? "issue" : "chapter";
+  $: selectedScript = isScreenplay ? ($project?.script_scenes.find((s) => s.id === $selectedScriptSceneId) ?? null) : null;
+  $: groupOne = isComic ? "issue" : isScreenplay ? "act" : "chapter";
 
   $: counts = $project ? exportPreview($project, options) : { scenes: 0, chapters: 0 };
-  $: canChooseScope = isComic ? !!selectedPage : !!$selectedScene;
+  $: canChooseScope = isComic ? !!selectedPage : isScreenplay ? !!selectedScript : !!$selectedScene;
   $: if (!canChooseScope) scope = "all";
 
   function close() {
@@ -92,7 +107,7 @@
       try {
         localStorage.setItem(
           STORE_KEY,
-          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language, comicKind, comicPlot })
+          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language, comicKind, comicPlot, spTitlePage, spSceneNumbers })
         );
       } catch {
         /* remembering options is optional */
@@ -168,11 +183,13 @@
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="chapter" disabled={!canChooseScope} />
-          {isComic ? "The issue of the selected page" : "The chapter of the selected scene"}
+          {isComic ? "The issue of the selected page" : isScreenplay ? "The act of the selected scene" : "The chapter of the selected scene"}
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="scene" disabled={!canChooseScope} />
-          {#if isComic}
+          {#if isScreenplay}
+            Only the selected scene{selectedScript ? ` (${selectedScript.int_ext ? selectedScript.int_ext + ". " : ""}${selectedScript.location || selectedScript.title || "untitled"})` : ""}
+          {:else if isComic}
             Only the selected page{selectedPage ? ` (page ${pageNumber(selectedPage)}${selectedPage.title ? `: “${selectedPage.title}”` : ""})` : ""}
           {:else}
             Only the selected scene{$selectedScene ? ` (“${$selectedScene.title || "Untitled"}”)` : ""}
@@ -190,6 +207,9 @@
           {#if comicKind === "script"}
             <label class="row"><input type="checkbox" bind:checked={comicPlot} /> Show each page's plot above its panels</label>
           {/if}
+        {:else if isScreenplay}
+          <label class="row"><input type="checkbox" bind:checked={spTitlePage} /> Title page</label>
+          <label class="row"><input type="checkbox" bind:checked={spSceneNumbers} /> Scene numbers (shooting script)</label>
         {:else}
           <label class="row"><input type="checkbox" bind:checked={chapterHeadings} /> Chapter headings</label>
           <label class="row"><input type="checkbox" bind:checked={sceneTitles} /> Scene titles (instead of scene breaks)</label>
@@ -202,7 +222,7 @@
             </select>
           </label>
         {/if}
-        {#if format === "docx" && !isSheet}
+        {#if (format === "docx" || format === "pdf") && !isSheet}
           <label class="field">
             Page size
             <select bind:value={pageSize}>
