@@ -39,7 +39,7 @@ test("every relative link in the README, ROADMAP and docs points at a file (and 
 test("the docs index lists every page under docs/", () => {
   const index = readFileSync(join(root, "docs/index.md"), "utf8");
   const missing = markdown(join(root, "docs"))
-    .map((p) => p.slice(join(root, "docs").length + 1))
+    .map((p) => p.slice(join(root, "docs").length + 1).replace(/\\/g, "/")) // Windows paths use backslashes
     .filter((p) => p !== "index.md" && !index.includes(`(${p})`));
   assert.deepEqual(missing, []);
 });
