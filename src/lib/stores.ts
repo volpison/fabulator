@@ -633,6 +633,8 @@ export function deleteScene(sceneId: string) {
 export const snapshotsOpen = writable(false);
 export const exportOpen = writable(false);
 export const replaceOpen = writable(false);
+/** Screenplay reports (scenes, characters, locations). */
+export const reportsOpen = writable(false);
 /** Distraction-free writing: only the manuscript is shown. */
 export const focusMode = writable(false);
 
