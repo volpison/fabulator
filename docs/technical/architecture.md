@@ -1,33 +1,87 @@
 # Architecture
 
-How the app is built: the stack, the folder layout, and where the rules live (web view and Rust).
+How the app is built: who does what, where the files are, and how a feature is put together.
+
+## The big picture
+
+Fabulator is a desktop app made of two halves that talk through a small set of commands:
+
+- **The web view** (Svelte 5 + TypeScript, inside a Tauri window) shows the screens and owns the *editing rules*: how a scene is added, moved, searched, replaced, exported.
+- **Rust** (Tauri 2 backend) owns the *files*: opening, atomic saving, rotating backups, crash recovery, the Markdown folder format, user themes, and a copy of the current project that it keeps up to date from small patches.
+
+The two halves share one data model: `src/lib/types.ts` (TypeScript) mirrors `src-tauri/src/models/mod.rs` (Rust), and both carry the same schema version (see [The project file format](file-format.md)).
 
 ## Stack
 
-- Tauri 2 (Rust backend)
-- Svelte 5 + TypeScript (frontend)
-- Vite
-## Project layout
+- Tauri 2 (Rust backend: `serde`, `serde_json`)
+- Svelte 5 + TypeScript (frontend), Vite, Tiptap (the text editor)
+- Tests: Node's built-in test runner for the TypeScript, `cargo test` for Rust (see [Tests](testing.md))
+
+## Folder layout
 
 ```
-src/                  # Svelte frontend
-  App.svelte
-  components/
-  lib/types.ts        # mirrors Rust model
-  lib/stores.ts
-src-tauri/
-  src/
-    lib.rs            # commands + app state
-    models/mod.rs     # Project, Scene, Character, Place…
+src/                       the web view
+  App.svelte, main.ts      start-up, keyboard shortcuts, which dialogs are open
+  components/              Svelte screens and dialogs (TopBar, TimelineView, ManuscriptView,
+                           ComicTimeline, ScreenplayManuscript, ExportDialog, SnapshotsDialog, ...)
+  lib/                     everything that is not a screen
+    types.ts               the data model (mirrors the Rust models)
+    stores.ts              the project and UI state; thin wrappers that apply the pure rules below
+    migrate.ts             upgrades older project files; CURRENT_SCHEMA_VERSION
+    formats.ts             the story formats (novel, comic, screenplay) and their words
+    model.ts, comic.ts, screenplay.ts       pure rules per format (ordering, counting, slug lines, ...)
+    comicedit.ts, screenplayedit.ts         pure edit operations per format
+    search.ts, replace.ts, snapshots.ts,    shared tools; each handles all formats
+    wordcount.ts, goals.ts
+    export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails
+    platform/              the Platform layer (see below)
+    patch.ts, mirror.ts    sending small changes to Rust
+    persistence.ts         open, save, recover, folder: the flows that use the Platform
+src-tauri/src/
+  main.rs, lib.rs          the Tauri commands and the app's unsaved-work state
+  models/mod.rs            Project, Scene, Character, Place, Issue, ComicPage, Act, ScriptScene, ...
+  storage.rs               atomic writes, backups, recovery, themes, the Markdown folder format
+  patch.rs                 applies small patches to Rust's copy of the project
+tests/                     one test file per area; fakePlatform.ts is an in-memory pretend disk
+themes/                    example colour themes
+scripts/version.mjs        keeps the version equal in five files; checks a release tag
+.github/workflows/         ci.yml (every push and PR) and release.yml (a version tag)
+docs/                      these pages
 ```
 
-## Architecture: the Platform layer
+The Rust side is small (about 2,000 lines in five files) and is planned to be split into one module per concern; see the [roadmap](../../ROADMAP.md).
+
+## How a feature is put together
+
+Features follow one pattern, which is what keeps them testable and easy to find:
+
+1. **Pure rules** in a `src/lib/*.ts` module: functions that take a project and return a new one (or a result). No Svelte, no Tauri, no disk. Example: `screenplayedit.ts` (`addScene`, `moveElement`, `deleteScene`).
+2. **A thin store wrapper** in `stores.ts` that runs the rule on the open project and marks it changed.
+3. **A component** that shows the result and calls the wrapper.
+4. **Tests** for the pure rules in `tests/`.
+
+Anything that touches the machine goes through the Platform layer instead of calling Tauri directly.
+
+## Adding a new story format
+
+What the Screenplay mode needed, as a checklist (a Game Prototyping mode would follow the same path):
+
+1. `types.ts` and `models/mod.rs`: the document's fields (empty and left out of the file for other formats), plus `Project::sample()`, which lists every field.
+2. `migrate.ts`: a `vNToV(N+1)` step, the cleaning of the new fields in `normalize()`, and `CURRENT_SCHEMA_VERSION`; the same version in `SCHEMA_VERSION` in `models/mod.rs`.
+3. `patch.ts` and `patch.rs`: add the new lists to the list of fields that patches handle.
+4. `formats.ts`: the format, its words for its units, and `ready: false` until it is finished.
+5. The pure rules, edit operations, Timeline and writing views.
+6. The shared tools: search, replace, snapshots (whole-unit snapshots, auto snapshots, deleted units), word counts and goals.
+7. Exports, then `ready: true`.
+8. A test for each step, and an update of the user guide and these pages.
+
+## The Platform layer
 
 The app never calls Tauri or the operating system directly. Everything that needs the machine (file dialogs, reading and writing project files, recovery copies, the live mirror, imported themes, message boxes, the window's close button) goes through one interface, `Platform` (`src/lib/platform/types.ts`). The desktop implementation (`src/lib/platform/tauri.ts`) is the **only** file with Tauri `invoke`/dialog calls; `main.ts` installs it at start-up. Files and folders are identified by an opaque **`Location`** (a path on desktop; it could be a content URI on Android). App code never parses one: it asks the platform for a `displayName` (status bar, lists) or `describe` (tooltips), and the compiler enforces this with a branded type.
 
 Why: a different backend (Android with content URIs, or Rust owning the whole project model) means writing another implementation of the same interface, not changing the editor, Timeline or save logic. It also makes the save/open/recovery logic testable: `tests/fakePlatform.ts` is an in-memory pretend disk with scripted dialog answers, and `tests/persistence.test.ts` checks flows such as start-up, Start fresh, reload recovery, Save, New story and opening old files against it.
 
-## Rules that now live in Rust
+## Rules that live in Rust
 
 These are commands any front end can reuse (`src-tauri/src/storage.rs` holds the logic, `lib.rs` the commands):
 

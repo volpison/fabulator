@@ -47,6 +47,6 @@ jobs:
             Windows installer (setup .exe or .msi).
 
             The installer is not code-signed, so Windows SmartScreen may warn on first run:
-            choose "More info", then "Run anyway". See the README for what is new.
+            choose "More info", then "Run anyway".
           releaseDraft: true
           prerelease: false

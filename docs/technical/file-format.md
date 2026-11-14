@@ -1,15 +1,51 @@
 # The project file format
 
-What a `.fabulator.json` file contains and how old files are upgraded. A fuller written standard is planned (see the [roadmap](../../ROADMAP.md)).
+What a Fabulator project file contains, how old files are upgraded, and the rules that keep it safe. A project is one JSON file, normally named `<name>.fabulator.json`, UTF-8, pretty-printed.
 
-## Data model (schema v11)
+## Versioning rules
 
-In a novel, `Project` → `chapters[]` (ordered) and `scenes[]`. (Comics and screenplays use `issues[]` / `pages[]` and `acts[]` / `script_scenes[]`; see the sections below.) A scene has `chapter_id` and
-`order` (position inside its chapter); plotlines are a planning lens only.
-Book order = chapters in order, then scenes by `order`.
-Files carry `schema_version`; older files are upgraded on open by
-`src/lib/migrate.ts` (an untouched copy goes to `<file>.backups/` first), and
-files from a *newer* Fabulator are refused rather than damaged.
+- Every file carries `schema_version` (currently **11**). `CURRENT_SCHEMA_VERSION` in `src/lib/migrate.ts` and `SCHEMA_VERSION` in `src-tauri/src/models/mod.rs` must always be equal.
+- **Older file:** it is upgraded when opened, step by step (`migrations[n]` turns version n into n+1). Before an upgraded file is written back, an untouched copy is made first (`.bak`, see [Safety, backups and recovery](../user-guide/safety-and-backups.md)). If that backup fails, the open fails.
+- **Newer file:** it is refused with a clear message ("saved by a newer version of Fabulator"), never opened and damaged.
+- **Never edit an old migration step.** To change the format: bump the version, add a step, add the same fields in Rust (`#[serde(default)]`), and add a test.
+- `normalize()` repairs small gaps (a missing field, a wrong type, an unknown colour or status) instead of rejecting the file.
+- Fields that a format does not use are empty and **left out of the file** (a novel has no `issues`, `pages`, `acts` or `script_scenes`).
+
+### Version history
+
+| Version | What changed |
+|---|---|
+| 0 → 1 | Chapters become real entities (scenes had a plain chapter number) |
+| 1 → 2 | Characters and places gain `aliases` |
+| 2 → 3 | The project gains `snapshots` |
+| 3 → 4 | Scenes gain `status` and `color` |
+| 4 → 5 | Scenes gain `notes` and `todos` |
+| 5 → 6 | Scenes gain `when` (story time) |
+| 6 → 7 | The project gains `story_format` (every older project is a novel) |
+| 7 → 8 | Comic documents: `issues`, `pages`, `script_style` |
+| 8 → 9 | A snapshot may hold a whole comic page (`page`) |
+| 9 → 10 | Screenplay documents: `acts`, `script_scenes` |
+| 10 → 11 | A snapshot may hold a whole screenplay scene (`script_scene`) |
+
+## Top-level fields
+
+| Field | Used by | Notes |
+|---|---|---|
+| `schema_version`, `story_format`, `id`, `title`, `premise`, `genre`, `theme` | all | `story_format` is `novel`, `comic` or `screenplay` |
+| `chapters[]`, `scenes[]` | novel | A scene has `chapter_id` and `order`; book order is chapters in order, then scenes by `order` |
+| `issues[]`, `pages[]`, `script_style` | comic | See "Comic data" below |
+| `acts[]`, `script_scenes[]` | screenplay | See "Screenplay data" below |
+| `characters[]`, `places[]`, `notes[]`, `plotlines[]` | all | The shared world |
+| `snapshots[]` | all | Saved versions of a scene, page or screenplay scene (manual, auto, safety) |
+
+## Known limits (planned for schema v12)
+
+These are the gaps between today's format and a long-lived standard; see the [roadmap](../../ROADMAP.md):
+
+- **Unknown fields are dropped on save.** The web view keeps fields it does not know while the project is open, but Rust saves through its own `Project` structure, which lists only the fields it knows. The version check is what protects a newer file today; keeping unknown fields would make that safe by design.
+- **One flat list of fields per format.** Each new mode adds more top-level lists. Grouping the shared "world" (characters, places, notes, plotlines, snapshots) apart from each format's document would keep the file tidy as modes are added.
+- **No format marker** that says "this is a Fabulator file" and which reader version it needs.
+- **No abilities** yet in the shared world.
 
 ## Story formats
 
