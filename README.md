@@ -213,7 +213,7 @@ Gets your story out of the app as **Word (.docx)**, **EPUB**, **Markdown** or **
 - Every scene has a **status** (Idea, Draft, Revised, Final) and an optional **colour label** (red, orange, yellow, green, blue, purple). Set them in the Manuscript editor header, or in a Timeline card's *Edit* mode. Cards show a status badge and a coloured edge strip.
 - The **filter bar** under the Timeline toolbar narrows by text (title, synopsis, tags), status, colour (or "No colour"), character and plotline. Several values of one kind mean "any of these"; different kinds must all match. The status chips also show how many scenes are in each state.
 - Scenes that do not match are **dimmed, not hidden**, so the layout and drag-and-drop keep working. The bar shows "N of M scenes" and a *Clear* button. The filter is not saved.
-- Older projects are upgraded automatically (now schema v10): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
+- Older projects are upgraded automatically (now schema v11): scenes with text become *Draft*, empty ones *Idea*; every scene gets empty notes and to-dos.
 
 ## Plotlines (Timeline lanes)
 
@@ -363,11 +363,11 @@ A comic is `issues[]` (ordered) and `pages[]`; a page has a `plot`, an optional 
 
 Comic is **ready** in `formats.ts`: *File → New comic* starts one. Exporting a comic as a Markdown folder is refused for now rather than writing a copy without its pages.
 
-### Screenplay data (schema v10; views come in later steps)
+### Screenplay data (schema v10, snapshots of whole scenes since v11)
 
 A screenplay is `acts[]` (ordered) and `script_scenes[]`. A scene has a **slug line** kept as parts (`int_ext` INT / EXT / INT/EXT, `location`, `time`; "INT. KITCHEN - DAY" is built from them, and `parseSlug` reads typed text back into them), an optional working `title`, a `summary`, the same shared fields as a novel's scene (status, plotline, cast, places, tags, colour, notes, to-dos, story time), and ordered `elements[]`: **action**, **dialogue** (a speaker, an optional extension such as V.O./O.S., an optional parenthetical, the words), **transition** (CUT TO:) and private **note** (never exported). Dialogue is structured, so a character's lines can be found, counted and renamed without parsing text; "(CONT'D)" is derived (`needsContd`: the same character speaks again with only action between), never stored. `src/lib/screenplay.ts` also has the **page estimate** (about 55 lines of 12 pt Courier per page, action about 60 characters wide, dialogue about 35, counted in eighths of a page; one page ≈ one minute as a rule of thumb) and word counts that leave out notes and the slug. Other formats carry none of these fields in their files.
 
-Screenplay is marked **not ready** in `formats.ts` (it has its Timeline, writing view and exports; the shared tools come next): *File → New screenplay (early preview)* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
+Screenplay is **ready**: *File → New screenplay* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now.
 
 ### Screenplay Timeline (scenes)
 
@@ -390,7 +390,14 @@ The scene is a list of **elements**: *action*, *dialogue*, *transition* and priv
 
 *File → Export…* offers three formats for a screenplay. **PDF** is written by Fabulator itself (no extra software): standard script pages in 12 pt Courier, 55 lines a page, 1.5 in left margin, page numbers from page 2, the slug line at the margin, dialogue and parentheticals indented, transitions at the right, a slug line never alone at the bottom of a page, and long dialogue split with **(MORE)** and **NAME (CONT'D)**. **Word** uses the same layout through real paragraph styles (Scene Heading, Action, Character, Parenthetical, Dialogue, Transition), so it can be edited. **Fountain** is plain text for Final Draft, Highland, Fade In and others (a forced slug `.` when INT/EXT is not set, `>` transitions, `!` for all-capital action lines). Options: **title page**, **scene numbers** (shooting script) and the scope: whole script, the act of the selected scene, or just that scene (numbers stay those of the whole script). Private notes and scenes with nothing in them are left out; "(CONT'D)" is worked out from the dialogue, never stored. The layout is `src/lib/export/screenplayLayout.ts`, the PDF writer `pdf.ts`. PDF text uses the standard Courier font, so characters outside Western European alphabets show as "?" (use Word or Fountain for those).
 
-Not for screenplays yet: Search, Find & replace, Snapshots and goals; exporting a Markdown folder.
+### Screenplay: Search, Find & replace, Snapshots, goals
+
+- **Search** (Ctrl+F) finds scenes by slug line, working title, synopsis, action, dialogue (the speaker's name counts as part of the line) and tags, private notes included, plus acts by title and summary. Results say "Act 1 · Scene 3".
+- **Find & replace** (Ctrl+H) works on action, dialogue words, parentheticals, transitions and private notes ("Action and dialogue"), working titles and synopses. The slug line and speaker names are structured data and are not touched (rename a character or place in the Cast instead). Each changed scene first gets a safety snapshot, so it can be undone from Snapshots.
+- **Snapshots** keep a whole scene (slug, summary, elements): take one by hand, get automatic ones while you write (at most one every 30 minutes per scene), a safety copy before a restore, a replace or a delete. A deleted scene with writing can be brought back from *Deleted scenes*, at the end of its act. Restoring brings back the writing (title, summary, slug, elements); cast, colour and notes stay as they are.
+- **Goals and word counts** include screenplays: the status bar counts action, dialogue and transitions (not private notes or slug lines), and the Goals panel lists words by act.
+
+Not for screenplays yet: reports (scene, character and location), and exporting a Markdown folder.
 
 ### Comic Timeline (pages)
 
@@ -419,7 +426,7 @@ Still not for comics: the "Export as folder (Markdown)" command.
 
 In the other kinds, empty pages are left out (the numbers keep their place). Private notes and to-dos are never exported.
 
-## Data model (schema v10)
+## Data model (schema v11)
 
 `Project` → `chapters[]` (ordered) and `scenes[]`. A scene has `chapter_id` and
 `order` (position inside its chapter); plotlines are a planning lens only.

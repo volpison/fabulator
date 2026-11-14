@@ -29,10 +29,10 @@ function sample(): Project {
   return p;
 }
 
-test("the screenplay format has its Timeline and writing view, but is not ready: not offered for new stories", () => {
-  assert.equal(STORY_FORMATS.screenplay.ready, false);
+test("the screenplay format is ready: offered for new stories", () => {
+  assert.equal(STORY_FORMATS.screenplay.ready, true);
   assert.deepEqual(STORY_FORMATS.screenplay.views, { timeline: true, manuscript: true });
-  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic"]);
+  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic", "screenplay"]);
   const p = sample();
   assert.equal(formatOf(p).label, "Screenplay");
   assert.equal(noun(p, "group", 2), "acts");

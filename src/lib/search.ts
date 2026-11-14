@@ -12,6 +12,7 @@
 import type { Project } from "./types";
 import { readingOrder } from "./model";
 import { comicReadingOrder, pageNumber } from "./comic";
+import { sceneNumbers, screenplayReadingOrder, slugLine } from "./screenplay";
 import {
   blockTextWithPositions,
   foldText,
@@ -19,27 +20,31 @@ import {
   type BlockLike,
 } from "./mentions";
 
-export type SearchKind = "scene" | "page" | "character" | "place" | "note" | "chapter" | "issue";
+export type SearchKind = "scene" | "page" | "script_scene" | "character" | "place" | "note" | "chapter" | "issue" | "act";
 
 /** Display order of result groups. */
 export const KIND_ORDER: SearchKind[] = [
   "scene",
   "page",
+  "script_scene",
   "character",
   "place",
   "note",
   "chapter",
   "issue",
+  "act",
 ];
 
 export const KIND_LABEL: Record<SearchKind, string> = {
   scene: "Scenes",
   page: "Pages",
+  script_scene: "Scenes",
   character: "Characters",
   place: "Places",
   note: "Notes",
   chapter: "Chapters",
   issue: "Issues",
+  act: "Acts",
 };
 
 export type Snippet = { before: string; match: string; after: string };
@@ -196,13 +201,13 @@ export function search(
 ): SearchResult {
   const terms = parseQuery(query);
   const counts: Record<SearchKind, number> = {
-    scene: 0, page: 0, character: 0, place: 0, note: 0, chapter: 0, issue: 0,
+    scene: 0, page: 0, script_scene: 0, character: 0, place: 0, note: 0, chapter: 0, issue: 0, act: 0,
   };
   if (terms.length === 0) return { hits: [], counts, terms };
 
   const foldedTerms = terms.map((t) => foldText(t).folded);
   const byKind: Record<SearchKind, { hit: SearchHit; score: number }[]> = {
-    scene: [], page: [], character: [], place: [], note: [], chapter: [], issue: [],
+    scene: [], page: [], script_scene: [], character: [], place: [], note: [], chapter: [], issue: [], act: [],
   };
 
   const consider = (
@@ -257,6 +262,26 @@ export function search(
       { label: "Tags", text: pg.tags.join(", ") },
     ]);
   }
+  // Screenplay scenes: slug line, summary, every element (action, dialogue with its speaker, transitions), private notes, tags.
+  const acts = project.acts ?? [];
+  const actIndex = new Map(acts.map((a, n) => [a.id, n + 1]));
+  const numbers = sceneNumbers({ acts, script_scenes: project.script_scenes ?? [] });
+  for (const sc of screenplayReadingOrder({ acts, script_scenes: project.script_scenes ?? [] })) {
+    const script = sc.elements
+      .filter((e) => e.kind !== "note")
+      .map((e) => (e.kind === "dialogue" ? [names.get(e.speaker_id) ?? "", e.parenthetical, e.text].filter(Boolean).join(": ") : e.text))
+      .filter(Boolean)
+      .join("\n");
+    const slug = slugLine(sc);
+    consider("script_scene", sc.id, slug || sc.title, `Act ${actIndex.get(sc.act_id) ?? "?"} · Scene ${numbers.get(sc.id) ?? "?"}`, [
+      { label: "Title", text: sc.title, isTitle: true },
+      { label: "Slug line", text: slug, isTitle: true },
+      { label: "Synopsis", text: sc.summary },
+      { label: "Script", text: script },
+      { label: "Notes", text: sc.elements.filter((e) => e.kind === "note").map((e) => e.text).join("\n") },
+      { label: "Tags", text: sc.tags.join(", ") },
+    ]);
+  }
   for (const c of project.characters) {
     consider("character", c.id, c.name, [c.role, c.category].filter(Boolean).join(" · "), [
       { label: "Name", text: c.name, isTitle: true },
@@ -292,6 +317,13 @@ export function search(
 
   issues.forEach((c, i) => {
     consider("issue", c.id, c.title, `Issue ${i + 1}`, [
+      { label: "Title", text: c.title, isTitle: true },
+      { label: "Summary", text: c.summary },
+    ]);
+  });
+
+  acts.forEach((c, i) => {
+    consider("act", c.id, c.title, `Act ${i + 1}`, [
       { label: "Title", text: c.title, isTitle: true },
       { label: "Summary", text: c.summary },
     ]);

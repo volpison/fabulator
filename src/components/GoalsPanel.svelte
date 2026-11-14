@@ -12,7 +12,8 @@
   $: daily = $progress.daily;
   $: manuscript = $progress.manuscript;
   $: isComic = $project?.story_format === "comic";
-  $: chapters = (isComic ? ($project?.issues ?? []) : ($project?.chapters ?? [])).map((c, i) => ({
+  $: isScreenplay = $project?.story_format === "screenplay";
+  $: chapters = (isComic ? ($project?.issues ?? []) : isScreenplay ? ($project?.acts ?? []) : ($project?.chapters ?? [])).map((c, i) => ({
     number: i + 1,
     title: c.title || "Untitled",
     words: $stats.byChapter.get(c.id) ?? 0,
@@ -122,9 +123,9 @@
       </section>
 
       <section>
-        <h3>{isComic ? "By issue" : "By chapter"}</h3>
+        <h3>{isComic ? "By issue" : isScreenplay ? "By act" : "By chapter"}</h3>
         {#if chapters.length === 0}
-          <p class="note">{isComic ? "No issues yet." : "No chapters yet."}</p>
+          <p class="note">{isComic ? "No issues yet." : isScreenplay ? "No acts yet." : "No chapters yet."}</p>
         {:else}
           <ul class="chapters">
             {#each chapters as c}

@@ -13,12 +13,13 @@
  * not match "Jose"), because replacing the wrong thing silently is worse
  * than missing something; the search dialog is the accent-insensitive tool.
  */
-import type { ComicPage, Project, Scene } from "./types";
+import type { ComicPage, Project, Scene, ScriptScene } from "./types";
+import { screenplayReadingOrder, slugLine } from "./screenplay";
 import { comicReadingOrder, pageNumber } from "./comic";
 import { readingOrder } from "./model";
 import { decodeEntities, looksLikeHtml } from "./export/html";
 import { htmlToPlainText } from "./mentions";
-import { hasContent, makePageSnapshot, makeSnapshot, pageHasContent, pageToText } from "./snapshots";
+import { hasContent, makePageSnapshot, makeScriptSnapshot, makeSnapshot, pageHasContent, pageToText, scriptSceneHasContent, scriptSceneToText } from "./snapshots";
 
 export type ReplaceOptions = { matchCase: boolean; wholeWord: boolean };
 export type ReplaceFields = { content: boolean; title: boolean; summary: boolean };
@@ -252,6 +253,92 @@ function applyReplaceComic(
   return { project: { ...project, pages, snapshots }, scenes, replacements };
 }
 
+// ─── screenplay scenes ───
+// "text" is the writing (action, dialogue words, parentheticals, transitions, private notes), "title" is the
+// working title, "summary" the synopsis. The slug line and speaker names are structured data and stay as they are.
+
+function replaceInScriptText(sc: ScriptScene, re: RegExp, replacement: string): { scene: ScriptScene; count: number } {
+  let count = 0;
+  const one = (t: string) => {
+    const r = replaceInPlain(t, re, replacement);
+    count += r.count;
+    return r.text;
+  };
+  const elements = sc.elements.map((e) => {
+    const text = one(e.text);
+    const parenthetical = e.kind === "dialogue" ? one(e.parenthetical) : e.parenthetical;
+    return text === e.text && parenthetical === e.parenthetical ? e : { ...e, text, parenthetical };
+  });
+  return count === 0 ? { scene: sc, count: 0 } : { scene: { ...sc, elements }, count };
+}
+
+function planReplaceScreenplay(
+  project: Project,
+  re: RegExp,
+  replacement: string,
+  fields: ReplaceFields,
+  onlyId?: string | null
+): ReplacePlan {
+  const actLabel = new Map(project.acts.map((a, n) => [a.id, `Act ${n + 1}${a.title ? ` · ${a.title}` : ""}`]));
+  const changes: SceneChange[] = [];
+  let number = 0;
+  for (const sc of screenplayReadingOrder(project)) {
+    number++;
+    if (onlyId && sc.id !== onlyId) continue;
+    const counts = {
+      content: fields.content ? replaceInScriptText(sc, re, replacement).count : 0,
+      title: fields.title ? replaceInPlain(sc.title, re, replacement).count : 0,
+      summary: fields.summary ? replaceInPlain(sc.summary, re, replacement).count : 0,
+    };
+    const total = counts.content + counts.title + counts.summary;
+    if (total === 0) continue;
+    const snippet =
+      (counts.content && snipOf(scriptSceneToText({ ...sc, summary: "" }), re, replacement)) ||
+      (counts.title && snipOf(sc.title, re, replacement)) ||
+      (counts.summary && snipOf(sc.summary, re, replacement)) ||
+      null;
+    changes.push({
+      sceneId: sc.id,
+      title: slugLine(sc) || sc.title || "Untitled",
+      chapterLabel: `${actLabel.get(sc.act_id) ?? ""} · Scene ${number}`.replace(/^ · /, ""),
+      counts,
+      total,
+      snippet,
+    });
+  }
+  return { changes, total: changes.reduce((n, c) => n + c.total, 0), scenes: changes.length };
+}
+
+function applyReplaceScreenplay(
+  project: Project,
+  re: RegExp,
+  find: string,
+  replacement: string,
+  fields: ReplaceFields,
+  ids: Set<string>,
+  now: number,
+  newId: () => string
+): { project: Project; scenes: number; replacements: number } {
+  const label = `Before replace “${find}” → “${replacement}”`;
+  const snapshots = [...project.snapshots];
+  let scenes = 0;
+  let replacements = 0;
+  const script_scenes = project.script_scenes.map((sc): ScriptScene => {
+    if (!ids.has(sc.id)) return sc;
+    const c = fields.content ? replaceInScriptText(sc, re, replacement) : { scene: sc, count: 0 };
+    const t = fields.title ? replaceInPlain(sc.title, re, replacement) : { text: sc.title, count: 0 };
+    const y = fields.summary ? replaceInPlain(sc.summary, re, replacement) : { text: sc.summary, count: 0 };
+    const n = c.count + t.count + y.count;
+    if (n === 0) return sc;
+    scenes++;
+    replacements += n;
+    if (scriptSceneHasContent(sc) || sc.title) snapshots.push(makeScriptSnapshot(sc, "safety", label, now, newId()));
+    return { ...c.scene, title: t.text, summary: y.text };
+  });
+  if (scenes === 0) return { project, scenes: 0, replacements: 0 };
+  return { project: { ...project, script_scenes, snapshots }, scenes, replacements };
+}
+
 /** What a replace would change, scene by scene (nothing is modified). */
 export function planReplace(
   project: Project,
@@ -264,6 +351,7 @@ export function planReplace(
   const re = buildMatcher(find, opts);
   if (!re) return { changes: [], total: 0, scenes: 0 };
   if (project.story_format === "comic") return planReplaceComic(project, re, replacement, fields, onlySceneId);
+  if (project.story_format === "screenplay") return planReplaceScreenplay(project, re, replacement, fields, onlySceneId);
   const chapterLabel = new Map(project.chapters.map((c, i) => [c.id, `Ch ${i + 1} · ${c.title}`]));
   const changes: SceneChange[] = [];
 
@@ -311,6 +399,7 @@ export function applyReplace(
   const re = buildMatcher(find, opts);
   if (!re || sceneIds.size === 0) return { project, scenes: 0, replacements: 0 };
   if (project.story_format === "comic") return applyReplaceComic(project, re, find, replacement, fields, sceneIds, now, newId);
+  if (project.story_format === "screenplay") return applyReplaceScreenplay(project, re, find, replacement, fields, sceneIds, now, newId);
 
   const label = `Before replace “${find}” → “${replacement}”`;
   const snapshots = [...project.snapshots];
