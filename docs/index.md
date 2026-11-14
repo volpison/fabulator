@@ -23,4 +23,6 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [The project file format](technical/file-format.md) | Data model, schema versions, formats |
 | [Tests](technical/testing.md) | How the project is tested |
 
-The release steps and GitHub setup are in [GITHUB.md](../GITHUB.md) for now; they move into a contributing page next.
+## Contributing
+
+[Contributing](contributing.md): the pull-request workflow, what CI does, how to make a release, keeping the docs healthy.
