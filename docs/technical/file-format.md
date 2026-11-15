@@ -4,9 +4,10 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 
 ## Versioning rules
 
-- Every file carries `schema_version` (currently **11**). `CURRENT_SCHEMA_VERSION` in `src/lib/migrate.ts` and `SCHEMA_VERSION` in `src-tauri/src/models/mod.rs` must always be equal.
+- Every file carries `schema_version` (currently **12**). `CURRENT_SCHEMA_VERSION` in `src/lib/migrate.ts` and `SCHEMA_VERSION` in `src-tauri/src/models/mod.rs` must always be equal.
 - **Older file:** it is upgraded when opened, step by step (`migrations[n]` turns version n into n+1). Before an upgraded file is written back, an untouched copy is made first (`.bak`, see [Safety, backups and recovery](../user-guide/safety-and-backups.md)). If that backup fails, the open fails.
-- **Newer file:** it is refused with a clear message ("saved by a newer version of Fabulator"), never opened and damaged.
+- **Newer file:** it is refused with a clear message ("saved by a newer version of Fabulator"), never opened and damaged. The exception is a file whose `min_reader_version` is not higher than this version: it says an older reader can open it safely, so it is opened, keeps its own `schema_version`, and the fields this version does not know are written back unchanged.
+- **Another kind of file:** `file_type` is always `"fabulator-project"`. A JSON file with a different `file_type` is refused as "not a Fabulator project". Files from before v12 have no marker and are accepted.
 - **Never edit an old migration step.** To change the format: bump the version, add a step, add the same fields in Rust (`#[serde(default)]`), and add a test.
 - `normalize()` repairs small gaps (a missing field, a wrong type, an unknown colour or status) instead of rejecting the file.
 - Fields that a format does not use are empty and **left out of the file** (a novel has no `issues`, `pages`, `acts` or `script_scenes`).
@@ -26,12 +27,13 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 | 8 → 9 | A snapshot may hold a whole comic page (`page`) |
 | 9 → 10 | Screenplay documents: `acts`, `script_scenes` |
 | 10 → 11 | A snapshot may hold a whole screenplay scene (`script_scene`) |
+| 11 → 12 | The file says what it is (`file_type`) and which reader it needs (`min_reader_version`) |
 
 ## Top-level fields
 
 | Field | Used by | Notes |
 |---|---|---|
-| `schema_version`, `story_format`, `id`, `title`, `premise`, `genre`, `theme` | all | `story_format` is `novel`, `comic` or `screenplay` |
+| `schema_version`, `file_type`, `min_reader_version`, `story_format`, `id`, `title`, `premise`, `genre`, `theme` | all | `story_format` is `novel`, `comic` or `screenplay` |
 | `chapters[]`, `scenes[]` | novel | A scene has `chapter_id` and `order`; book order is chapters in order, then scenes by `order` |
 | `issues[]`, `pages[]`, `script_style` | comic | See "Comic data" below |
 | `acts[]`, `script_scenes[]` | screenplay | See "Screenplay data" below |
@@ -44,7 +46,7 @@ These are the gaps between today's format and a long-lived standard; see the [ro
 
 - ~~Unknown fields are dropped on save.~~ **Fixed:** every Rust model struct keeps the fields it does not list (`extra`, a flattened map) and writes them back, so a field added by a newer Fabulator survives a save here. The version check still decides whether a file may be opened at all.
 - **One flat list of fields per format.** Each new mode adds more top-level lists. Grouping the shared "world" (characters, places, notes, plotlines, snapshots) apart from each format's document would keep the file tidy as modes are added.
-- **No format marker** that says "this is a Fabulator file" and which reader version it needs.
+- ~~No format marker.~~ **Fixed in v12:** `file_type` and `min_reader_version`.
 - **No abilities** yet in the shared world.
 
 ## Story formats

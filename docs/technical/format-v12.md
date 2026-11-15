@@ -77,12 +77,12 @@ Option B can still happen later, as its own step, because change 2 (`min_reader_
 
 ## The migration (v11 → v12)
 
-`v11ToV12` adds `file_type`, `min_reader_version: 12`, and an empty `abilities` list; `normalize()` cleans `abilities` and each character's `ability_ids`. The same fields are added to the Rust models with `#[serde(default)]`, `CURRENT_SCHEMA_VERSION` and `SCHEMA_VERSION` become 12, `abilities` joins the patch list in both `patch.ts` and `patch.rs`, and `Project::sample()` lists the new fields. The usual untouched backup is made before an older file is written back.
+`v11ToV12` adds `file_type` and `min_reader_version: 12` (done). Abilities arrive in step 3 without another version bump, since v12 is not released yet: `normalize()` will clean `abilities` and each character's `ability_ids`. The same fields are added to the Rust models with `#[serde(default)]`, `CURRENT_SCHEMA_VERSION` and `SCHEMA_VERSION` become 12, `abilities` joins the patch list in both `patch.ts` and `patch.rs`, and `Project::sample()` lists the new fields. The usual untouched backup is made before an older file is written back.
 
 ## Build order
 
 1. Keep unknown fields (Rust), with its test. No version change. ✅ done: every model struct has `extra`.
-2. The marker, `min_reader_version` and the clearer refusal messages; schema v12.
+2. The marker, `min_reader_version` and the clearer refusal messages; schema v12. ✅ done.
 3. Abilities: data, side panel, Search, Markdown export, docs.
 4. Move the facts into [The project file format](file-format.md), delete this page.
 

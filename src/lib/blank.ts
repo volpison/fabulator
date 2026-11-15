@@ -1,5 +1,5 @@
 /** The empty story a new session starts with (and File → New story creates). */
-import { CURRENT_SCHEMA_VERSION } from "./migrate";
+import { CURRENT_SCHEMA_VERSION, FILE_TYPE } from "./migrate";
 import { DEFAULT_STORY_FORMAT, type StoryFormatId } from "./formats";
 import { DEFAULT_SCRIPT_STYLE, newPage } from "./comic";
 import { newScriptScene } from "./screenplay";
@@ -10,6 +10,8 @@ export function blankProject(newId: (prefix: string) => string): Project {
   const plotlineId = newId("pl");
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: CURRENT_SCHEMA_VERSION,
     story_format: DEFAULT_STORY_FORMAT,
     id: newId("proj"),
     title: "Untitled story",
@@ -54,6 +56,8 @@ export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SC
   const plotlineId = newId("pl");
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: CURRENT_SCHEMA_VERSION,
     story_format: "comic",
     script_style: style,
     id: newId("proj"),
@@ -81,6 +85,8 @@ export function blankScreenplay(newId: (prefix: string) => string): Project {
   const plotlineId = newId("pl");
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: CURRENT_SCHEMA_VERSION,
     story_format: "screenplay",
     id: newId("proj"),
     title: "Untitled screenplay",

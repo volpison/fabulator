@@ -228,6 +228,10 @@ export interface ScriptScene {
 export interface Project {
   /** File-format version; see migrate.ts. */
   schema_version: number;
+  /** Always "fabulator-project": says this file is a Fabulator project (see migrate.ts). */
+  file_type: string;
+  /** The lowest file-format version of Fabulator that can open this file safely. */
+  min_reader_version: number;
   /** What kind of document this is (see formats.ts). */
   story_format: StoryFormatId;
   id: string;
