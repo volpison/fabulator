@@ -40,7 +40,12 @@ src/                       the web view
 src-tauri/src/
   main.rs, lib.rs          the Tauri commands and the app's unsaved-work state
   models/mod.rs            Project, Scene, Character, Place, Issue, ComicPage, Act, ScriptScene, ...
-  storage.rs               atomic writes, backups, recovery, themes, the Markdown folder format
+  storage/                 the file logic, std-only, one file per concern:
+    atomic.rs              crash-safe writes, bounded reads
+    backup.rs              rotating backups, the backup made before an upgrade
+    recovery.rs            unsaved-work copies (live, discarded, legacy)
+    themes.rs              user theme files
+    folder.rs              the Markdown project folder
   patch.rs                 applies small patches to Rust's copy of the project
 tests/                     one test file per area; fakePlatform.ts is an in-memory pretend disk
 themes/                    example colour themes
@@ -49,7 +54,7 @@ scripts/version.mjs        keeps the version equal in five files; checks a relea
 docs/                      these pages
 ```
 
-The Rust side is small (about 2,000 lines in five files) and is planned to be split into one module per concern; see the [roadmap](../../ROADMAP.md).
+The Rust side is being split into one module per concern: `storage/` is done; the commands (`lib.rs`) and the models are next.
 
 ## How a feature is put together
 
@@ -83,7 +88,7 @@ Why: a different backend (Android with content URIs, or Rust owning the whole pr
 
 ## Rules that live in Rust
 
-These are commands any front end can reuse (`src-tauri/src/storage.rs` holds the logic, `lib.rs` the commands):
+These are commands any front end can reuse (`src-tauri/src/storage/` holds the logic, `lib.rs` the commands):
 
 - `open_project(path)`: reads and parses the file, and makes a one-off `.bak` of it first if it is older than the current schema (or has no version), so an upgrade can never destroy the original. If that backup fails, the open fails.
 - `save_project(path, project, force_backup)`: atomic write with rotating backups (also drops any legacy recovery copy).
