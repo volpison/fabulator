@@ -38,7 +38,12 @@ src/                       the web view
     patch.ts, mirror.ts    sending small changes to Rust
     persistence.ts         open, save, recover, folder: the flows that use the Platform
 src-tauri/src/
-  main.rs, lib.rs          the Tauri commands and the app's unsaved-work state
+  main.rs, lib.rs          start-up: the module list and the list of commands the web view can call
+  commands/                the Tauri commands, one file per job
+    project.rs             open, save, export a project file
+    unsaved.rs             Rust's kept copy of the project and the recovery copies
+    themes.rs              the user's colour themes
+    folder.rs              the Markdown project folder
   models/mod.rs            Project, Scene, Character, Place, Issue, ComicPage, Act, ScriptScene, ...
   storage/                 the file logic, std-only, one file per concern:
     atomic.rs              crash-safe writes, bounded reads
@@ -54,7 +59,7 @@ scripts/version.mjs        keeps the version equal in five files; checks a relea
 docs/                      these pages
 ```
 
-The Rust side is being split into one module per concern: `storage/` is done; the commands (`lib.rs`) and the models are next.
+The Rust side is being split into one module per concern: `storage/` and `commands/` are done; the models are next.
 
 ## How a feature is put together
 
@@ -88,7 +93,7 @@ Why: a different backend (Android with content URIs, or Rust owning the whole pr
 
 ## Rules that live in Rust
 
-These are commands any front end can reuse (`src-tauri/src/storage/` holds the logic, `lib.rs` the commands):
+These are commands any front end can reuse (`src-tauri/src/storage/` holds the logic, `src-tauri/src/commands/` the commands):
 
 - `open_project(path)`: reads and parses the file, and makes a one-off `.bak` of it first if it is older than the current schema (or has no version), so an upgrade can never destroy the original. If that backup fails, the open fails.
 - `save_project(path, project, force_backup)`: atomic write with rotating backups (also drops any legacy recovery copy).
