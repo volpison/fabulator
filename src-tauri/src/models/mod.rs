@@ -378,7 +378,7 @@ mod tests {
         json["game"] = serde_json::json!({ "quests": [{ "id": "q-1" }] });
         json["characters"][0]["ability_ids"] = serde_json::json!(["ab-1"]);
         json["scenes"][0]["mood"] = "tense".into();
-        json["scenes"][0]["todos"] = serde_json::json!([{ "id": "t-1", "text": "x", "priority": 2 }]);
+        json["scenes"][0]["todos"] = serde_json::json!([{ "id": "t-1", "text": "x", "done": false, "priority": 2 }]);
 
         let project: Project = serde_json::from_value(json.clone()).unwrap();
         assert!(project.extra.contains_key("game"));
