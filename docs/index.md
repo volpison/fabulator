@@ -21,6 +21,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 |---|---|
 | [Architecture](technical/architecture.md) | Stack, folder layout, the Platform layer, what Rust owns |
 | [The project file format](technical/file-format.md) | Data model, schema versions, formats |
+| [Proposal: format v12](technical/format-v12.md) | The planned next version of the file format (not built yet) |
 | [Tests](technical/testing.md) | How the project is tested |
 
 ## Contributing
