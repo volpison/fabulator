@@ -11,6 +11,9 @@ pub struct SceneTodo {
     pub text: String,
     #[serde(default)]
     pub done: bool,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// A saved version of a scene. `kind` is "manual", "auto" or "safety".
@@ -36,6 +39,9 @@ pub struct Snapshot {
     /// Screenplays: the whole scene as it was (then `scene_id` holds the scene id and `content` is empty).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script_scene: Option<ScriptScene>,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +55,9 @@ pub struct Character {
     pub category: String,
     pub traits: Vec<String>,
     pub notes: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +69,9 @@ pub struct Place {
     pub description: String,
     pub location: String,
     pub notes: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,6 +80,9 @@ pub struct Note {
     pub title: String,
     pub content: String,
     pub tags: Vec<String>,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,4 +90,7 @@ pub struct Plotline {
     pub id: String,
     pub name: String,
     pub color: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }

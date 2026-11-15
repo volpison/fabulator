@@ -11,6 +11,9 @@ pub struct Act {
     pub title: String,
     #[serde(default)]
     pub summary: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// One element of a screenplay scene. `kind` is "action", "dialogue", "transition" or "note".
@@ -29,6 +32,9 @@ pub struct ScriptElement {
     pub parenthetical: String,
     #[serde(default)]
     pub text: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// A screenplay scene: a slug line and its elements. The shared fields behave exactly as on a novel's scene.
@@ -69,6 +75,9 @@ pub struct ScriptScene {
     pub todos: Vec<SceneTodo>,
     #[serde(default)]
     pub when: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 fn default_scene_status() -> String {

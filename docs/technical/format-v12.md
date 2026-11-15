@@ -81,7 +81,7 @@ Option B can still happen later, as its own step, because change 2 (`min_reader_
 
 ## Build order
 
-1. Keep unknown fields (Rust), with its test. No version change.
+1. Keep unknown fields (Rust), with its test. No version change. ✅ done: every model struct has `extra`.
 2. The marker, `min_reader_version` and the clearer refusal messages; schema v12.
 3. Abilities: data, side panel, Search, Markdown export, docs.
 4. Move the facts into [The project file format](file-format.md), delete this page.

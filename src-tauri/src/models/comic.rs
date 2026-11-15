@@ -11,6 +11,9 @@ pub struct Issue {
     pub title: String,
     #[serde(default)]
     pub summary: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// One balloon, caption or sound effect. `kind` is "dialogue", "caption", "thought" or "sfx".
@@ -26,6 +29,9 @@ pub struct ComicLine {
     /// Lettering note ("off-panel", "small").
     #[serde(default)]
     pub note: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +42,9 @@ pub struct ComicPanel {
     pub description: String,
     #[serde(default)]
     pub lines: Vec<ComicLine>,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// A comic page. The shared fields behave exactly as on a novel's scene.
@@ -74,6 +83,9 @@ pub struct ComicPage {
     pub todos: Vec<SceneTodo>,
     #[serde(default)]
     pub when: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 fn default_stage() -> String {
