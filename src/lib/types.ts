@@ -237,6 +237,123 @@ export interface ScriptScene {
   when: string;
 }
 
+// ─── Game documents (story_format "game": quests → nodes, conditions and effects) ───
+
+export type QuestKind = "main" | "side";
+export type CompareOp = "=" | "!=" | "<" | "<=" | ">" | ">=";
+
+/** One thing that must be true. Stored as data so it can be shown as text and checked. */
+export type SimpleCondition =
+  /** A flag is set (`set: true`) or not set (`set: false`). */
+  | { kind: "flag"; variable_id: string; set: boolean }
+  /** A number variable compares to a value. */
+  | { kind: "number"; variable_id: string; op: CompareOp; value: number }
+  /** The player has at least `min` of an item. */
+  | { kind: "item"; item_id: string; min: number }
+  /** A character has an ability ("" = the player's character). */
+  | { kind: "ability"; character_id: string; ability_id: string }
+  /** A node has been completed. */
+  | { kind: "done"; node_id: string };
+/** "Any of": at least one holds. One level deep (an `any` never holds another `any`). */
+export type Condition = SimpleCondition | { kind: "any"; of: SimpleCondition[] };
+
+/** One thing that changes when a node happens or an option is chosen. */
+export type Effect =
+  | { kind: "set"; variable_id: string; to: boolean }
+  | { kind: "add"; variable_id: string; amount: number }
+  /** Give (positive) or take (negative) items. */
+  | { kind: "give"; item_id: string; amount: number }
+  | { kind: "grant"; character_id: string; ability_id: string };
+
+export type GameElementKind = "narration" | "dialogue" | "choice" | "note";
+
+/** One option of a choice: what the player reads, when it is offered, what it does, where it leads. */
+export interface ChoiceOption {
+  id: string;
+  text: string;
+  requires: Condition[];
+  effects: Effect[];
+  /** The node it leads to ("" = nowhere yet). */
+  to: string;
+}
+
+export interface GameElement {
+  id: string;
+  kind: GameElementKind;
+  /** Dialogue: the character who speaks (a Character id). */
+  speaker_id: string;
+  /** Dialogue: a short direction ("whispering"), without brackets. */
+  parenthetical: string;
+  /** Narration, the spoken words, the choice's prompt or the private note. */
+  text: string;
+  /** Choice only: the options. */
+  options: ChoiceOption[];
+}
+
+/** A way out of a node, optionally only when a condition holds. */
+export interface GameLink {
+  id: string;
+  to: string;
+  label: string;
+  requires: Condition[];
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  kind: QuestKind;
+  summary: string;
+  plotline_id: string;
+  /** Offered only when all of these hold. */
+  requires: Condition[];
+}
+
+/** A story beat, encounter or conversation. The shared fields behave as on a novel's scene. */
+export interface GameNode {
+  id: string;
+  quest_id: string;
+  /** Position inside its quest (0-based). */
+  order: number;
+  title: string;
+  summary: string;
+  elements: GameElement[];
+  requires: Condition[];
+  effects: Effect[];
+  links: GameLink[];
+  /** True when the story may stop here (so it is not reported as a dead end). */
+  ending: boolean;
+  status: "idea" | "draft" | "revised" | "final";
+  plotline_id: string;
+  character_ids: string[];
+  place_ids: string[];
+  tags: string[];
+  color: string;
+  notes: string;
+  todos: SceneTodo[];
+  when: string;
+}
+
+/** A named piece of state: a yes/no flag or a number. Declared once, used by conditions and effects. */
+export interface GameVariable {
+  id: string;
+  kind: "flag" | "number";
+  label: string;
+  notes: string;
+}
+
+export interface GameItem {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Game {
+  quests: Quest[];
+  nodes: GameNode[];
+  variables: GameVariable[];
+  items: GameItem[];
+}
+
 export interface Project {
   /** File-format version; see migrate.ts. */
   schema_version: number;
@@ -260,6 +377,8 @@ export interface Project {
   /** Screenplay documents only (empty in other formats): acts in order, and their scenes. */
   acts: Act[];
   script_scenes: ScriptScene[];
+  /** Game documents only (left out elsewhere): quests, nodes, and the variables and items they use. */
+  game?: Game;
   /** Comic only: which scripting style the project favours. */
   script_style?: ScriptStyle;
   /** Saved scene versions (see Snapshot). */

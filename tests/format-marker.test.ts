@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CURRENT_SCHEMA_VERSION, FILE_TYPE, migrateProject } from "../src/lib/migrate.ts";
+import { CURRENT_SCHEMA_VERSION, FILE_TYPE, MIN_READER_VERSION, migrateProject } from "../src/lib/migrate.ts";
 import { blankProject } from "../src/lib/blank.ts";
 
 const blank = () => JSON.parse(JSON.stringify(blankProject((p) => `${p}-1`)));
@@ -8,7 +8,7 @@ const blank = () => JSON.parse(JSON.stringify(blankProject((p) => `${p}-1`)));
 test("a new project carries the marker and the minimum reader version", () => {
   const p = blankProject((x) => `${x}-1`);
   assert.equal(p.file_type, FILE_TYPE);
-  assert.equal(p.min_reader_version, CURRENT_SCHEMA_VERSION);
+  assert.equal(p.min_reader_version, MIN_READER_VERSION);
 });
 
 test("an older file gets the marker when it is upgraded", () => {
@@ -38,13 +38,13 @@ test("a newer file that says this reader is enough is opened, and keeps its vers
     ...blank(),
     schema_version: CURRENT_SCHEMA_VERSION + 1,
     min_reader_version: CURRENT_SCHEMA_VERSION,
-    game: { quests: [{ id: "q-1" }] },
+    future_thing: { quests: [{ id: "q-1" }] },
   };
   const r = migrateProject(newer);
   assert.equal(r.migratedFrom, null);
   assert.equal(r.project.schema_version, CURRENT_SCHEMA_VERSION + 1);
   assert.equal(r.project.min_reader_version, CURRENT_SCHEMA_VERSION);
-  assert.deepEqual((r.project as unknown as { game: unknown }).game, { quests: [{ id: "q-1" }] });
+  assert.deepEqual((r.project as unknown as { future_thing: unknown }).future_thing, { quests: [{ id: "q-1" }] });
 });
 
 test("a newer file that needs a newer reader is refused", () => {

@@ -8,10 +8,11 @@
  *
  *   novel        chapters → scenes (long prose)                    ← the only one so far
  *   comic        issues → pages → panels (plot-first or full script)  ← data, Timeline, writing view, search, replace, snapshots, goals, exports
- *   screenplay   acts → scenes → slug line + elements (action, dialogue, transition)  ← data, Timeline and writing view so far (`ready: false` until exports)
+ *   screenplay   acts → scenes → slug line + elements (action, dialogue, transition)
+ *   game         quests → nodes with conditions, effects and links (a graph with state)  ← data only so far (`ready: false`); design: docs/technical/game-prototyping.md
  *
  * The document fields of each format live on `Project` (novel: chapters + scenes; comic: issues +
- * pages; screenplay: acts + script_scenes), and the other format's fields are simply empty.
+ * pages; screenplay: acts + script_scenes; game: everything under `game`), and the other format's fields are simply empty.
  *
  * A new format is added by: a new id here, its own document fields on `Project` (with a
  * schema migration and the same fields in src-tauri/src/models/mod.rs), and its views.
@@ -22,7 +23,7 @@
 import type { Project } from "./types";
 
 /** The ids this version of Fabulator can open. */
-export const STORY_FORMAT_IDS = ["novel", "comic", "screenplay"] as const;
+export const STORY_FORMAT_IDS = ["novel", "comic", "screenplay", "game"] as const;
 export type StoryFormatId = (typeof STORY_FORMAT_IDS)[number];
 
 /** The format of every project written before formats existed, and of a new story. */
@@ -83,6 +84,17 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     vocabulary: {
       group: { one: "act", many: "acts" },
       unit: { one: "scene", many: "scenes" },
+    },
+  },
+  game: {
+    id: "game",
+    label: "Game Prototyping",
+    description: "Quests and side-quests, with the conditions and choices that connect them.",
+    ready: false,
+    views: { timeline: false, manuscript: false },
+    vocabulary: {
+      group: { one: "quest", many: "quests" },
+      unit: { one: "node", many: "nodes" },
     },
   },
 };

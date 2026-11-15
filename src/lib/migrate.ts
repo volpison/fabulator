@@ -13,9 +13,17 @@ import { cleanTodos } from "./scenenotes";
 import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
 import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import { cleanActs, cleanScriptScenes } from "./screenplay";
+import { cleanGame } from "./game";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 12;
+export const CURRENT_SCHEMA_VERSION = 13;
+
+/**
+ * The lowest file-format version of Fabulator that can open a file this version writes safely.
+ * Raise it only when an older app would misread or damage the file (not for an additive change:
+ * an older app refuses a game project anyway because it does not know the format).
+ */
+export const MIN_READER_VERSION = 12;
 
 /** The value of `file_type` in every project file: "this is a Fabulator project". */
 export const FILE_TYPE = "fabulator-project";
@@ -120,6 +128,14 @@ function v11ToV12(p: Raw): Raw {
   return { ...p, schema_version: 12, file_type: FILE_TYPE, min_reader_version: 12 };
 }
 
+/**
+ * v12 -> v13: game documents (`story_format` "game", with everything under `game`). Nothing changes
+ * for existing files; `min_reader_version` stays 12.
+ */
+function v12ToV13(p: Raw): Raw {
+  return { ...p, schema_version: 13 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -133,6 +149,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   9: v9ToV10,
   10: v10ToV11,
   11: v11ToV12,
+  12: v12ToV13,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -281,7 +298,7 @@ function normalize(p: Raw): Project {
     // A file from a newer Fabulator that this one may still open keeps its own (higher) version.
     schema_version: Math.max(CURRENT_SCHEMA_VERSION, num(p.schema_version)),
     file_type: FILE_TYPE,
-    min_reader_version: typeof p.min_reader_version === "number" ? p.min_reader_version : CURRENT_SCHEMA_VERSION,
+    min_reader_version: typeof p.min_reader_version === "number" ? p.min_reader_version : MIN_READER_VERSION,
     story_format: storyFormat,
     id: str(p.id) || "proj-imported",
     title: str(p.title, "Untitled"),
@@ -304,6 +321,9 @@ function normalize(p: Raw): Project {
   // The scripting style only means something in a comic.
   if (storyFormat === "comic") project.script_style = cleanScriptStyle(p.script_style);
   else delete project.script_style;
+  // The game document only exists in a game project.
+  if (storyFormat === "game") project.game = cleanGame(p.game, new Set(project.plotlines.map((pl) => pl.id)));
+  else delete project.game;
   return project;
 }
 

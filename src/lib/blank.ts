@@ -1,5 +1,5 @@
 /** The empty story a new session starts with (and File → New story creates). */
-import { CURRENT_SCHEMA_VERSION, FILE_TYPE } from "./migrate";
+import { CURRENT_SCHEMA_VERSION, FILE_TYPE, MIN_READER_VERSION } from "./migrate";
 import { DEFAULT_STORY_FORMAT, type StoryFormatId } from "./formats";
 import { DEFAULT_SCRIPT_STYLE, newPage } from "./comic";
 import { newScriptScene } from "./screenplay";
@@ -11,7 +11,7 @@ export function blankProject(newId: (prefix: string) => string): Project {
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
     file_type: FILE_TYPE,
-    min_reader_version: CURRENT_SCHEMA_VERSION,
+    min_reader_version: MIN_READER_VERSION,
     story_format: DEFAULT_STORY_FORMAT,
     id: newId("proj"),
     title: "Untitled story",
@@ -58,7 +58,7 @@ export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SC
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
     file_type: FILE_TYPE,
-    min_reader_version: CURRENT_SCHEMA_VERSION,
+    min_reader_version: MIN_READER_VERSION,
     story_format: "comic",
     script_style: style,
     id: newId("proj"),
@@ -88,7 +88,7 @@ export function blankScreenplay(newId: (prefix: string) => string): Project {
   return {
     schema_version: CURRENT_SCHEMA_VERSION,
     file_type: FILE_TYPE,
-    min_reader_version: CURRENT_SCHEMA_VERSION,
+    min_reader_version: MIN_READER_VERSION,
     story_format: "screenplay",
     id: newId("proj"),
     title: "Untitled screenplay",
@@ -111,8 +111,26 @@ export function blankScreenplay(newId: (prefix: string) => string): Project {
 }
 
 /** A new, empty project in the given format. */
+/** The empty game a new game project starts with: one main quest with its first node. */
+export function blankGame(newId: (prefix: string) => string): Project {
+  const questId = newId("q");
+  return {
+    ...blankProject(newId),
+    story_format: "game",
+    chapters: [],
+    scenes: [],
+    game: {
+      quests: [{ id: questId, title: "Main quest", kind: "main", summary: "", plotline_id: "", requires: [] }],
+      nodes: [],
+      variables: [],
+      items: [],
+    },
+  };
+}
+
 export function blankProjectFor(format: StoryFormatId, newId: (prefix: string) => string): Project {
   if (format === "comic") return blankComic(newId);
   if (format === "screenplay") return blankScreenplay(newId);
+  if (format === "game") return blankGame(newId);
   return blankProject(newId);
 }

@@ -1,28 +1,27 @@
 <script lang="ts">
   import { project } from "../lib/stores";
+  import { formatOf } from "../lib/formats";
 
   /** Which view is missing ("Manuscript"). */
   export let view = "";
-  import { formatOf } from "../lib/formats";
 
   $: format = $project ? formatOf($project) : null;
-  $: issues = $project?.issues.length ?? 0;
-  $: pages = $project?.pages.length ?? 0;
-  $: panels = $project?.pages.reduce((n, p) => n + p.panels.length, 0) ?? 0;
+  $: quests = $project?.game?.quests.length ?? 0;
+  $: nodes = $project?.game?.nodes.length ?? 0;
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 </script>
 
 <section class="not-ready" aria-live="polite">
-  <h2>The {view.toLowerCase()} view for {format?.label.toLowerCase()}s isn’t built yet</h2>
+  <h2>The {view.toLowerCase()} view for {format?.label.toLowerCase()} isn’t built yet</h2>
   <p>
-    This project is a <strong>{format?.label.toLowerCase()}</strong>:
-    {plural(issues, "issue")}, {plural(pages, "page")}, {plural(panels, "panel")}.
+    This project is a <strong>{format?.label.toLowerCase()}</strong> project:
+    {plural(quests, "quest")}, {plural(nodes, "node")}.
     Everything in it is saved safely with the project, but this version of Fabulator
-    can’t show or edit its panels and dialogue yet. That part is being built step by step.
+    can’t show or edit its quests and nodes yet. That part is being built step by step.
   </p>
   <p>
-    Meanwhile the <strong>Timeline</strong> (pages, plots and stages), <strong>Cast</strong> and the
-    Characters, Places and Notes panels all work, and you can save and open the project as usual.
+    Meanwhile <strong>Cast</strong> and the Characters, Places, Abilities and Notes panels all work,
+    and you can save and open the project as usual.
   </p>
 </section>
 
