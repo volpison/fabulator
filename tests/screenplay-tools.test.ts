@@ -128,7 +128,7 @@ test("schema v11: older files open, a snapshot of a scene survives and is repair
   const p = sample();
   const withSnap = { ...p, snapshots: [makeScriptSnapshot(p.script_scenes[0], "manual", "v1", 5, "s1")] };
   const { project } = migrateProject(JSON.parse(JSON.stringify({ ...withSnap, schema_version: 10 })));
-  assert.equal(project.schema_version, 12);
+  assert.equal(project.schema_version, 13);
   assert.equal(project.snapshots[0].script_scene!.elements.length, 3);
   const bad = migrateProject({ ...withSnap, snapshots: [{ ...withSnap.snapshots[0], script_scene: { id: "x", elements: "nope" } }] }).project;
   assert.ok(bad.snapshots[0].script_scene === undefined || Array.isArray(bad.snapshots[0].script_scene.elements));

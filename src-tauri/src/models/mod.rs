@@ -17,7 +17,11 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 12;
+pub const SCHEMA_VERSION: u32 = 13;
+
+/// The lowest file-format version that can open a file this version writes safely. Keep in sync
+/// with MIN_READER_VERSION in src/lib/migrate.ts.
+pub const MIN_READER_VERSION: u32 = 12;
 
 /// The value of `file_type` in every project file ("this is a Fabulator project").
 pub const FILE_TYPE: &str = "fabulator-project";
@@ -27,7 +31,7 @@ fn default_file_type() -> String {
 }
 
 fn default_min_reader_version() -> u32 {
-    SCHEMA_VERSION
+    MIN_READER_VERSION
 }
 
 /// The format of a project written before formats existed. The frontend decides what formats
@@ -91,7 +95,7 @@ impl Project {
         Project {
             schema_version: SCHEMA_VERSION,
             file_type: FILE_TYPE.into(),
-            min_reader_version: SCHEMA_VERSION,
+            min_reader_version: MIN_READER_VERSION,
             story_format: DEFAULT_STORY_FORMAT.into(),
             id: "proj-boy-who-cried-wolf".into(),
             chapters: (1..=6)
@@ -361,11 +365,11 @@ mod tests {
     fn a_saved_project_says_what_it_is_and_which_reader_it_needs() {
         let json = serde_json::to_value(Project::sample()).unwrap();
         assert_eq!(json["file_type"], "fabulator-project");
-        assert_eq!(json["min_reader_version"], SCHEMA_VERSION);
+        assert_eq!(json["min_reader_version"], MIN_READER_VERSION);
 
         // A file from a newer Fabulator that older readers may open keeps its own version numbers.
         let mut newer = json.clone();
-        newer["schema_version"] = 13.into();
+        newer["schema_version"] = 14.into();
         newer["min_reader_version"] = 12.into();
         let project: Project = serde_json::from_value(newer.clone()).unwrap();
         assert_eq!(serde_json::to_value(&project).unwrap(), newer);
@@ -435,6 +439,22 @@ mod tests {
         let json = serde_json::to_value(Project::sample()).unwrap();
         let project: Project = serde_json::from_value(json.clone()).unwrap();
         assert!(project.extra.is_empty());
+        assert_eq!(serde_json::to_value(&project).unwrap(), json);
+    }
+
+    #[test]
+    fn a_game_document_is_kept_whole_without_rust_knowing_its_shape() {
+        // Rust does not model the game (the web side owns it); `extra` carries it through a save.
+        let mut json = serde_json::to_value(Project::sample()).unwrap();
+        json["story_format"] = "game".into();
+        json["game"] = serde_json::json!({
+            "quests": [{ "id": "q-1", "title": "Main", "kind": "main" }],
+            "nodes": [{ "id": "n-1", "quest_id": "q-1", "requires": [{ "kind": "flag", "variable_id": "met", "set": true }] }],
+            "variables": [{ "id": "met", "kind": "flag" }],
+            "items": []
+        });
+        let project: Project = serde_json::from_value(json.clone()).unwrap();
+        assert_eq!(project.story_format, "game");
         assert_eq!(serde_json::to_value(&project).unwrap(), json);
     }
 }

@@ -1,6 +1,6 @@
 # Design: Game Prototyping mode
 
-> **Status: proposal.** Nothing here is built. It is written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The open questions are at the end; the "recommended" choices are what I would build unless told otherwise. When the mode is built, the facts move into the other technical pages and this page is deleted.
+> **Status: decided, being built.** Step 1 (the data) is done; the rest is not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
 
 ## What it is for
 
@@ -26,12 +26,11 @@ Everything that belongs to the game lives under **one key**, `game`, as decided 
 {
   "story_format": "game",
   "game": {
-    "quests":    [{ "id": "q-ring", "title": "The Lost Ring", "kind": "side", "summary": "", "plotline_id": "pl-village", "order": 0,
-                    "requires": [] }],
+    "quests":    [{ "id": "q-ring", "title": "The Lost Ring", "kind": "side", "summary": "", "plotline_id": "pl-village", "requires": [] }],
     "nodes":     [{ "id": "n-well", "quest_id": "q-ring", "order": 1, "title": "Search the well", "summary": "",
-                    "elements": [], "requires": [{ "ability": "ab-climbing" }],
-                    "effects": [{ "set": "has_ring", "to": true }],
-                    "links": [{ "to": "n-return", "label": "", "requires": [{ "flag": "has_ring" }] }],
+                    "elements": [], "ending": false, "requires": [{ "kind": "ability", "character_id": "", "ability_id": "ab-climbing" }],
+                    "effects": [{ "kind": "set", "variable_id": "has_ring", "to": true }],
+                    "links": [{ "id": "ln-1", "to": "n-return", "label": "", "requires": [{ "kind": "flag", "variable_id": "has_ring", "set": true }] }],
                     "place_ids": [], "character_ids": [], "status": "draft", "notes": "", "todos": [] }],
     "variables": [{ "id": "has_ring", "kind": "flag", "label": "Has the ring", "notes": "" },
                   { "id": "reputation", "kind": "number", "label": "Reputation", "notes": "" }],
@@ -80,7 +79,7 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 
 ## Steps (each its own pull request, like Comic and Screenplay)
 
-1. **Data:** the `game` model, schema v13, the format entry (not ready), Rust sample and tests, docs.
+1. **Data:** the `game` model, schema v13, the format entry (not ready), Rust sample and tests, docs. ✅ done.
 2. **Timeline:** quest lanes and nodes, add / move / delete, status and colour.
 3. **Writing view:** the node editor with its text elements.
 4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them.
@@ -88,11 +87,13 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 6. **Exports:** quest bible, CSVs, the Markdown folder.
 7. **Shared tools:** Search, Replace, Snapshots, goals and reports for nodes; the format becomes ready.
 
-## Open questions
+## Decisions
 
-1. **Hierarchy.** Recommended: **Quest → Node** (two levels, like Comic's issue → page). Alternative: add a level above quests (*Chapter* or *Region*) for big games. It can be added later without breaking files, so I would start with two.
-2. **How conditions are written.** Recommended: **structured rows** shown as readable text (checkable, no parser, no typos). Alternative: a small typed expression language (`has_ring && reputation >= 1`), which is faster to type for programmers but needs a parser, error messages and more tests.
-3. **Declared variables.** Recommended: **declared** in a registry (above). Alternative: free-form names created on first use, which is quicker but loses the "set but never used" and typo checks.
-4. **First exports.** Recommended: **quest bible and CSVs first**, machine formats (Ink / Twee / Yarn) later. Is there a tool you already use for prototyping that should come first?
-5. **Graph drawing.** Recommended: **our own small layered layout** (testable, no dependency). Alternative: a graph library, which draws more but adds a large dependency and is harder to keep working.
-6. **Dialogue.** Recommended: the game's dialogue reuses the **screenplay element shape** (speaker, parenthetical, text), so a conversation could later be copied between a screenplay scene and a node. Alternative: its own shape tuned for branching text.
+The six open questions were answered "all recommended" by the project owner:
+
+1. **Hierarchy:** Quest → Node (a level above quests can be added later without breaking files).
+2. **Conditions:** structured rows shown as readable text, not an expression language.
+3. **Variables:** declared in a registry.
+4. **First exports:** quest bible and CSVs; machine formats (Ink / Twee / Yarn) later, if wanted. No prototyping tool needs to come first.
+5. **Graph drawing:** our own small layered layout, no library.
+6. **Dialogue:** the screenplay element shape (speaker, parenthetical, text).
