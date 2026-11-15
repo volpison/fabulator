@@ -57,9 +57,11 @@ A new shared list, `abilities[]`, next to characters and places:
 
 A character gains `ability_ids: string[]` (empty by default, left out when empty). Abilities appear in the side panels and in Search like places do. Game Prototyping will attach rules and conditions to them later; v12 only adds the entity and the link.
 
-### 4. Where documents live: the open decision
+### 4. Where documents live: decided, option A
 
-Option **A** (recommended): **namespace new formats, leave the existing ones flat.**
+**Decision (by the project owner): option A.** Option B is kept below for the record.
+
+Option **A** (chosen): **namespace new formats, leave the existing ones flat.**
 Novel, Comic and Screenplay keep their current top-level fields, so no existing file or code path changes. From now on a new format stores everything under one key named after it (`"game": { ... }`), and unknown fields are preserved (change 1), so a newer file does not lose its document in an older reader. The cost is a small inconsistency: three formats are flat, the next ones are namespaced.
 
 Option **B**: **move everything into `world` and `document` objects now**:
