@@ -40,6 +40,17 @@ import {
   deleteElement as deleteScriptElementFrom,
   removeCastFromScenes,
 } from "./screenplayedit";
+import {
+  addQuest as addQuestTo,
+  updateQuest as updateQuestIn,
+  deleteQuest as deleteQuestFrom,
+  moveQuest as moveQuestIn,
+  addNode as addNodeTo,
+  updateNode as updateNodeIn,
+  moveNode as moveNodeIn,
+  deleteNode as deleteNodeFrom,
+  removeCastFromNodes,
+} from "./gameedit";
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
@@ -104,6 +115,8 @@ export const selectedSceneId = writable<string | null>(null);
 export const selectedPageId = writable<string | null>(null);
 /** The selected scene of a screenplay. */
 export const selectedScriptSceneId = writable<string | null>(null);
+/** The selected node of a game. */
+export const selectedNodeId = writable<string | null>(null);
 
 // ─── Search ───────────────────────────────────────────────
 
@@ -477,6 +490,62 @@ export function deleteScreenplayScene(id: string) {
   selectedScriptSceneId.update((cur) => (cur === id ? null : cur));
 }
 
+// Game: quests and nodes (the Timeline).
+
+export function addGameQuest(title?: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addQuestTo(p, uid, title);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameQuest(id: string, fields: Parameters<typeof updateQuestIn>[2]) {
+  editProject((p) => updateQuestIn(p, id, fields));
+}
+
+/** Only an empty quest can be deleted. Returns whether it was. */
+export function deleteGameQuest(id: string): boolean {
+  let deleted = false;
+  editProject((p) => {
+    const next = deleteQuestFrom(p, id);
+    deleted = next !== p;
+    return next;
+  });
+  return deleted;
+}
+
+export function moveGameQuest(id: string, toIndex: number) {
+  editProject((p) => moveQuestIn(p, id, toIndex));
+}
+
+/** Add a node (to the given quest, or the last one) and select it. Returns its id. */
+export function addGameNode(questId?: string, atIndex?: number): string {
+  let id = "";
+  editProject((p) => {
+    const r = addNodeTo(p, uid, questId, atIndex);
+    id = r.id;
+    return r.project;
+  });
+  if (id) selectedNodeId.set(id);
+  return id;
+}
+
+export function updateGameNode(id: string, fields: Parameters<typeof updateNodeIn>[2]) {
+  editProject((p) => updateNodeIn(p, id, fields));
+}
+
+export function moveGameNode(id: string, questId: string, index: number) {
+  editProject((p) => moveNodeIn(p, id, questId, index));
+}
+
+export function deleteGameNode(id: string) {
+  editProject((p) => deleteNodeFrom(p, id));
+  selectedNodeId.update((cur) => (cur === id ? null : cur));
+}
+
 // Elements of a screenplay scene (the writing view).
 
 export function addScreenplayElement(
@@ -766,7 +835,7 @@ export function deleteCharacter(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return removeCastFromScenes(removeCastFromPages(
+    return removeCastFromNodes(removeCastFromScenes(removeCastFromPages(
       {
         ...proj,
         characters: proj.characters.filter((c) => c.id !== id),
@@ -778,7 +847,7 @@ export function deleteCharacter(id: string) {
       },
       "character",
       id
-    ), "character", id);
+    ), "character", id), "character", id);
   });
 }
 
@@ -817,7 +886,7 @@ export function deletePlace(id: string) {
   project.update((proj) => {
     if (!proj) return proj;
     touch();
-    return removeCastFromScenes(removeCastFromPages(
+    return removeCastFromNodes(removeCastFromScenes(removeCastFromPages(
       {
         ...proj,
         places: proj.places.filter((p) => p.id !== id),
@@ -828,7 +897,7 @@ export function deletePlace(id: string) {
       },
       "place",
       id
-    ), "place", id);
+    ), "place", id), "place", id);
   });
 }
 
