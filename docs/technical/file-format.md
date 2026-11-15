@@ -40,7 +40,7 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 
 ## Known limits (planned for schema v12)
 
-These are the gaps between today's format and a long-lived standard; see the [roadmap](../../ROADMAP.md):
+These are the gaps between today's format and a long-lived standard; see the [roadmap](../../ROADMAP.md) and the [v12 proposal](format-v12.md):
 
 - **Unknown fields are dropped on save.** The web view keeps fields it does not know while the project is open, but Rust saves through its own `Project` structure, which lists only the fields it knows. The version check is what protects a newer file today; keeping unknown fields would make that safe by design.
 - **One flat list of fields per format.** Each new mode adds more top-level lists. Grouping the shared "world" (characters, places, notes, plotlines, snapshots) apart from each format's document would keep the file tidy as modes are added.
