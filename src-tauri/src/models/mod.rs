@@ -76,6 +76,8 @@ pub struct Project {
     pub snapshots: Vec<Snapshot>,
     pub characters: Vec<Character>,
     pub places: Vec<Place>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub abilities: Vec<Ability>,
     pub notes: Vec<Note>,
     pub plotlines: Vec<Plotline>,
     /// Fields this version does not know (written by a newer Fabulator): kept and written back.
@@ -140,6 +142,7 @@ impl Project {
                         "Overly confident".into(),
                     ],
                     notes: "External Goal: Entertainment and validation — trapped in a mind-numbing, isolated job and craves a break from the monotony.\n\nInternal Flaw: Short-sightedness and a lack of empathy. He prioritizes immediate amusement over his long-term reputation and the safety of the village's livelihood.".into(),
+                    ability_ids: vec![],
                     extra: Default::default(),
                 },
                 Character {
@@ -151,6 +154,7 @@ impl Project {
                     category: "Supporting".into(),
                     traits: vec!["Dutiful".into(), "Initially trusting".into(), "Increasingly wary".into()],
                     notes: "They represent the social contract the boy breaks. Their final refusal to help is the consequence of his lies.".into(),
+                    ability_ids: vec![],
                     extra: Default::default(),
                 },
                 Character {
@@ -162,9 +166,11 @@ impl Project {
                     category: "Main".into(),
                     traits: vec!["Silent".into(), "Hungry".into(), "Inevitable".into()],
                     notes: "The wolf is less a character with motive and more the embodiment of the real danger the boy was supposed to watch for.".into(),
+                    ability_ids: vec![],
                     extra: Default::default(),
                 },
             ],
+            abilities: vec![],
             places: vec![
                 Place {
                     id: "place-pasture".into(),

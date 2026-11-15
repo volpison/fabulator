@@ -16,7 +16,7 @@ use serde_json::Value;
 use std::collections::HashSet;
 
 /// The project fields that are lists of items with an `id`.
-pub const LISTS: [&str; 11] = [
+pub const LISTS: [&str; 12] = [
     "chapters",
     "scenes",
     "issues",
@@ -26,6 +26,7 @@ pub const LISTS: [&str; 11] = [
     "snapshots",
     "characters",
     "places",
+    "abilities",
     "notes",
     "plotlines",
 ];

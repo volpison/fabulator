@@ -17,7 +17,7 @@ Writes the story as plain files you can version with git, diff, and edit in any 
 
 ```
 my-story/
-  project.json                          title, premise, plotlines, characters, places
+  project.json                          title, premise, plotlines, characters, places, abilities
   manuscript/01-the-start/_chapter.md   chapter header (id, title) + synopsis
   manuscript/01-the-start/01-opening.md one scene
   notes/01-core-theme.md                one note

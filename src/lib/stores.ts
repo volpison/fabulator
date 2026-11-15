@@ -64,6 +64,7 @@ import type {
   Chapter,
   Character,
   Place,
+  Ability,
   Note,
   LineKind,
 } from "./types";
@@ -140,6 +141,10 @@ export function openSearchHit(hit: SearchHit, terms: string[]) {
       break;
     case "place":
       sidePanel.set("places");
+      sidePanelFocus.set(hit.id);
+      break;
+    case "ability":
+      sidePanel.set("abilities");
       sidePanelFocus.set(hit.id);
       break;
     case "note":
@@ -824,6 +829,53 @@ export function deletePlace(id: string) {
       "place",
       id
     ), "place", id);
+  });
+}
+
+// ─── Abilities ────────────────────────────────────────────
+
+export function updateAbility(id: string, fields: Partial<Ability>) {
+  project.update((proj) => {
+    if (!proj) return proj;
+    touch();
+    return {
+      ...proj,
+      abilities: proj.abilities.map((a) => (a.id === id ? { ...a, ...fields } : a)),
+    };
+  });
+}
+
+export function addAbility(name?: string): string {
+  const id = uid("ability");
+  project.update((proj) => {
+    if (!proj) return proj;
+    touch();
+    const ability: Ability = {
+      id,
+      name: name?.trim() || "New Ability",
+      aliases: [],
+      description: "",
+      notes: "",
+    };
+    return { ...proj, abilities: [...proj.abilities, ability] };
+  });
+  return id;
+}
+
+/** Delete an ability; the characters that had it simply lose it. */
+export function deleteAbility(id: string) {
+  project.update((proj) => {
+    if (!proj) return proj;
+    touch();
+    return {
+      ...proj,
+      abilities: proj.abilities.filter((a) => a.id !== id),
+      characters: proj.characters.map((c) =>
+        (c.ability_ids ?? []).includes(id)
+          ? { ...c, ability_ids: (c.ability_ids ?? []).filter((x) => x !== id) }
+          : c
+      ),
+    };
   });
 }
 

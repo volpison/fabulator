@@ -55,6 +55,23 @@ pub struct Character {
     pub category: String,
     pub traits: Vec<String>,
     pub notes: String,
+    /// Abilities this character has (ids of `Project.abilities`); left out of the file when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ability_ids: Vec<String>,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Something a character can do (a power, skill, spell, trade...). Part of the shared world.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Ability {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    pub description: String,
+    pub notes: String,
     /// Fields this version does not know (written by a newer Fabulator): kept and written back.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,

@@ -119,6 +119,18 @@ export interface Character {
   category: string;
   traits: string[];
   notes: string;
+  /** Abilities this character has (see Project.abilities). Left out of the file when empty. */
+  ability_ids?: string[];
+}
+
+/** Something a character can do (a power, skill, spell, trade…). Part of the shared world. */
+export interface Ability {
+  id: string;
+  name: string;
+  /** Other ways the text refers to it. */
+  aliases: string[];
+  description: string;
+  notes: string;
 }
 
 export interface Place {
@@ -254,9 +266,10 @@ export interface Project {
   snapshots: Snapshot[];
   characters: Character[];
   places: Place[];
+  abilities: Ability[];
   notes: Note[];
   plotlines: Plotline[];
 }
 
 export type MainView = "timeline" | "manuscript" | "cast";
-export type SidePanel = "characters" | "places" | "notes" | null;
+export type SidePanel = "characters" | "places" | "abilities" | "notes" | null;

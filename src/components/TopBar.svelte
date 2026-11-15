@@ -65,6 +65,7 @@
   const panels: { id: Exclude<SidePanel, null>; label: string }[] = [
     { id: "characters", label: "Characters" },
     { id: "places", label: "Places" },
+    { id: "abilities", label: "Abilities" },
     { id: "notes", label: "Notes" },
   ];
 

@@ -2,7 +2,7 @@
  * "Project as a folder": every scene is a Markdown file with a small header,
  * so the story diffs and merges well in git and opens in any editor.
  *
- *   project.json                          title, premise, plotlines, characters, places
+ *   project.json                          title, premise, plotlines, characters, places, abilities
  *   manuscript/01-the-start/_chapter.md   chapter id + title (header), synopsis (body)
  *   manuscript/01-the-start/01-opening.md scene header + text as Markdown
  *   notes/01-core-theme.md                note header + text
@@ -140,6 +140,7 @@ export function toFolder(p: Project): FolderFile[] {
           plotlines: p.plotlines,
           characters: p.characters,
           places: p.places,
+          abilities: p.abilities,
         },
         null,
         2
@@ -231,6 +232,7 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
   if (plotlines.length === 0) plotlines.push({ id: "pl-main", name: "Main", color: "#4a8fd9" });
   const characters = arr(m.characters);
   const places = arr(m.places);
+  const abilities = arr(m.abilities);
 
   const usedIds = new Set<string>();
   const claim = (wanted: string, prefix: string, what: string): string => {
@@ -347,6 +349,7 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
       snapshots: [],
       characters,
       places,
+      abilities,
       notes,
       plotlines,
     });

@@ -148,6 +148,18 @@ function withAliases(list: unknown): Raw[] {
     }));
 }
 
+/** A character's `ability_ids` only list abilities that exist; the field is left out when empty. */
+function cleanAbilityIds(characters: Raw[], abilities: Raw[]): Raw[] {
+  const known = new Set(abilities.map((a) => a.id));
+  return characters.map((c) => {
+    const ids = [...new Set(arr(c.ability_ids).filter((i): i is string => typeof i === "string" && known.has(i)))];
+    if (ids.length > 0) return { ...c, ability_ids: ids };
+    const { ability_ids: _dropped, ...rest } = c;
+    void _dropped;
+    return rest;
+  });
+}
+
 const SNAPSHOT_KINDS: SnapshotKind[] = ["manual", "auto", "safety"];
 
 /** Keep well-formed snapshots only; repair small gaps instead of dropping them. */
@@ -262,6 +274,8 @@ function normalize(p: Raw): Project {
   }
   const script_scenes = cleanScriptScenes(p.script_scenes, acts);
 
+  const abilities = withAliases(p.abilities).filter((a) => typeof a.id === "string" && a.id !== "");
+
   const project: Project = {
     ...p,
     // A file from a newer Fabulator that this one may still open keeps its own (higher) version.
@@ -281,8 +295,9 @@ function normalize(p: Raw): Project {
     acts,
     script_scenes,
     snapshots: cleanSnapshots(p.snapshots),
-    characters: withAliases(p.characters) as Project["characters"],
+    characters: cleanAbilityIds(withAliases(p.characters), abilities) as Project["characters"],
     places: withAliases(p.places) as Project["places"],
+    abilities: abilities as Project["abilities"],
     notes: arr(p.notes) as Project["notes"],
     plotlines: arr(p.plotlines) as Project["plotlines"],
   };

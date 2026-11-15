@@ -20,7 +20,7 @@ import {
   type BlockLike,
 } from "./mentions";
 
-export type SearchKind = "scene" | "page" | "script_scene" | "character" | "place" | "note" | "chapter" | "issue" | "act";
+export type SearchKind = "scene" | "page" | "script_scene" | "character" | "place" | "ability" | "note" | "chapter" | "issue" | "act";
 
 /** Display order of result groups. */
 export const KIND_ORDER: SearchKind[] = [
@@ -29,6 +29,7 @@ export const KIND_ORDER: SearchKind[] = [
   "script_scene",
   "character",
   "place",
+  "ability",
   "note",
   "chapter",
   "issue",
@@ -41,6 +42,7 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   script_scene: "Scenes",
   character: "Characters",
   place: "Places",
+  ability: "Abilities",
   note: "Notes",
   chapter: "Chapters",
   issue: "Issues",
@@ -201,13 +203,13 @@ export function search(
 ): SearchResult {
   const terms = parseQuery(query);
   const counts: Record<SearchKind, number> = {
-    scene: 0, page: 0, script_scene: 0, character: 0, place: 0, note: 0, chapter: 0, issue: 0, act: 0,
+    scene: 0, page: 0, script_scene: 0, character: 0, place: 0, ability: 0, note: 0, chapter: 0, issue: 0, act: 0,
   };
   if (terms.length === 0) return { hits: [], counts, terms };
 
   const foldedTerms = terms.map((t) => foldText(t).folded);
   const byKind: Record<SearchKind, { hit: SearchHit; score: number }[]> = {
-    scene: [], page: [], script_scene: [], character: [], place: [], note: [], chapter: [], issue: [], act: [],
+    scene: [], page: [], script_scene: [], character: [], place: [], ability: [], note: [], chapter: [], issue: [], act: [],
   };
 
   const consider = (
@@ -299,6 +301,14 @@ export function search(
       { label: "Location", text: p.location },
       { label: "Description", text: p.description },
       { label: "Notes", text: p.notes },
+    ]);
+  }
+  for (const a of project.abilities) {
+    consider("ability", a.id, a.name, "", [
+      { label: "Name", text: a.name, isTitle: true },
+      { label: "Aliases", text: (a.aliases ?? []).join(", "), isTitle: true },
+      { label: "Description", text: a.description },
+      { label: "Notes", text: a.notes },
     ]);
   }
   for (const n of project.notes) {

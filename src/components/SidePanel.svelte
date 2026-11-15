@@ -13,6 +13,9 @@
     updatePlace,
     addPlace,
     deletePlace,
+    updateAbility,
+    addAbility,
+    deleteAbility,
     updateNote,
     addNote,
     deleteNote,
@@ -94,12 +97,22 @@
       .filter(Boolean);
   }
 
+  /** Give a character an ability, or take it away. */
+  function setAbility(charId: string, abilityId: string, on: boolean) {
+    const current = $project?.characters.find((c) => c.id === charId)?.ability_ids ?? [];
+    const next = on ? [...current.filter((i) => i !== abilityId), abilityId] : current.filter((i) => i !== abilityId);
+    updateCharacter(charId, { ability_ids: next });
+  }
+
   function onAdd() {
     if ($sidePanel === "characters") {
       const id = addCharacter();
       editingId = id;
     } else if ($sidePanel === "places") {
       const id = addPlace();
+      editingId = id;
+    } else if ($sidePanel === "abilities") {
+      const id = addAbility();
       editingId = id;
     } else if ($sidePanel === "notes") {
       const id = addNote();
@@ -118,6 +131,7 @@
     if (!ok) return;
     if (panel === "characters") deleteCharacter(id);
     else if (panel === "places") deletePlace(id);
+    else if (panel === "abilities") deleteAbility(id);
     else if (panel === "notes") deleteNote(id);
     if (editingId === id) editingId = null;
   }
@@ -147,6 +161,8 @@
         Characters
       {:else if $sidePanel === "places"}
         Places
+      {:else if $sidePanel === "abilities"}
+        Abilities
       {:else if $sidePanel === "notes"}
         Notes
       {/if}
@@ -245,6 +261,21 @@
                     })}
                 ></textarea>
               </label>
+              {#if $project.abilities.length > 0}
+                <fieldset class="abilities">
+                  <legend>Abilities</legend>
+                  {#each $project.abilities as ab (ab.id)}
+                    <label class="check">
+                      <input
+                        type="checkbox"
+                        checked={(char.ability_ids ?? []).includes(ab.id)}
+                        on:change={(e) => setAbility(char.id, ab.id, e.currentTarget.checked)}
+                      />
+                      {ab.name || "Untitled"}
+                    </label>
+                  {/each}
+                </fieldset>
+              {/if}
               <Appearances type="character" id={char.id} />
               <div class="form-actions">
                 <button class="danger" on:click={() => onDelete(char.id, char.name)}>
@@ -331,6 +362,63 @@
             </div>
           {:else if place.description}
             <div class="card-desc">{place.description}</div>
+          {/if}
+        </div>
+      {/each}
+    {:else if $sidePanel === "abilities" && $project}
+      {#each $project.abilities as ability (ability.id)}
+        {@const holders = $project.characters.filter((c) => (c.ability_ids ?? []).includes(ability.id))}
+        <div class="card" id="card-{ability.id}" class:editing={editingId === ability.id}>
+          <button class="card-head" on:click={() => toggleEdit(ability.id)}>
+            <div class="card-title">{ability.name || "Untitled"}</div>
+            <div class="card-meta">{holders.map((c) => c.name).join(", ") || "Nobody yet"}</div>
+          </button>
+
+          {#if editingId === ability.id}
+            <div class="form">
+              <label>
+                Name
+                <input
+                  type="text"
+                  value={ability.name}
+                  on:input={(e) => updateAbility(ability.id, { name: e.currentTarget.value })}
+                />
+              </label>
+              <label>
+                Aliases (comma-separated)
+                <input
+                  type="text"
+                  placeholder="other names the text uses for it…"
+                  value={traitsToString(ability.aliases)}
+                  on:input={(e) =>
+                    updateAbility(ability.id, {
+                      aliases: stringToTraits(e.currentTarget.value),
+                    })}
+                />
+              </label>
+              <label>
+                Description
+                <textarea
+                  rows="3"
+                  value={ability.description}
+                  on:input={(e) => updateAbility(ability.id, { description: e.currentTarget.value })}
+                ></textarea>
+              </label>
+              <label>
+                Notes
+                <textarea
+                  rows="2"
+                  value={ability.notes}
+                  on:input={(e) => updateAbility(ability.id, { notes: e.currentTarget.value })}
+                ></textarea>
+              </label>
+              <p class="hint">Give it to a character from that character's card.</p>
+              <div class="form-actions">
+                <button class="danger" on:click={() => onDelete(ability.id, ability.name)}>Delete</button>
+              </div>
+            </div>
+          {:else if ability.description}
+            <div class="card-desc">{ability.description}</div>
           {/if}
         </div>
       {/each}
@@ -539,6 +627,47 @@
   .form input:focus,
   .form textarea:focus {
     border-color: var(--accent);
+  }
+
+  .form fieldset.abilities {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem 0.6rem 0.5rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .form fieldset.abilities legend {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    padding: 0 0.25rem;
+  }
+
+  .form label.check {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+
+  .form label.check input {
+    padding: 0;
+    margin: 0;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
   }
 
   .form-actions {

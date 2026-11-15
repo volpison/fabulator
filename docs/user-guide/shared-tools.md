@@ -4,7 +4,8 @@ Tools that work in every mode: continuity, snapshots, search, find & replace and
 
 ## Continuity: aliases and name highlighting
 
-- Characters and places have **aliases** (nicknames, titles, other spellings).
+- **Abilities** (a power, a skill, a spell, a trade) are part of the shared world, like characters and places: add them in the Abilities panel, then tick them on a character's card. An ability's card shows who has it. They are found by Search.
+- Characters, places and abilities have **aliases** (nicknames, titles, other spellings).
 - Names and aliases are matched as whole words, ignoring case and accents
   ("Jose" ≙ "José"), with Unicode-aware word boundaries.
 - In the manuscript editor, mentions are underlined (blue = character, green =
