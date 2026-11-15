@@ -1,3 +1,18 @@
+//! The project file's data model (schema in docs/technical/file-format.md).
+//!
+//! `Project` and the constants live here; each format's documents and the shared world are in
+//! their own files and re-exported, so the rest of the app keeps using `crate::models::X`.
+
+mod comic;
+mod novel;
+mod screenplay;
+mod shared;
+
+pub use comic::*;
+pub use novel::*;
+pub use screenplay::*;
+pub use shared::*;
+
 use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
@@ -15,7 +30,7 @@ fn default_story_format() -> String {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub schema_version: u32,
-    /// What kind of document this is: "novel", later "comic", "screenplay".
+    /// What kind of document this is: "novel", "comic" or "screenplay".
     #[serde(default = "default_story_format")]
     pub story_format: String,
     pub id: String,
@@ -46,266 +61,6 @@ pub struct Project {
     pub places: Vec<Place>,
     pub notes: Vec<Note>,
     pub plotlines: Vec<Plotline>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Chapter {
-    pub id: String,
-    pub title: String,
-    pub summary: String,
-}
-
-/// A comic issue (like a chapter): ordered, groups pages.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Issue {
-    pub id: String,
-    pub title: String,
-    #[serde(default)]
-    pub summary: String,
-}
-
-/// One balloon, caption or sound effect. `kind` is "dialogue", "caption", "thought" or "sfx".
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ComicLine {
-    pub id: String,
-    pub kind: String,
-    /// A Character id, or empty for a caption or sound effect.
-    #[serde(default)]
-    pub speaker_id: String,
-    #[serde(default)]
-    pub text: String,
-    /// Lettering note ("off-panel", "small").
-    #[serde(default)]
-    pub note: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ComicPanel {
-    pub id: String,
-    /// What the artist should draw.
-    #[serde(default)]
-    pub description: String,
-    #[serde(default)]
-    pub lines: Vec<ComicLine>,
-}
-
-/// A comic page. The shared fields behave exactly as on a novel's scene.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ComicPage {
-    pub id: String,
-    pub issue_id: String,
-    /// Position inside its issue (0-based); the page number is order + 1.
-    pub order: u32,
-    #[serde(default)]
-    pub title: String,
-    /// What happens on the page, in the writer's own words (the plot-first text).
-    #[serde(default)]
-    pub plot: String,
-    /// Planned layout, free text ("3 tiers: 2/1/3", "splash").
-    #[serde(default)]
-    pub layout: String,
-    #[serde(default)]
-    pub panels: Vec<ComicPanel>,
-    /// "plot", "art", "dialogue" or "lettered".
-    #[serde(default = "default_stage")]
-    pub stage: String,
-    #[serde(default)]
-    pub plotline_id: String,
-    #[serde(default)]
-    pub character_ids: Vec<String>,
-    #[serde(default)]
-    pub place_ids: Vec<String>,
-    #[serde(default)]
-    pub tags: Vec<String>,
-    #[serde(default)]
-    pub color: String,
-    #[serde(default)]
-    pub notes: String,
-    #[serde(default)]
-    pub todos: Vec<SceneTodo>,
-    #[serde(default)]
-    pub when: String,
-}
-
-fn default_stage() -> String {
-    "plot".into()
-}
-
-/// A screenplay act (like a chapter): ordered, groups scenes.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Act {
-    pub id: String,
-    pub title: String,
-    #[serde(default)]
-    pub summary: String,
-}
-
-/// One element of a screenplay scene. `kind` is "action", "dialogue", "transition" or "note".
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScriptElement {
-    pub id: String,
-    pub kind: String,
-    /// Dialogue: a Character id.
-    #[serde(default)]
-    pub speaker_id: String,
-    /// Dialogue: "V.O.", "O.S."… (free text).
-    #[serde(default)]
-    pub extension: String,
-    /// Dialogue: a short direction, without brackets.
-    #[serde(default)]
-    pub parenthetical: String,
-    #[serde(default)]
-    pub text: String,
-}
-
-/// A screenplay scene: a slug line and its elements. The shared fields behave exactly as on a novel's scene.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScriptScene {
-    pub id: String,
-    pub act_id: String,
-    /// Position inside its act (0-based).
-    pub order: u32,
-    #[serde(default)]
-    pub title: String,
-    /// "INT", "EXT", "INT/EXT" or empty.
-    #[serde(default)]
-    pub int_ext: String,
-    #[serde(default)]
-    pub location: String,
-    #[serde(default)]
-    pub time: String,
-    #[serde(default)]
-    pub summary: String,
-    #[serde(default)]
-    pub elements: Vec<ScriptElement>,
-    #[serde(default = "default_scene_status")]
-    pub status: String,
-    #[serde(default)]
-    pub plotline_id: String,
-    #[serde(default)]
-    pub character_ids: Vec<String>,
-    #[serde(default)]
-    pub place_ids: Vec<String>,
-    #[serde(default)]
-    pub tags: Vec<String>,
-    #[serde(default)]
-    pub color: String,
-    #[serde(default)]
-    pub notes: String,
-    #[serde(default)]
-    pub todos: Vec<SceneTodo>,
-    #[serde(default)]
-    pub when: String,
-}
-
-fn default_scene_status() -> String {
-    "idea".into()
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Scene {
-    pub id: String,
-    pub title: String,
-    pub summary: String,
-    pub content: String,
-    pub chapter_id: String,
-    /// Position inside its chapter (0-based, across all plotlines).
-    pub order: u32,
-    pub plotline_id: String,
-    pub character_ids: Vec<String>,
-    pub place_ids: Vec<String>,
-    pub tags: Vec<String>,
-    /// "idea", "draft", "revised" or "final".
-    #[serde(default = "default_status")]
-    pub status: String,
-    /// A colour label id, or empty for none.
-    #[serde(default)]
-    pub color: String,
-    /// Private notes about the scene.
-    #[serde(default)]
-    pub notes: String,
-    /// Private to-do list for the scene.
-    #[serde(default)]
-    pub todos: Vec<SceneTodo>,
-    /// When the scene happens inside the story (free text, e.g. "Day 3 evening").
-    #[serde(default)]
-    pub when: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SceneTodo {
-    pub id: String,
-    pub text: String,
-    #[serde(default)]
-    pub done: bool,
-}
-
-fn default_status() -> String {
-    "draft".into()
-}
-
-/// A saved version of a scene. `kind` is "manual", "auto" or "safety".
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Snapshot {
-    pub id: String,
-    pub scene_id: String,
-    pub kind: String,
-    pub label: String,
-    /// Milliseconds since the Unix epoch.
-    pub created_at: u64,
-    pub title: String,
-    pub summary: String,
-    pub content: String,
-    pub chapter_id: String,
-    pub plotline_id: String,
-    pub character_ids: Vec<String>,
-    pub place_ids: Vec<String>,
-    pub tags: Vec<String>,
-    /// Comics: the whole page as it was (then `scene_id` holds the page id and `content` is empty).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub page: Option<ComicPage>,
-    /// Screenplays: the whole scene as it was (then `scene_id` holds the scene id and `content` is empty).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub script_scene: Option<ScriptScene>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Character {
-    pub id: String,
-    pub name: String,
-    #[serde(default)]
-    pub aliases: Vec<String>,
-    pub description: String,
-    pub role: String,
-    pub category: String,
-    pub traits: Vec<String>,
-    pub notes: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Place {
-    pub id: String,
-    pub name: String,
-    #[serde(default)]
-    pub aliases: Vec<String>,
-    pub description: String,
-    pub location: String,
-    pub notes: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Note {
-    pub id: String,
-    pub title: String,
-    pub content: String,
-    pub tags: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Plotline {
-    pub id: String,
-    pub name: String,
-    pub color: String,
 }
 
 impl Project {

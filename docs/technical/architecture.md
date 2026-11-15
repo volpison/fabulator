@@ -9,7 +9,7 @@ Fabulator is a desktop app made of two halves that talk through a small set of c
 - **The web view** (Svelte 5 + TypeScript, inside a Tauri window) shows the screens and owns the *editing rules*: how a scene is added, moved, searched, replaced, exported.
 - **Rust** (Tauri 2 backend) owns the *files*: opening, atomic saving, rotating backups, crash recovery, the Markdown folder format, user themes, and a copy of the current project that it keeps up to date from small patches.
 
-The two halves share one data model: `src/lib/types.ts` (TypeScript) mirrors `src-tauri/src/models/mod.rs` (Rust), and both carry the same schema version (see [The project file format](file-format.md)).
+The two halves share one data model: `src/lib/types.ts` (TypeScript) mirrors `src-tauri/src/models/` (Rust), and both carry the same schema version (see [The project file format](file-format.md)).
 
 ## Stack
 
@@ -44,7 +44,11 @@ src-tauri/src/
     unsaved.rs             Rust's kept copy of the project and the recovery copies
     themes.rs              the user's colour themes
     folder.rs              the Markdown project folder
-  models/mod.rs            Project, Scene, Character, Place, Issue, ComicPage, Act, ScriptScene, ...
+  models/mod.rs            Project, the schema version, Project::sample(), re-exports
+  models/shared.rs         Character, Place, Note, Plotline, Snapshot, SceneTodo
+  models/novel.rs          Chapter, Scene
+  models/comic.rs          Issue, ComicPage, ComicPanel, ComicLine
+  models/screenplay.rs     Act, ScriptScene, ScriptElement
   storage/                 the file logic, std-only, one file per concern:
     atomic.rs              crash-safe writes, bounded reads
     backup.rs              rotating backups, the backup made before an upgrade
@@ -59,7 +63,7 @@ scripts/version.mjs        keeps the version equal in five files; checks a relea
 docs/                      these pages
 ```
 
-The Rust side is being split into one module per concern: `storage/` and `commands/` are done; the models are next.
+The Rust side is split into one module per concern: `storage/`, `commands/` and `models/`.
 
 ## How a feature is put together
 
