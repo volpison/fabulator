@@ -15,7 +15,10 @@ import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import { cleanActs, cleanScriptScenes } from "./screenplay";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 11;
+export const CURRENT_SCHEMA_VERSION = 12;
+
+/** The value of `file_type` in every project file: "this is a Fabulator project". */
+export const FILE_TYPE = "fabulator-project";
 
 export type MigrationResult = {
   project: Project;
@@ -29,6 +32,7 @@ type Raw = Record<string, any>;
 const isObject = (x: unknown): x is Raw =>
   typeof x === "object" && x !== null && !Array.isArray(x);
 const arr = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
+const num = (x: unknown): number => (typeof x === "number" ? x : 0);
 const str = (x: unknown, fallback = ""): string =>
   typeof x === "string" ? x : fallback;
 
@@ -108,6 +112,14 @@ function v10ToV11(p: Raw): Raw {
   return { ...p, schema_version: 11 };
 }
 
+/**
+ * v11 -> v12: the file says what it is (`file_type`) and the lowest version of Fabulator that can
+ * open it safely (`min_reader_version`). Everything else is unchanged.
+ */
+function v11ToV12(p: Raw): Raw {
+  return { ...p, schema_version: 12, file_type: FILE_TYPE, min_reader_version: 12 };
+}
+
 const migrations: Record<number, (p: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
@@ -120,6 +132,7 @@ const migrations: Record<number, (p: Raw) => Raw> = {
   8: v8ToV9,
   9: v9ToV10,
   10: v10ToV11,
+  11: v11ToV12,
 };
 
 /** Entities (characters/places) always carry a clean `aliases` string list. */
@@ -251,7 +264,10 @@ function normalize(p: Raw): Project {
 
   const project: Project = {
     ...p,
-    schema_version: CURRENT_SCHEMA_VERSION,
+    // A file from a newer Fabulator that this one may still open keeps its own (higher) version.
+    schema_version: Math.max(CURRENT_SCHEMA_VERSION, num(p.schema_version)),
+    file_type: FILE_TYPE,
+    min_reader_version: typeof p.min_reader_version === "number" ? p.min_reader_version : CURRENT_SCHEMA_VERSION,
     story_format: storyFormat,
     id: str(p.id) || "proj-imported",
     title: str(p.title, "Untitled"),
@@ -286,10 +302,20 @@ export function migrateProject(raw: unknown): MigrationResult {
       ? raw.schema_version
       : 0;
 
-  if (found > CURRENT_SCHEMA_VERSION) {
+  if (typeof raw.file_type === "string" && raw.file_type !== FILE_TYPE) {
+    throw new Error(`This file is not a Fabulator project (file type “${raw.file_type}”).`);
+  }
+
+  // A newer file may still be opened if it says an older reader can (min_reader_version): the
+  // fields this version does not know are kept and written back. Without that, newer = refused.
+  const needs =
+    typeof raw.min_reader_version === "number" && raw.min_reader_version >= 0
+      ? raw.min_reader_version
+      : found;
+  if (needs > CURRENT_SCHEMA_VERSION) {
     throw new Error(
       `This project was saved by a newer version of Fabulator ` +
-        `(format ${found}; this version understands up to ${CURRENT_SCHEMA_VERSION}). ` +
+        `(format ${needs}; this version understands up to ${CURRENT_SCHEMA_VERSION}). ` +
         `Update Fabulator to open it.`
     );
   }

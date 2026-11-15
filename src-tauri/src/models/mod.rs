@@ -17,7 +17,18 @@ use serde::{Deserialize, Serialize};
 
 /// File-format version written to every project. Keep in sync with
 /// CURRENT_SCHEMA_VERSION in src/lib/migrate.ts (which upgrades old files).
-pub const SCHEMA_VERSION: u32 = 11;
+pub const SCHEMA_VERSION: u32 = 12;
+
+/// The value of `file_type` in every project file ("this is a Fabulator project").
+pub const FILE_TYPE: &str = "fabulator-project";
+
+fn default_file_type() -> String {
+    FILE_TYPE.to_string()
+}
+
+fn default_min_reader_version() -> u32 {
+    SCHEMA_VERSION
+}
 
 /// The format of a project written before formats existed. The frontend decides what formats
 /// exist (src/lib/formats.ts); Rust stores whatever the file says and never interprets it.
@@ -30,6 +41,12 @@ fn default_story_format() -> String {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub schema_version: u32,
+    /// Says this file is a Fabulator project.
+    #[serde(default = "default_file_type")]
+    pub file_type: String,
+    /// The lowest file-format version of Fabulator that can open this file safely.
+    #[serde(default = "default_min_reader_version")]
+    pub min_reader_version: u32,
     /// What kind of document this is: "novel", "comic" or "screenplay".
     #[serde(default = "default_story_format")]
     pub story_format: String,
@@ -71,6 +88,8 @@ impl Project {
     pub fn sample() -> Self {
         Project {
             schema_version: SCHEMA_VERSION,
+            file_type: FILE_TYPE.into(),
+            min_reader_version: SCHEMA_VERSION,
             story_format: DEFAULT_STORY_FORMAT.into(),
             id: "proj-boy-who-cried-wolf".into(),
             chapters: (1..=6)
@@ -330,6 +349,20 @@ mod tests {
         let p = Project::sample();
         assert_eq!(p.story_format, "novel");
         assert_eq!(p.schema_version, SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn a_saved_project_says_what_it_is_and_which_reader_it_needs() {
+        let json = serde_json::to_value(Project::sample()).unwrap();
+        assert_eq!(json["file_type"], "fabulator-project");
+        assert_eq!(json["min_reader_version"], SCHEMA_VERSION);
+
+        // A file from a newer Fabulator that older readers may open keeps its own version numbers.
+        let mut newer = json.clone();
+        newer["schema_version"] = 13.into();
+        newer["min_reader_version"] = 12.into();
+        let project: Project = serde_json::from_value(newer.clone()).unwrap();
+        assert_eq!(serde_json::to_value(&project).unwrap(), newer);
     }
 
     #[test]
