@@ -1,6 +1,6 @@
 # Design: Game Prototyping mode
 
-> **Status: decided, being built.** Step 1 (the data) is done; the rest is not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
+> **Status: decided, being built.** Steps 1 (the data) and 2 (the Timeline) are done; the rest are not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
 
 ## What it is for
 
@@ -80,7 +80,7 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 ## Steps (each its own pull request, like Comic and Screenplay)
 
 1. **Data:** the `game` model, schema v13, the format entry (not ready), Rust sample and tests, docs. ✅ done.
-2. **Timeline:** quest lanes and nodes, add / move / delete, status and colour.
+2. **Timeline:** quest lanes and nodes, add / move / delete, status and colour. ✅ done (File → New game (preview)).
 3. **Writing view:** the node editor with its text elements.
 4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them.
 5. **Check, Playtest and Graph:** the checks above, the playtest, the graph view.

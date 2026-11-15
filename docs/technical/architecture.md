@@ -28,9 +28,11 @@ src/                       the web view
     types.ts               the data model (mirrors the Rust models)
     stores.ts              the project and UI state; thin wrappers that apply the pure rules below
     migrate.ts             upgrades older project files; CURRENT_SCHEMA_VERSION
-    formats.ts             the story formats (novel, comic, screenplay) and their words
-    model.ts, comic.ts, screenplay.ts       pure rules per format (ordering, counting, slug lines, ...)
-    comicedit.ts, screenplayedit.ts         pure edit operations per format
+    formats.ts             the story formats (novel, comic, screenplay, game) and their words
+    model.ts, comic.ts, screenplay.ts,
+    game.ts                                 pure rules per format (ordering, counting, slug lines, ...)
+    comicedit.ts, screenplayedit.ts,
+    gameedit.ts                             pure edit operations per format
     search.ts, replace.ts, snapshots.ts,    shared tools; each handles all formats
     wordcount.ts, goals.ts
     export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails
