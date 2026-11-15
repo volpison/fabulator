@@ -9,6 +9,9 @@ pub struct Chapter {
     pub id: String,
     pub title: String,
     pub summary: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 fn default_status() -> String {
@@ -43,4 +46,7 @@ pub struct Scene {
     /// When the scene happens inside the story (free text, e.g. "Day 3 evening").
     #[serde(default)]
     pub when: String,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }

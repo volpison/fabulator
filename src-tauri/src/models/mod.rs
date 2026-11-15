@@ -61,6 +61,9 @@ pub struct Project {
     pub places: Vec<Place>,
     pub notes: Vec<Note>,
     pub plotlines: Vec<Plotline>,
+    /// Fields this version does not know (written by a newer Fabulator): kept and written back.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 impl Project {
@@ -75,6 +78,7 @@ impl Project {
                     id: format!("ch-{n}"),
                     title: format!("Chapter {n}"),
                     summary: String::new(),
+                    extra: Default::default(),
                 })
                 .collect(),
             title: "The Boy Who Cried Wolf".into(),
@@ -86,16 +90,19 @@ impl Project {
                     id: "pl-main".into(),
                     name: "Main Plot".into(),
                     color: "#3b82f6".into(),
+                    extra: Default::default(),
                 },
                 Plotline {
                     id: "pl-boy".into(),
                     name: "The Boy".into(),
                     color: "#f59e0b".into(),
+                    extra: Default::default(),
                 },
                 Plotline {
                     id: "pl-village".into(),
                     name: "The Village".into(),
                     color: "#64748b".into(),
+                    extra: Default::default(),
                 },
             ],
             snapshots: vec![],
@@ -114,6 +121,7 @@ impl Project {
                         "Overly confident".into(),
                     ],
                     notes: "External Goal: Entertainment and validation — trapped in a mind-numbing, isolated job and craves a break from the monotony.\n\nInternal Flaw: Short-sightedness and a lack of empathy. He prioritizes immediate amusement over his long-term reputation and the safety of the village's livelihood.".into(),
+                    extra: Default::default(),
                 },
                 Character {
                     id: "char-villagers".into(),
@@ -124,6 +132,7 @@ impl Project {
                     category: "Supporting".into(),
                     traits: vec!["Dutiful".into(), "Initially trusting".into(), "Increasingly wary".into()],
                     notes: "They represent the social contract the boy breaks. Their final refusal to help is the consequence of his lies.".into(),
+                    extra: Default::default(),
                 },
                 Character {
                     id: "char-wolf".into(),
@@ -134,6 +143,7 @@ impl Project {
                     category: "Main".into(),
                     traits: vec!["Silent".into(), "Hungry".into(), "Inevitable".into()],
                     notes: "The wolf is less a character with motive and more the embodiment of the real danger the boy was supposed to watch for.".into(),
+                    extra: Default::default(),
                 },
             ],
             places: vec![
@@ -144,6 +154,7 @@ impl Project {
                     description: "An isolated hillside where the shepherd boy watches the flock. Quiet, exposed, and far from the village.".into(),
                     location: "Above the village, on the open slope".into(),
                     notes: "The setting of boredom, the false cries, and the final real attack.".into(),
+                    extra: Default::default(),
                 },
                 Place {
                     id: "place-village".into(),
@@ -152,6 +163,7 @@ impl Project {
                     description: "The heart of the village. Where people work, gather, and from which they run when they hear the cry of \"Wolf!\".".into(),
                     location: "Down in the valley".into(),
                     notes: "The place that stops responding after the second false alarm.".into(),
+                    extra: Default::default(),
                 },
                 Place {
                     id: "place-woods".into(),
@@ -160,6 +172,7 @@ impl Project {
                     description: "The dark treeline from which the real wolf eventually emerges.".into(),
                     location: "Bordering the north pasture".into(),
                     notes: String::new(),
+                    extra: Default::default(),
                 },
             ],
             notes: vec![
@@ -168,18 +181,21 @@ impl Project {
                     title: "Core theme".into(),
                     content: "Trust is a form of social currency. The boy spends it for entertainment and discovers too late that he has none left when he truly needs it.".into(),
                     tags: vec!["Theme".into()],
+                    extra: Default::default(),
                 },
                 Note {
                     id: "note-pov".into(),
                     title: "Point of View".into(),
                     content: "Third-Person Limited — focusing on the boy's internal boredom, amusement, and later panic.".into(),
                     tags: vec!["Craft".into(), "POV".into()],
+                    extra: Default::default(),
                 },
                 Note {
                     id: "note-tension".into(),
                     title: "Tension progression".into(),
                     content: "Scene 1: Low (boredom)\nScenes 2–3: Comedic / anxious (false alarms)\nScenes 4–6: High / terror (real wolf + silence)".into(),
                     tags: vec!["Structure".into()],
+                    extra: Default::default(),
                 },
             ],
             scenes: vec![
@@ -200,6 +216,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
                 // Act II – The Deceptions
                 Scene {
@@ -218,6 +235,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
                 Scene {
                     id: "sc-3".into(),
@@ -235,6 +253,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
                 // Act III – The Reckoning
                 Scene {
@@ -253,6 +272,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
                 Scene {
                     id: "sc-5".into(),
@@ -270,6 +290,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
                 Scene {
                     id: "sc-6".into(),
@@ -287,6 +308,7 @@ impl Project {
                     notes: String::new(),
                     todos: vec![],
                     when: String::new(),
+                    extra: Default::default(),
                 },
             ],
             issues: vec![],
@@ -294,6 +316,7 @@ impl Project {
             acts: vec![],
             script_scenes: vec![],
             script_style: None,
+            extra: Default::default(),
         }
     }
 }
@@ -346,5 +369,33 @@ mod tests {
         assert_eq!(comic.story_format, "comic"); // Rust passes it through untouched
         let back = serde_json::to_value(&comic).unwrap();
         assert_eq!(back["story_format"], "comic");
+    }
+
+    #[test]
+    fn fields_this_version_does_not_know_are_kept_when_saving() {
+        // A newer Fabulator wrote an invented field on the project, a character, a scene and a to-do.
+        let mut json = serde_json::to_value(Project::sample()).unwrap();
+        json["game"] = serde_json::json!({ "quests": [{ "id": "q-1" }] });
+        json["characters"][0]["ability_ids"] = serde_json::json!(["ab-1"]);
+        json["scenes"][0]["mood"] = "tense".into();
+        json["scenes"][0]["todos"] = serde_json::json!([{ "id": "t-1", "text": "x", "priority": 2 }]);
+
+        let project: Project = serde_json::from_value(json.clone()).unwrap();
+        assert!(project.extra.contains_key("game"));
+        let back = serde_json::to_value(&project).unwrap();
+
+        assert_eq!(back["game"]["quests"][0]["id"], "q-1");
+        assert_eq!(back["characters"][0]["ability_ids"][0], "ab-1");
+        assert_eq!(back["scenes"][0]["mood"], "tense");
+        assert_eq!(back["scenes"][0]["todos"][0]["priority"], 2);
+        assert_eq!(back, json); // nothing added, nothing lost
+    }
+
+    #[test]
+    fn a_known_file_has_no_extra_fields_so_saved_files_do_not_change() {
+        let json = serde_json::to_value(Project::sample()).unwrap();
+        let project: Project = serde_json::from_value(json.clone()).unwrap();
+        assert!(project.extra.is_empty());
+        assert_eq!(serde_json::to_value(&project).unwrap(), json);
     }
 }
