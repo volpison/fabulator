@@ -40,14 +40,15 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 | `characters[]`, `places[]`, `abilities[]`, `notes[]`, `plotlines[]` | all | The shared world. A character may list `ability_ids`; both are left out of the file when empty |
 | `snapshots[]` | all | Saved versions of a scene, page or screenplay scene (manual, auto, safety) |
 
-## Known limits (planned for schema v12)
+## Compatibility rules (since v12)
 
-These are the gaps between today's format and a long-lived standard; see the [roadmap](../../ROADMAP.md) and the [v12 proposal](format-v12.md):
+These keep a file safe across versions of the app, and across the formats still to come:
 
-- ~~Unknown fields are dropped on save.~~ **Fixed:** every Rust model struct keeps the fields it does not list (`extra`, a flattened map) and writes them back, so a field added by a newer Fabulator survives a save here. The version check still decides whether a file may be opened at all.
-- **One flat list of fields per format.** Each new mode adds more top-level lists. Grouping the shared "world" (characters, places, notes, plotlines, snapshots) apart from each format's document would keep the file tidy as modes are added.
-- ~~No format marker.~~ **Fixed in v12:** `file_type` and `min_reader_version`.
-- ~~No abilities.~~ **Fixed in v12:** `abilities[]` and a character's `ability_ids`.
+- **Unknown fields are kept.** Every Rust model struct has an `extra` map (`#[serde(flatten)]`) that holds the fields it does not list and writes them back on save; the web side keeps them too. A field added by a newer Fabulator survives a save in an older one.
+- **The file says what it is.** `file_type` (`"fabulator-project"`) and `min_reader_version` (the lowest `schema_version` that can open the file safely). A purely additive change in a later version can leave `min_reader_version` lower than its `schema_version`, so older apps keep opening such files instead of refusing them. Raise it only when an older app would misread or damage the file.
+- **Where a format's data lives.** Novel, Comic and Screenplay keep their fields flat at the top level, as they always have. **A new format stores its whole document under one key named after it** (for example `"game": { ... }`), so formats do not mix their lists with the shared world and an older app that does not know the format keeps the key untouched (and refuses the file if its `story_format` is unknown, as above). Moving everything into `world` and `document` objects was considered and left for later: it would touch the whole app without adding a feature, and `min_reader_version` makes it safe to do as its own step.
+- **The shared world** is the same in every format: characters, places, abilities, notes, plotlines, snapshots. A character lists the abilities it has in `ability_ids`.
+- **The name stays `.fabulator.json`.**
 
 ## Story formats
 
