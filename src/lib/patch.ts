@@ -26,6 +26,7 @@ export const LIST_FIELDS = [
   "snapshots",
   "characters",
   "places",
+  "abilities",
   "notes",
   "plotlines",
 ] as const;

@@ -27,7 +27,7 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 | 8 → 9 | A snapshot may hold a whole comic page (`page`) |
 | 9 → 10 | Screenplay documents: `acts`, `script_scenes` |
 | 10 → 11 | A snapshot may hold a whole screenplay scene (`script_scene`) |
-| 11 → 12 | The file says what it is (`file_type`) and which reader it needs (`min_reader_version`) |
+| 11 → 12 | The file says what it is (`file_type`) and which reader it needs (`min_reader_version`); abilities join the shared world (`abilities`, `ability_ids`) |
 
 ## Top-level fields
 
@@ -37,7 +37,7 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 | `chapters[]`, `scenes[]` | novel | A scene has `chapter_id` and `order`; book order is chapters in order, then scenes by `order` |
 | `issues[]`, `pages[]`, `script_style` | comic | See "Comic data" below |
 | `acts[]`, `script_scenes[]` | screenplay | See "Screenplay data" below |
-| `characters[]`, `places[]`, `notes[]`, `plotlines[]` | all | The shared world |
+| `characters[]`, `places[]`, `abilities[]`, `notes[]`, `plotlines[]` | all | The shared world. A character may list `ability_ids`; both are left out of the file when empty |
 | `snapshots[]` | all | Saved versions of a scene, page or screenplay scene (manual, auto, safety) |
 
 ## Known limits (planned for schema v12)
@@ -47,7 +47,7 @@ These are the gaps between today's format and a long-lived standard; see the [ro
 - ~~Unknown fields are dropped on save.~~ **Fixed:** every Rust model struct keeps the fields it does not list (`extra`, a flattened map) and writes them back, so a field added by a newer Fabulator survives a save here. The version check still decides whether a file may be opened at all.
 - **One flat list of fields per format.** Each new mode adds more top-level lists. Grouping the shared "world" (characters, places, notes, plotlines, snapshots) apart from each format's document would keep the file tidy as modes are added.
 - ~~No format marker.~~ **Fixed in v12:** `file_type` and `min_reader_version`.
-- **No abilities** yet in the shared world.
+- ~~No abilities.~~ **Fixed in v12:** `abilities[]` and a character's `ability_ids`.
 
 ## Story formats
 

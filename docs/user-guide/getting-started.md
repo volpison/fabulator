@@ -21,7 +21,7 @@ Windows installers are built from release tags; the installer is not code-signed
 ## Where things are
 
 - **Timeline** (Ctrl+1) plans the structure: chapters and scenes, issues and pages, or acts and scenes. **Manuscript** (Ctrl+2) is where you write. **Cast** (Ctrl+3) shows who appears where.
-- The side panels hold your **Characters**, **Places** and **Notes**.
+- The side panels hold your **Characters**, **Places**, **Abilities** and **Notes**.
 - **Search** (Ctrl+F), **Find & replace** (Ctrl+H), **Snapshots** and **Export** (Ctrl+E) are in the menus and in [Shared tools](shared-tools.md) and [Export](export.md).
 
 ## Next

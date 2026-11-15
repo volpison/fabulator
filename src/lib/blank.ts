@@ -46,6 +46,7 @@ export function blankProject(newId: (prefix: string) => string): Project {
     snapshots: [],
     characters: [],
     places: [],
+    abilities: [],
     notes: [],
   };
 }
@@ -75,6 +76,7 @@ export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SC
     snapshots: [],
     characters: [],
     places: [],
+    abilities: [],
     notes: [],
   };
 }
@@ -103,6 +105,7 @@ export function blankScreenplay(newId: (prefix: string) => string): Project {
     snapshots: [],
     characters: [],
     places: [],
+    abilities: [],
     notes: [],
   };
 }

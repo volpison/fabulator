@@ -1,6 +1,6 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { parseQuery, search, findTermRanges, termRangesInBlock, clearSearchCache } from "../src/lib/search.ts";
+import { parseQuery, search, findTermRanges, termRangesInBlock, clearSearchCache, KIND_LABEL } from "../src/lib/search.ts";
 import type { Project } from "../src/lib/types.ts";
 
 beforeEach(() => clearSearchCache());
@@ -18,6 +18,7 @@ function proj(over: Partial<Project> = {}): Project {
       { id: "mid", title: "Wolf!", summary: "", content: "<p>Nothing but a cry.</p>", chapter_id: "c1", order: 1, plotline_id: "pl", character_ids: [], place_ids: [], tags: [] },
     ],
     characters: [{ id: "boy", name: "The Shepherd Boy", aliases: ["Pip"], description: "Bored lad", role: "Protagonist", category: "Main", traits: ["Clever"], notes: "Fears the wolf" }],
+    abilities: [],
     places: [{ id: "past", name: "North Pasture", aliases: [], description: "A hillside", location: "Above the village", notes: "" }],
     notes: [{ id: "n1", title: "Theme", content: "Trust is currency. Wolf = consequence.", tags: ["Theme"] }],
     plotlines: [{ id: "pl", name: "Main", color: "#000" }],
@@ -42,7 +43,7 @@ test("finds across kinds; scenes come in reading order; counts are per kind", ()
   const r = search(proj(), "wolf");
   assert.deepEqual(r.hits.filter((h) => h.kind === "scene").map((h) => h.id), ["mid", "late"]); // title hit ranks first
   assert.deepEqual(r.hits.map((h) => h.kind), ["scene", "scene", "character", "note", "chapter"]);
-  assert.deepEqual(r.counts, { scene: 2, page: 0, script_scene: 0, character: 1, place: 0, note: 1, chapter: 1, issue: 0, act: 0 });
+  assert.deepEqual(r.counts, { scene: 2, page: 0, script_scene: 0, character: 1, place: 0, ability: 0, note: 1, chapter: 1, issue: 0, act: 0 });
 });
 
 test("case-, accent- and substring-insensitive", () => {
@@ -123,4 +124,15 @@ test("termRangesInBlock: document positions across formatting runs", () => {
   };
   const r = termRangesInBlock(block, 10, ["shepherd"]);
   assert.deepEqual(r, [{ from: 15, to: 23 }]); // content starts at 11; "Shepherd" at index 4
+});
+
+test("abilities are searched by name, alias and description, and jump to the Abilities panel", () => {
+  const p = proj({
+    abilities: [{ id: "ab-1", name: "Shape-shifting", aliases: ["skinwalking"], description: "Takes the form of a wolf", notes: "" }],
+  });
+  const byName = search(p, "shape");
+  assert.equal(byName.counts.ability, 1);
+  assert.equal(byName.hits.find((h) => h.kind === "ability")?.id, "ab-1");
+  assert.equal(search(p, "skinwalking").counts.ability, 1);
+  assert.equal(KIND_LABEL.ability, "Abilities");
 });

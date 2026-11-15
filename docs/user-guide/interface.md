@@ -5,7 +5,7 @@ How the app looks and behaves, and how to change it.
 ## Interface, themes and shortcuts
 
 - **Top bar**: *File* and *Tools* menus (with shortcuts shown, arrow-key navigation, Esc to close),
-  the three views centred, the Characters / Places / Notes panels and the **View** menu on the right.
+  the three views centred, the Characters / Places / Abilities / Notes panels and the **View** menu on the right.
   The project name, file and save state moved to a status bar at the bottom.
 - **View menu**: theme (System, Light, Dark, Sepia, Midnight, High contrast), interface size
   (90–150%), and for the manuscript: font (serif / sans / mono), text size, line width and
@@ -16,7 +16,7 @@ How the app looks and behaves, and how to change it.
 - Shortcuts: Ctrl+O open · Ctrl+S save · Ctrl+Shift+S save as · Ctrl+E export · Ctrl+F search ·
   Ctrl+H replace · Ctrl+Shift+H snapshots · Ctrl+1/2/3 Timeline/Manuscript/Cast ·
   Ctrl+\ toggle side panel · Ctrl+Shift+F focus mode. (Cmd instead of Ctrl on macOS.)
-- The right-hand panel (Characters / Places / Notes) scrolls, and its width is adjustable: drag its left edge,
+- The right-hand panel (Characters / Places / Abilities / Notes) scrolls, and its width is adjustable: drag its left edge,
   or focus the edge and use ←/→ (Shift for bigger steps, Home to reset); double-click resets. The width is remembered.
 - Fabulator behaves like a desktop app, not a web page: the browser's right-click menu (Back / Refresh / Save as…) is
   hidden except over editable text or a selection (cut/copy/paste, spelling), and reload, print and history shortcuts
