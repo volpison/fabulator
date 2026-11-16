@@ -30,7 +30,8 @@ src/                       the web view
     migrate.ts             upgrades older project files; CURRENT_SCHEMA_VERSION
     formats.ts             the story formats (novel, comic, screenplay, game) and their words
     model.ts, comic.ts, screenplay.ts,
-    game.ts, gamerules.ts                   pure rules per format (ordering, counting, slug lines, ...)
+    game.ts, gamerules.ts, gamecheck.ts,
+    gameplay.ts, gamegraph.ts               pure rules per format (ordering, counting, slug lines, checks, playtest, graph layout, ...)
     comicedit.ts, screenplayedit.ts,
     gameedit.ts                             pure edit operations per format
     search.ts, replace.ts, snapshots.ts,    shared tools; each handles all formats

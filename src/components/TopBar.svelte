@@ -7,6 +7,7 @@
     exportOpen,
     replaceOpen,
     reportsOpen,
+    gameCheckOpen,
     project,
   } from "../lib/stores";
   import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, loadSample, newProject } from "../lib/persistence";
@@ -55,6 +56,7 @@
     { separator: true },
     { label: "Snapshots…", shortcut: "Ctrl+Shift+H", action: () => snapshotsOpen.set(true) },
     ...($project?.story_format === "screenplay" ? [{ separator: true }, { label: "Reports…", action: () => reportsOpen.set(true) }] : []),
+    ...($project?.story_format === "game" ? [{ separator: true }, { label: "Check & playtest…", action: () => gameCheckOpen.set(true) }] : []),
   ] as MenuItem[];
 
   const views: { id: MainView; label: string; hint: string }[] = [
