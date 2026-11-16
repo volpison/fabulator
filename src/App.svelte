@@ -34,6 +34,7 @@
   import ComicTimeline from "./components/ComicTimeline.svelte";
   import ScreenplayTimeline from "./components/ScreenplayTimeline.svelte";
   import GameTimeline from "./components/GameTimeline.svelte";
+  import GameManuscript from "./components/GameManuscript.svelte";
   import ScreenplayManuscript from "./components/ScreenplayManuscript.svelte";
   import ComicManuscript from "./components/ComicManuscript.svelte";
   import { formatOf } from "./lib/formats";
@@ -180,6 +181,8 @@
           <ComicManuscript />
         {:else if $project.story_format === "screenplay"}
           <ScreenplayManuscript />
+        {:else if $project.story_format === "game"}
+          <GameManuscript />
         {:else}
           <ManuscriptView />
         {/if}

@@ -91,7 +91,7 @@ export const STORY_FORMATS: Record<StoryFormatId, StoryFormat> = {
     label: "Game Prototyping",
     description: "Quests and side-quests, with the conditions and choices that connect them.",
     ready: false,
-    views: { timeline: true, manuscript: false },
+    views: { timeline: true, manuscript: true },
     vocabulary: {
       group: { one: "quest", many: "quests" },
       unit: { one: "node", many: "nodes" },

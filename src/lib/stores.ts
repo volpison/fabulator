@@ -50,6 +50,16 @@ import {
   moveNode as moveNodeIn,
   deleteNode as deleteNodeFrom,
   removeCastFromNodes,
+  addElement as addGameElementTo,
+  updateElement as updateGameElementIn,
+  moveElement as moveGameElementIn,
+  deleteElement as deleteGameElementFrom,
+  addOption as addGameOptionTo,
+  updateOption as updateGameOptionIn,
+  deleteOption as deleteGameOptionFrom,
+  addLink as addGameLinkTo,
+  updateLink as updateGameLinkIn,
+  deleteLink as deleteGameLinkFrom,
 } from "./gameedit";
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
@@ -68,6 +78,7 @@ import {
 } from "./snapshots";
 import type {
   ElementKind,
+  GameElementKind,
   Project,
   MainView,
   SidePanel,
@@ -544,6 +555,66 @@ export function moveGameNode(id: string, questId: string, index: number) {
 export function deleteGameNode(id: string) {
   editProject((p) => deleteNodeFrom(p, id));
   selectedNodeId.update((cur) => (cur === id ? null : cur));
+}
+
+// Elements, choice options and links of a game node (the writing view).
+
+export function addGameElement(nodeId: string, kind: GameElementKind = "narration", atIndex?: number, speakerId = ""): string {
+  let id = "";
+  editProject((p) => {
+    const r = addGameElementTo(p, uid, nodeId, kind, atIndex, speakerId);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameElement(nodeId: string, elementId: string, fields: Parameters<typeof updateGameElementIn>[3]) {
+  editProject((p) => updateGameElementIn(p, nodeId, elementId, fields));
+}
+
+export function moveGameElement(nodeId: string, elementId: string, toIndex: number) {
+  editProject((p) => moveGameElementIn(p, nodeId, elementId, toIndex));
+}
+
+export function deleteGameElement(nodeId: string, elementId: string) {
+  editProject((p) => deleteGameElementFrom(p, nodeId, elementId));
+}
+
+export function addGameOption(nodeId: string, elementId: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addGameOptionTo(p, uid, nodeId, elementId);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameOption(nodeId: string, elementId: string, optionId: string, fields: Parameters<typeof updateGameOptionIn>[4]) {
+  editProject((p) => updateGameOptionIn(p, nodeId, elementId, optionId, fields));
+}
+
+export function deleteGameOption(nodeId: string, elementId: string, optionId: string) {
+  editProject((p) => deleteGameOptionFrom(p, nodeId, elementId, optionId));
+}
+
+export function addGameLink(nodeId: string, to: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addGameLinkTo(p, uid, nodeId, to);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameLink(nodeId: string, linkId: string, fields: Parameters<typeof updateGameLinkIn>[3]) {
+  editProject((p) => updateGameLinkIn(p, nodeId, linkId, fields));
+}
+
+export function deleteGameLink(nodeId: string, linkId: string) {
+  editProject((p) => deleteGameLinkFrom(p, nodeId, linkId));
 }
 
 // Elements of a screenplay scene (the writing view).
