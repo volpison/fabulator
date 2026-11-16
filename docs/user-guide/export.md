@@ -31,7 +31,7 @@ In the other kinds, empty pages are left out (the numbers keep their place). Pri
 
 *File → Export…* offers three formats for a screenplay. **PDF** is written by Fabulator itself (no extra software): standard script pages in 12 pt Courier, 55 lines a page, 1.5 in left margin, page numbers from page 2, the slug line at the margin, dialogue and parentheticals indented, transitions at the right, a slug line never alone at the bottom of a page, and long dialogue split with **(MORE)** and **NAME (CONT'D)**. **Word** uses the same layout through real paragraph styles (Scene Heading, Action, Character, Parenthetical, Dialogue, Transition), so it can be edited. **Fountain** is plain text for Final Draft, Highland, Fade In and others (a forced slug `.` when INT/EXT is not set, `>` transitions, `!` for all-capital action lines). Options: **title page**, **scene numbers** (shooting script) and the scope: whole script, the act of the selected scene, or just that scene (numbers stay those of the whole script). Private notes and scenes with nothing in them are left out; "(CONT'D)" is worked out from the dialogue, never stored. The layout is `src/lib/export/screenplayLayout.ts`, the PDF writer `pdf.ts`. PDF text uses the standard Courier font, so characters outside Western European alphabets show as "?" (use Word or Fountain for those).
 
-## Game exports (preview)
+## Game exports
 
 **File → Export…** on a game offers three kinds, for the whole game, the quest of the selected node, or just that node:
 

@@ -7,6 +7,7 @@
     selectedSceneId,
     selectedPageId,
     selectedScriptSceneId,
+    selectedNodeId,
     mainView,
     replaceOpen,
     replaceInScenes,
@@ -49,9 +50,10 @@
 
   $: isComic = $project?.story_format === "comic";
   $: isScreenplay = $project?.story_format === "screenplay";
-  $: unit = isComic ? "page" : "scene";
+  $: isGame = $project?.story_format === "game";
+  $: unit = isGame ? "node" : isComic ? "page" : "scene";
   /** The selected scene (novel) or page (comic). */
-  $: selectedItemId = isComic ? $selectedPageId : isScreenplay ? $selectedScriptSceneId : ($selectedScene?.id ?? null);
+  $: selectedItemId = isGame ? $selectedNodeId : isComic ? $selectedPageId : isScreenplay ? $selectedScriptSceneId : ($selectedScene?.id ?? null);
   $: options = { matchCase, wholeWord } as ReplaceOptions;
   $: fields = { content: inText, title: inTitles, summary: inSynopsis } as ReplaceFields;
   $: plan = $project
@@ -82,7 +84,8 @@
   }
 
   function open(id: string) {
-    if (isComic) selectedPageId.set(id);
+    if (isGame) selectedNodeId.set(id);
+    else if (isComic) selectedPageId.set(id);
     else if (isScreenplay) selectedScriptSceneId.set(id);
     else selectedSceneId.set(id);
     mainView.set("manuscript");
@@ -136,7 +139,7 @@
         <label class="chk"><input type="checkbox" bind:checked={matchCase} /> Match case</label>
         <label class="chk"><input type="checkbox" bind:checked={wholeWord} /> Whole word</label>
         <span class="sep"></span>
-        <label class="chk"><input type="checkbox" bind:checked={inText} /> {isComic ? "Plot, panels and lettering" : isScreenplay ? "Action and dialogue" : "Text"}</label>
+        <label class="chk"><input type="checkbox" bind:checked={inText} /> {isGame ? "Narration, dialogue and choices" : isComic ? "Plot, panels and lettering" : isScreenplay ? "Action and dialogue" : "Text"}</label>
         <label class="chk"><input type="checkbox" bind:checked={inTitles} /> Titles</label>
         {#if !isComic}
           <label class="chk"><input type="checkbox" bind:checked={inSynopsis} /> Synopses</label>

@@ -13,7 +13,9 @@
  * not match "Jose"), because replacing the wrong thing silently is worse
  * than missing something; the search dialog is the accent-insensitive tool.
  */
-import type { ComicPage, Project, Scene, ScriptScene } from "./types";
+import type { ComicPage, GameElement, GameNode, Project, Scene, ScriptScene } from "./types";
+import { gameReadingOrder, nodeLabels } from "./gameedit";
+import { makeNodeSnapshot, nodeHasContent, nodeToText } from "./gamesnapshots";
 import { screenplayReadingOrder, slugLine } from "./screenplay";
 import { comicReadingOrder, pageNumber } from "./comic";
 import { readingOrder } from "./model";
@@ -339,6 +341,92 @@ function applyReplaceScreenplay(
   return { project: { ...project, script_scenes, snapshots }, scenes, replacements };
 }
 
+// ─── game nodes ───
+// "text" is the writing (narration, dialogue words and parentheticals, the prompt of a choice and its options, notes),
+// "title" is the node's title, "summary" its summary. Speaker names, conditions and effects are structured data and stay as they are.
+
+function replaceInNodeText(n: GameNode, re: RegExp, replacement: string): { node: GameNode; count: number } {
+  let count = 0;
+  const one = (t: string) => {
+    const r = replaceInPlain(t, re, replacement);
+    count += r.count;
+    return r.text;
+  };
+  const elements = n.elements.map((e): GameElement => {
+    const text = one(e.text);
+    const parenthetical = e.kind === "dialogue" ? one(e.parenthetical) : e.parenthetical;
+    const options = e.options.map((o) => {
+      const t = one(o.text);
+      return t === o.text ? o : { ...o, text: t };
+    });
+    const sameOptions = options.every((o, i) => o === e.options[i]);
+    return text === e.text && parenthetical === e.parenthetical && sameOptions ? e : { ...e, text, parenthetical, options };
+  });
+  return count === 0 ? { node: n, count: 0 } : { node: { ...n, elements }, count };
+}
+
+function planReplaceGame(project: Project, re: RegExp, replacement: string, fields: ReplaceFields, onlyId?: string | null): ReplacePlan {
+  const labels = nodeLabels(project);
+  const quests = new Map((project.game?.quests ?? []).map((q, i) => [q.id, `Quest ${i + 1}${q.title.trim() ? ` · ${q.title.trim()}` : ""}`]));
+  const changes: SceneChange[] = [];
+  for (const n of gameReadingOrder(project)) {
+    if (onlyId && n.id !== onlyId) continue;
+    const counts = {
+      content: fields.content ? replaceInNodeText(n, re, replacement).count : 0,
+      title: fields.title ? replaceInPlain(n.title, re, replacement).count : 0,
+      summary: fields.summary ? replaceInPlain(n.summary, re, replacement).count : 0,
+    };
+    const total = counts.content + counts.title + counts.summary;
+    if (total === 0) continue;
+    const snippet =
+      (counts.content && snipOf(nodeToText({ ...n, title: "", summary: "" }), re, replacement)) ||
+      (counts.title && snipOf(n.title, re, replacement)) ||
+      (counts.summary && snipOf(n.summary, re, replacement)) ||
+      null;
+    changes.push({
+      sceneId: n.id,
+      title: n.title || "Untitled node",
+      chapterLabel: `${quests.get(n.quest_id) ?? ""} · Node ${labels.get(n.id) ?? ""}`.replace(/^ · /, ""),
+      counts,
+      total,
+      snippet,
+    });
+  }
+  return { changes, total: changes.reduce((n, c) => n + c.total, 0), scenes: changes.length };
+}
+
+function applyReplaceGame(
+  project: Project,
+  re: RegExp,
+  find: string,
+  replacement: string,
+  fields: ReplaceFields,
+  ids: Set<string>,
+  now: number,
+  newId: () => string
+): { project: Project; scenes: number; replacements: number } {
+  const g = project.game;
+  if (!g) return { project, scenes: 0, replacements: 0 };
+  const label = `Before replace “${find}” → “${replacement}”`;
+  const snapshots = [...project.snapshots];
+  let scenes = 0;
+  let replacements = 0;
+  const nodes = g.nodes.map((n): GameNode => {
+    if (!ids.has(n.id)) return n;
+    const c = fields.content ? replaceInNodeText(n, re, replacement) : { node: n, count: 0 };
+    const t = fields.title ? replaceInPlain(n.title, re, replacement) : { text: n.title, count: 0 };
+    const y = fields.summary ? replaceInPlain(n.summary, re, replacement) : { text: n.summary, count: 0 };
+    const count = c.count + t.count + y.count;
+    if (count === 0) return n;
+    scenes++;
+    replacements += count;
+    if (nodeHasContent(n) || n.title) snapshots.push(makeNodeSnapshot(n, "safety", label, now, newId()));
+    return { ...c.node, title: t.text, summary: y.text };
+  });
+  if (scenes === 0) return { project, scenes: 0, replacements: 0 };
+  return { project: { ...project, game: { ...g, nodes }, snapshots }, scenes, replacements };
+}
+
 /** What a replace would change, scene by scene (nothing is modified). */
 export function planReplace(
   project: Project,
@@ -352,6 +440,7 @@ export function planReplace(
   if (!re) return { changes: [], total: 0, scenes: 0 };
   if (project.story_format === "comic") return planReplaceComic(project, re, replacement, fields, onlySceneId);
   if (project.story_format === "screenplay") return planReplaceScreenplay(project, re, replacement, fields, onlySceneId);
+  if (project.story_format === "game") return planReplaceGame(project, re, replacement, fields, onlySceneId);
   const chapterLabel = new Map(project.chapters.map((c, i) => [c.id, `Ch ${i + 1} · ${c.title}`]));
   const changes: SceneChange[] = [];
 
@@ -400,6 +489,7 @@ export function applyReplace(
   if (!re || sceneIds.size === 0) return { project, scenes: 0, replacements: 0 };
   if (project.story_format === "comic") return applyReplaceComic(project, re, find, replacement, fields, sceneIds, now, newId);
   if (project.story_format === "screenplay") return applyReplaceScreenplay(project, re, find, replacement, fields, sceneIds, now, newId);
+  if (project.story_format === "game") return applyReplaceGame(project, re, find, replacement, fields, sceneIds, now, newId);
 
   const label = `Before replace “${find}” → “${replacement}”`;
   const snapshots = [...project.snapshots];

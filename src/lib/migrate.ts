@@ -13,7 +13,7 @@ import { cleanTodos } from "./scenenotes";
 import { DEFAULT_STORY_FORMAT, readStoryFormat } from "./formats";
 import { cleanIssues, cleanPages, cleanScriptStyle } from "./comic";
 import { cleanActs, cleanScriptScenes } from "./screenplay";
-import { cleanGame } from "./game";
+import { cleanGame, cleanNodeSnapshot } from "./game";
 import type { Chapter, Project, Scene, Snapshot, SnapshotKind } from "./types";
 
 export const CURRENT_SCHEMA_VERSION = 13;
@@ -199,6 +199,8 @@ function cleanSnapshots(list: unknown): Snapshot[] {
     const script_scene = isObject(raw.script_scene)
       ? cleanScriptScenes([raw.script_scene], [{ id: sceneAct, title: "", summary: "" }])[0]
       : undefined;
+    // A game node kept whole: repaired like any node, or dropped if it is not one.
+    const node = cleanNodeSnapshot(raw.node);
     const snap: Snapshot = {
       ...raw,
       id,
@@ -219,6 +221,8 @@ function cleanSnapshots(list: unknown): Snapshot[] {
     else delete snap.page;
     if (script_scene) snap.script_scene = script_scene;
     else delete snap.script_scene;
+    if (node) snap.node = node;
+    else delete snap.node;
     out.push(snap);
   }
   return out;

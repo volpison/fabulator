@@ -28,7 +28,7 @@ What a Fabulator project file contains, how old files are upgraded, and the rule
 | 9 → 10 | Screenplay documents: `acts`, `script_scenes` |
 | 10 → 11 | A snapshot may hold a whole screenplay scene (`script_scene`) |
 | 11 → 12 | The file says what it is (`file_type`) and which reader it needs (`min_reader_version`); abilities join the shared world (`abilities`, `ability_ids`) |
-| 12 → 13 | Game documents: `story_format` `game`, everything under one `game` key (data only so far). Nothing changes for older files; `min_reader_version` stays 12 |
+| 12 → 13 | Game documents: `story_format` `game`, everything under one `game` key (snapshots may hold a whole node in `node`). Nothing changes for older files; `min_reader_version` stays 12 |
 
 ## Top-level fields
 
@@ -54,7 +54,7 @@ These keep a file safe across versions of the app, and across the formats still 
 
 ## Story formats
 
-Every project has a `story_format` (`novel`, `comic`, `screenplay` or `game`; Game Prototyping has its data but no views yet, see the [roadmap](../../ROADMAP.md)). The shared parts (characters, places, notes, plotlines, story time, snapshots, themes, backups, recovery) are the same in every format; the format decides the document itself: its units, editor and Timeline/Manuscript views. `src/lib/formats.ts` is the registry (ids, labels, and each format's words for its units: chapter/scene, issue/page/panel, act/scene).
+Every project has a `story_format` (`novel`, `comic`, `screenplay` or `game`; Game Prototyping is ready since the shared tools arrived, see the [roadmap](../../ROADMAP.md)). The shared parts (characters, places, notes, plotlines, story time, snapshots, themes, backups, recovery) are the same in every format; the format decides the document itself: its units, editor and Timeline/Manuscript views. `src/lib/formats.ts` is the registry (ids, labels, and each format's words for its units: chapter/scene, issue/page/panel, act/scene).
 
 - Older files open as novels; the upgrade makes the usual untouched backup first.
 - A file whose format this version doesn't know (for example a comic opened in an older Fabulator) is **refused with a clear message**, never opened as a novel, so it can't be damaged.
@@ -73,8 +73,8 @@ A screenplay is `acts[]` (ordered) and `script_scenes[]`. A scene has a **slug l
 
 Screenplay is **ready**: *File → New screenplay* starts one. A screenplay file is kept safe on open and save; exporting one as a Markdown folder is refused for now. (A game can be exported as a Markdown folder, one way only: `project.json` there says `story_format: "game"` and opening such a folder is refused with a clear message.)
 
-## Game data (schema v13, data only so far)
+## Game data (schema v13)
 
 A game project keeps its whole document under one key, `game` (the rule for new formats). `quests[]` (main or side, with an optional `requires`), `nodes[]` (each in a quest, with text `elements[]` of narration, dialogue, choice and private note, plus `requires`, `effects`, `links` and an `ending` flag), and a registry of declared `variables[]` (flag or number) and `items[]`. Conditions and effects are small structured rows (`{ "kind": "flag", "variable_id": "met", "set": true }`), never code. Characters, places, abilities, notes and plotlines stay in the shared world and are referenced by id.
 
-`src/lib/game.ts` holds the types' cleaning: unreadable conditions are dropped, odd ones (an undeclared variable) are kept for the checks to report, nodes always live in a real quest, and links and choice targets never point at a deleted node. Rust does not model the game: the `extra` map carries the `game` object through a save untouched. **Game is not ready**: it is not offered for new projects and its views say so; see [Design: Game Prototyping](game-prototyping.md) for the rest. Other formats carry no `game` key.
+`src/lib/game.ts` holds the types' cleaning: unreadable conditions are dropped, odd ones (an undeclared variable) are kept for the checks to report, nodes always live in a real quest, and links and choice targets never point at a deleted node. Rust does not model the game: the `extra` map carries the `game` object through a save untouched. **Game is ready**: *File → New game* starts one; see [Design: Game Prototyping](game-prototyping.md) for the rest. A snapshot of a game node keeps the whole node in the snapshot's `node` field (an optional field like `page` and `script_scene`; `scene_id` holds the node id). It needed no new schema version, because the game itself is new in v13 and no released app wrote game files before; Rust carries `node` through `extra`. Other formats carry no `game` key.
