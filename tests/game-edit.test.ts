@@ -139,3 +139,106 @@ test("a deleted character or place leaves the nodes", () => {
   assert.equal(removeCastFromNodes(p, "character", "zzz"), p);
   assert.deepEqual(removeCastFromNodes(p, "place", "p1").game!.nodes[0].place_ids, []);
 });
+
+// ─── The writing view: elements, options, links ───
+
+import {
+  addElement, addLink, addOption, deleteElement, deleteLink, deleteOption, gameReadingOrder, moveElement,
+  nodeLabels, nodeWordCount, replySpeaker, updateElement, updateLink, updateOption,
+} from "../src/lib/gameedit.ts";
+
+function twoNodes() {
+  let p = fresh();
+  const a = addNode(p, id); p = a.project;
+  const b = addNode(p, id); p = b.project;
+  return { p, a: a.id, b: b.id };
+}
+const nodeOf = (p: Project, nid: string) => p.game!.nodes.find((x) => x.id === nid)!;
+
+test("elements are added where asked, moved and deleted", () => {
+  const { p: p0, a } = twoNodes();
+  let p = p0;
+  const e1 = addElement(p, id, a, "narration"); p = e1.project;
+  const e2 = addElement(p, id, a, "dialogue", undefined, "char-x"); p = e2.project;
+  const e3 = addElement(p, id, a, "choice", 1); p = e3.project;
+  assert.deepEqual(nodeOf(p, a).elements.map((e) => e.id), [e1.id, e3.id, e2.id]);
+  assert.deepEqual(nodeOf(p, a).character_ids, ["char-x"]); // the speaker joined the cast
+  assert.equal(addElement(p, id, a, "bogus" as never).id, "");
+  p = moveElement(p, a, e2.id, 0);
+  assert.equal(nodeOf(p, a).elements[0].id, e2.id);
+  p = deleteElement(p, a, e3.id);
+  assert.equal(nodeOf(p, a).elements.length, 2);
+  assert.equal(deleteElement(p, a, "nope"), p);
+});
+
+test("only dialogue keeps a speaker; the first words turn an idea into a draft", () => {
+  const { p: p0, a } = twoNodes();
+  let p = p0;
+  const e = addElement(p, id, a, "narration"); p = e.project;
+  assert.equal(nodeOf(p, a).status, "idea");
+  p = updateElement(p, a, e.id, { text: "The sun rises." });
+  assert.equal(nodeOf(p, a).status, "draft");
+  p = updateElement(p, a, e.id, { kind: "dialogue", speaker_id: "c1", parenthetical: "(softly)" });
+  assert.equal(nodeOf(p, a).elements[0].parenthetical, "softly");
+  p = updateElement(p, a, e.id, { kind: "narration" });
+  assert.equal(nodeOf(p, a).elements[0].speaker_id, "");
+  assert.equal(updateElement(p, a, e.id, { text: "The sun rises." }), p);
+  assert.equal(updateElement(p, a, e.id, { kind: "bogus" as never }), p);
+});
+
+test("a private note does not turn an idea into a draft", () => {
+  const { p: p0, a } = twoNodes();
+  let p = p0;
+  const e = addElement(p, id, a, "note"); p = e.project;
+  p = updateElement(p, a, e.id, { text: "remember to…" });
+  assert.equal(nodeOf(p, a).status, "idea");
+  assert.equal(nodeWordCount(nodeOf(p, a)), 0);
+});
+
+test("choice options: add, edit, point at a node, delete; a choice with options keeps its type", () => {
+  const { p: p0, a, b } = twoNodes();
+  let p = p0;
+  const c = addElement(p, id, a, "choice"); p = c.project;
+  const o = addOption(p, id, a, c.id); p = o.project;
+  assert.notEqual(o.id, "");
+  p = updateOption(p, a, c.id, o.id, { text: "Go left", to: b });
+  assert.deepEqual(nodeOf(p, a).elements[0].options.map((x) => [x.text, x.to]), [["Go left", b]]);
+  assert.equal(updateOption(p, a, c.id, o.id, { to: "ghost" }), p); // not a node
+  assert.equal(updateElement(p, a, c.id, { kind: "narration" }), p); // would lose the option
+  assert.equal(addOption(p, id, a, "no-such").id, "");
+  p = deleteOption(p, a, c.id, o.id);
+  assert.equal(nodeOf(p, a).elements[0].options.length, 0);
+  p = updateElement(p, a, c.id, { kind: "narration" });
+  assert.equal(nodeOf(p, a).elements[0].kind, "narration");
+});
+
+test("links need a real target and can be changed and removed", () => {
+  const { p: p0, a, b } = twoNodes();
+  let p = p0;
+  assert.equal(addLink(p, id, a, "ghost").id, "");
+  const l = addLink(p, id, a, b); p = l.project;
+  p = updateLink(p, a, l.id, { label: "Later" });
+  assert.equal(nodeOf(p, a).links[0].label, "Later");
+  assert.equal(updateLink(p, a, l.id, { to: "ghost" }), p);
+  assert.equal(updateLink(p, a, l.id, { label: "Later" }), p);
+  p = deleteLink(p, a, l.id);
+  assert.equal(nodeOf(p, a).links.length, 0);
+});
+
+test("reading order, labels and the reply speaker", () => {
+  let p = fresh();
+  p = addQuest(p, id).project;
+  const [q1, q2] = p.game!.quests.map((q) => q.id);
+  const a = addNode(p, id, q1); p = a.project;
+  const b = addNode(p, id, q2); p = b.project;
+  const c = addNode(p, id, q2); p = c.project;
+  assert.deepEqual(gameReadingOrder(p).map((x) => x.id), [a.id, b.id, c.id]);
+  assert.deepEqual([...nodeLabels(p).values()], ["1.1", "2.1", "2.2"]);
+  const els = [
+    { id: "1", kind: "dialogue" as const, speaker_id: "ann", parenthetical: "", text: "Hi", options: [] },
+    { id: "2", kind: "narration" as const, speaker_id: "", parenthetical: "", text: "…", options: [] },
+    { id: "3", kind: "dialogue" as const, speaker_id: "bob", parenthetical: "", text: "Yo", options: [] },
+  ];
+  assert.equal(replySpeaker(els, 2), "ann");
+  assert.equal(replySpeaker(els, 0), "");
+});

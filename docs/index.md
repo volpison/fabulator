@@ -10,7 +10,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [Writing a novel](user-guide/writing-novel.md) | Timeline, plotlines, status and colours, mentions, notes, story time, appearances |
 | [Writing a comic](user-guide/writing-comic.md) | Issues, pages, panels; Timeline of pages; writing view |
 | [Writing a screenplay](user-guide/writing-screenplay.md) | Acts and scenes; writing view; shared tools; reports |
-| [Writing a game (preview)](user-guide/writing-game.md) | Quests and nodes: the first, Timeline-only step |
+| [Writing a game (preview)](user-guide/writing-game.md) | Quests and nodes: the Timeline and the writing view |
 | [Shared tools](user-guide/shared-tools.md) | Continuity, snapshots, search, find & replace, writing goals |
 | [Export](user-guide/export.md) | Word, EPUB, PDF, Fountain, scripts, thumbnails |
 | [Interface, themes and shortcuts](user-guide/interface.md) | Colours, themes, keyboard shortcuts |

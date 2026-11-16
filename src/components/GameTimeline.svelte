@@ -2,6 +2,7 @@
   import {
     project,
     selectedNodeId,
+    mainView,
     addGameQuest,
     updateGameQuest,
     deleteGameQuest,
@@ -34,11 +35,20 @@
     selectedNodeId.set(id);
   }
 
+  /** Double-click (or Enter on the card) opens the node in the writing view. */
+  function open(id: string) {
+    selectedNodeId.set(id);
+    mainView.set("manuscript");
+  }
+
   function onCardKey(id: string, e: KeyboardEvent) {
     if (e.target !== e.currentTarget) return; // keys typed in the card's own controls are theirs
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === " ") {
       e.preventDefault();
       select(id);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      open(id);
     }
   }
 
@@ -78,7 +88,7 @@
       <button class="add" on:click={onAddNode}>+ Add node</button>
       <button class="add" on:click={() => addGameQuest()}>+ Add quest</button>
       <span class="preview" title="The Game Prototyping mode is being built step by step">Preview</span>
-      <span class="hint">Click a node to edit it · A node is one beat, encounter or conversation · Conditions, effects and links come in the next steps</span>
+      <span class="hint">Click a node to edit its details · Double-click (or Enter) to write it · A node is one beat, encounter or conversation · Conditions and effects come in the next step</span>
     </div>
 
     <div class="scroll">
@@ -134,6 +144,7 @@
                 aria-pressed={n.id === $selectedNodeId}
                 aria-label="Node {n.order + 1}: {n.title.trim() || 'Untitled node'}"
                 on:click={() => select(n.id)}
+                on:dblclick={() => open(n.id)}
                 on:keydown={(e) => onCardKey(n.id, e)}
               >
                 <div class="card-top">

@@ -3,9 +3,9 @@
  * Tauri): each returns a new project, or the very same object when nothing would change (so
  * callers can tell). The stores wrap these and mark the project as changed.
  */
-import type { Condition, Game, GameNode, Project, Quest, QuestKind } from "./types";
+import type { ChoiceOption, Condition, Game, GameElement, GameElementKind, GameLink, GameNode, Project, Quest, QuestKind } from "./types";
 import { SCENE_STATUSES, cleanColor } from "./labels";
-import { emptyGame, nodesInQuest } from "./game";
+import { ELEMENT_KINDS, emptyGame, nodesInQuest } from "./game";
 
 export type NewId = (prefix: string) => string;
 
@@ -238,3 +238,193 @@ export function questSummary(p: Pick<Project, "game">, questId: string): QuestSu
   );
   return { nodes: nodes.length, words, branches: nodes.filter((n) => exitsOf(n).length >= 2).length };
 }
+
+// ─── Writing a node: elements, choice options and links ───
+
+function editNode(p: Project, nodeId: string, fn: (n: GameNode) => GameNode): Project {
+  const g = gameOf(p);
+  const node = g.nodes.find((x) => x.id === nodeId);
+  if (!node) return p;
+  const next = fn(node);
+  return next === node ? p : withGame(p, { ...g, nodes: g.nodes.map((x) => (x.id === nodeId ? next : x)) });
+}
+
+const nodeExists = (p: Project, id: string) => gameOf(p).nodes.some((n) => n.id === id);
+
+/** A new element. Only dialogue has a speaker; only a choice has options. */
+export function newGameElement(newId: NewId, kind: GameElementKind, speakerId = ""): GameElement {
+  return {
+    id: newId("ge"),
+    kind,
+    speaker_id: kind === "dialogue" ? speakerId : "",
+    parenthetical: "",
+    text: "",
+    options: [],
+  };
+}
+
+/** Insert an element at `atIndex` (the end by default). A new dialogue may already have its speaker. */
+export function addElement(
+  p: Project,
+  newId: NewId,
+  nodeId: string,
+  kind: GameElementKind = "narration",
+  atIndex?: number,
+  speakerId = ""
+): { project: Project; id: string } {
+  const node = gameOf(p).nodes.find((x) => x.id === nodeId);
+  if (!node || !(ELEMENT_KINDS as readonly string[]).includes(kind)) return { project: p, id: "" };
+  const el = newGameElement(newId, kind, speakerId);
+  const at = atIndex === undefined ? node.elements.length : Math.max(0, Math.min(node.elements.length, Math.floor(atIndex)));
+  const elements = [...node.elements];
+  elements.splice(at, 0, el);
+  const cast = el.speaker_id && !node.character_ids.includes(el.speaker_id) ? [...node.character_ids, el.speaker_id] : node.character_ids;
+  return { project: editNode(p, nodeId, (n) => ({ ...n, elements, character_ids: cast })), id: el.id };
+}
+
+export type ElementFields = Partial<Pick<GameElement, "kind" | "speaker_id" | "parenthetical" | "text">>;
+
+/**
+ * Change an element. Only dialogue has a speaker and a parenthetical (changing the kind away from
+ * dialogue clears them). A choice that already has options cannot change kind (that would lose the
+ * options): delete the options first. A speaker joins the node's cast. The first words written in
+ * an "Idea" node make it a "Draft".
+ */
+export function updateElement(p: Project, nodeId: string, elementId: string, fields: ElementFields): Project {
+  if (fields.kind !== undefined && !(ELEMENT_KINDS as readonly string[]).includes(fields.kind)) return p;
+  return editNode(p, nodeId, (n) => {
+    const at = n.elements.findIndex((e) => e.id === elementId);
+    if (at === -1) return n;
+    const el = n.elements[at];
+    const kind = fields.kind ?? el.kind;
+    if (el.kind === "choice" && kind !== "choice" && el.options.length > 0) return n;
+    let next: GameElement = { ...el, ...fields, kind };
+    if (kind !== "dialogue") next = { ...next, speaker_id: "", parenthetical: "" };
+    else next = { ...next, parenthetical: next.parenthetical.trim().replace(/^\((.*)\)$/s, "$1") };
+    if (kind !== "choice" && next.options.length > 0) next = { ...next, options: [] };
+    const unchanged = (Object.keys(next) as (keyof GameElement)[]).every((k) => next[k] === el[k]);
+    if (unchanged) return n;
+    const elements = n.elements.map((e, i) => (i === at ? next : e));
+    const cast = next.speaker_id && !n.character_ids.includes(next.speaker_id) ? [...n.character_ids, next.speaker_id] : n.character_ids;
+    const status = n.status === "idea" && next.kind !== "note" && next.text.trim() ? "draft" : n.status;
+    return { ...n, elements, character_ids: cast, status };
+  });
+}
+
+/** Put an element at position `toIndex` (clamped) in its node. */
+export function moveElement(p: Project, nodeId: string, elementId: string, toIndex: number): Project {
+  return editNode(p, nodeId, (n) => {
+    const from = n.elements.findIndex((e) => e.id === elementId);
+    if (from === -1) return n;
+    const to = Math.max(0, Math.min(n.elements.length - 1, Math.floor(toIndex)));
+    if (to === from) return n;
+    const elements = [...n.elements];
+    const [moved] = elements.splice(from, 1);
+    elements.splice(to, 0, moved);
+    return { ...n, elements };
+  });
+}
+
+export function deleteElement(p: Project, nodeId: string, elementId: string): Project {
+  return editNode(p, nodeId, (n) =>
+    n.elements.some((e) => e.id === elementId) ? { ...n, elements: n.elements.filter((e) => e.id !== elementId) } : n
+  );
+}
+
+/**
+ * Who answers? For the dialogue at `index`: the nearest earlier speaker in the node who is not the
+ * same character ("" when nobody else has spoken yet). Used by "reply" (Ctrl+Enter).
+ */
+export function replySpeaker(elements: GameElement[], index: number): string {
+  const current = elements[index]?.kind === "dialogue" ? elements[index].speaker_id : "";
+  for (let i = Math.min(index, elements.length) - 1; i >= 0; i--) {
+    const e = elements[i];
+    if (e.kind === "dialogue" && e.speaker_id && e.speaker_id !== current) return e.speaker_id;
+  }
+  return "";
+}
+
+function editChoice(p: Project, nodeId: string, elementId: string, fn: (options: ChoiceOption[]) => ChoiceOption[]): Project {
+  return editNode(p, nodeId, (n) => {
+    const at = n.elements.findIndex((e) => e.id === elementId && e.kind === "choice");
+    if (at === -1) return n;
+    const options = fn(n.elements[at].options);
+    if (options === n.elements[at].options) return n;
+    return { ...n, elements: n.elements.map((e, i) => (i === at ? { ...e, options } : e)) };
+  });
+}
+
+/** Add an option to a choice. Its conditions and effects are edited in a later step. */
+export function addOption(p: Project, newId: NewId, nodeId: string, elementId: string): { project: Project; id: string } {
+  const id = newId("opt");
+  const project = editChoice(p, nodeId, elementId, (opts) => [...opts, { id, text: "", requires: [], effects: [], to: "" }]);
+  return { project, id: project === p ? "" : id };
+}
+
+/** Change an option's text or target (a node that exists, or "" for nowhere yet). */
+export function updateOption(
+  p: Project,
+  nodeId: string,
+  elementId: string,
+  optionId: string,
+  fields: Partial<Pick<ChoiceOption, "text" | "to">>
+): Project {
+  if (fields.to !== undefined && fields.to !== "" && !nodeExists(p, fields.to)) return p;
+  return editChoice(p, nodeId, elementId, (opts) => {
+    const at = opts.findIndex((o) => o.id === optionId);
+    if (at === -1) return opts;
+    const next = { ...opts[at], ...fields };
+    if (next.text === opts[at].text && next.to === opts[at].to) return opts;
+    return opts.map((o, i) => (i === at ? next : o));
+  });
+}
+
+export function deleteOption(p: Project, nodeId: string, elementId: string, optionId: string): Project {
+  return editChoice(p, nodeId, elementId, (opts) => (opts.some((o) => o.id === optionId) ? opts.filter((o) => o.id !== optionId) : opts));
+}
+
+/** Add a way out of a node to another node (a link needs a target that exists). Conditions come later. */
+export function addLink(p: Project, newId: NewId, nodeId: string, to: string): { project: Project; id: string } {
+  if (!nodeExists(p, to)) return { project: p, id: "" };
+  const link: GameLink = { id: newId("ln"), to, label: "", requires: [] };
+  const project = editNode(p, nodeId, (n) => ({ ...n, links: [...n.links, link] }));
+  return { project, id: project === p ? "" : link.id };
+}
+
+export function updateLink(p: Project, nodeId: string, linkId: string, fields: Partial<Pick<GameLink, "to" | "label">>): Project {
+  if (fields.to !== undefined && !nodeExists(p, fields.to)) return p;
+  return editNode(p, nodeId, (n) => {
+    const at = n.links.findIndex((l) => l.id === linkId);
+    if (at === -1) return n;
+    const next = { ...n.links[at], ...fields };
+    if (next.to === n.links[at].to && next.label === n.links[at].label) return n;
+    return { ...n, links: n.links.map((l, i) => (i === at ? next : l)) };
+  });
+}
+
+export function deleteLink(p: Project, nodeId: string, linkId: string): Project {
+  return editNode(p, nodeId, (n) => (n.links.some((l) => l.id === linkId) ? { ...n, links: n.links.filter((l) => l.id !== linkId) } : n));
+}
+
+// ─── Reading order and counts ───
+
+/** Every node in reading order: quest by quest, node by node. */
+export function gameReadingOrder(p: Pick<Project, "game">): GameNode[] {
+  const g = p.game;
+  return g ? g.quests.flatMap((q) => nodesInQuest(g.nodes, q.id)) : [];
+}
+
+/** A node's number: its quest's number and its own ("2.3" = third node of the second quest). */
+export function nodeLabels(p: Pick<Project, "game">): Map<string, string> {
+  const g = p.game;
+  const out = new Map<string, string>();
+  if (!g) return out;
+  g.quests.forEach((q, qi) => nodesInQuest(g.nodes, q.id).forEach((n, i) => out.set(n.id, `${qi + 1}.${i + 1}`)));
+  return out;
+}
+
+/** Words of narration, dialogue and choice text (private notes and options are not counted). */
+export const nodeWordCount = (n: Pick<GameNode, "elements">): number =>
+  n.elements
+    .filter((e) => e.kind !== "note")
+    .reduce((w, e) => w + (e.text.trim() ? e.text.trim().split(/\s+/).length : 0), 0);
