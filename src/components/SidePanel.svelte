@@ -3,6 +3,7 @@
   import { platform } from "../lib/platform";
   import Appearances from "./Appearances.svelte";
   import { clampPanelWidth, PANEL_DEFAULT } from "../lib/layout";
+  import { itemUsage, variableUsage } from "../lib/gamerules";
   import {
     project,
     sidePanel,
@@ -16,6 +17,12 @@
     updateAbility,
     addAbility,
     deleteAbility,
+    addGameVariable,
+    updateGameVariable,
+    deleteGameVariable,
+    addGameItem,
+    updateGameItem,
+    deleteGameItem,
     updateNote,
     addNote,
     deleteNote,
@@ -114,6 +121,9 @@
     } else if ($sidePanel === "abilities") {
       const id = addAbility();
       editingId = id;
+    } else if ($sidePanel === "state") {
+      const id = addGameVariable("flag");
+      editingId = id;
     } else if ($sidePanel === "notes") {
       const id = addNote();
       editingId = id;
@@ -132,6 +142,10 @@
     if (panel === "characters") deleteCharacter(id);
     else if (panel === "places") deletePlace(id);
     else if (panel === "abilities") deleteAbility(id);
+    else if (panel === "state") {
+      if ($project?.game?.items.some((i) => i.id === id)) deleteGameItem(id);
+      else deleteGameVariable(id);
+    }
     else if (panel === "notes") deleteNote(id);
     if (editingId === id) editingId = null;
   }
@@ -163,6 +177,8 @@
         Places
       {:else if $sidePanel === "abilities"}
         Abilities
+      {:else if $sidePanel === "state"}
+        State
       {:else if $sidePanel === "notes"}
         Notes
       {/if}
@@ -422,6 +438,79 @@
           {/if}
         </div>
       {/each}
+    {:else if $sidePanel === "state" && $project?.game}
+      {@const game = $project.game}
+      <p class="hint">
+        What the game remembers. Declare a flag (yes/no) or a number once here, then use it in conditions and effects.
+      </p>
+      <div class="group-title">Variables</div>
+      {#each game.variables as v (v.id)}
+        {@const use = variableUsage(game, v.id)}
+        <div class="card" id="card-{v.id}" class:editing={editingId === v.id}>
+          <button class="card-head" on:click={() => toggleEdit(v.id)}>
+            <div class="card-title">{v.label || "Untitled"}</div>
+            <div class="card-meta">{v.kind === "number" ? "Number" : "Flag"} · set {use.written}× · used {use.read}×</div>
+          </button>
+          {#if editingId === v.id}
+            <div class="form">
+              <label>
+                Name
+                <input type="text" value={v.label} on:input={(e) => updateGameVariable(v.id, { label: e.currentTarget.value })} />
+              </label>
+              <label>
+                Kind
+                <select value={v.kind} on:change={(e) => updateGameVariable(v.id, { kind: e.currentTarget.value === "number" ? "number" : "flag" })}>
+                  <option value="flag">Flag (yes / no)</option>
+                  <option value="number">Number</option>
+                </select>
+              </label>
+              <label>
+                Notes
+                <textarea rows="2" value={v.notes} on:input={(e) => updateGameVariable(v.id, { notes: e.currentTarget.value })}></textarea>
+              </label>
+              {#if use.read + use.written > 0}
+                <p class="hint">Used in {use.read} condition{use.read === 1 ? "" : "s"} and set by {use.written} effect{use.written === 1 ? "" : "s"}. Deleting it leaves those showing “not declared”.</p>
+              {/if}
+              <div class="form-actions">
+                <button class="danger" on:click={() => onDelete(v.id, v.label)}>Delete</button>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/each}
+      <div class="form-actions start">
+        <button class="add-btn" on:click={() => (editingId = addGameVariable("flag"))}>+ Flag</button>
+        <button class="add-btn" on:click={() => (editingId = addGameVariable("number"))}>+ Number</button>
+      </div>
+
+      <div class="group-title">Items</div>
+      {#each game.items as it (it.id)}
+        {@const use = itemUsage(game, it.id)}
+        <div class="card" id="card-{it.id}" class:editing={editingId === it.id}>
+          <button class="card-head" on:click={() => toggleEdit(it.id)}>
+            <div class="card-title">{it.name || "Untitled"}</div>
+            <div class="card-meta">given or taken {use.written}× · needed {use.read}×</div>
+          </button>
+          {#if editingId === it.id}
+            <div class="form">
+              <label>
+                Name
+                <input type="text" value={it.name} on:input={(e) => updateGameItem(it.id, { name: e.currentTarget.value })} />
+              </label>
+              <label>
+                Description
+                <textarea rows="2" value={it.description} on:input={(e) => updateGameItem(it.id, { description: e.currentTarget.value })}></textarea>
+              </label>
+              <div class="form-actions">
+                <button class="danger" on:click={() => onDelete(it.id, it.name)}>Delete</button>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/each}
+      <div class="form-actions start">
+        <button class="add-btn" on:click={() => (editingId = addGameItem())}>+ Item</button>
+      </div>
     {:else if $sidePanel === "notes" && $project}
       {#each $project.notes as note (note.id)}
         <div class="card" id="card-{note.id}" class:editing={editingId === note.id}>
@@ -668,6 +757,21 @@
     margin: 0;
     font-size: 0.75rem;
     color: var(--text-muted);
+  }
+
+  .group-title {
+    margin: 0.75rem 0 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  .form-actions.start {
+    justify-content: flex-start;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
   }
 
   .form-actions {

@@ -3,9 +3,11 @@
  * Tauri): each returns a new project, or the very same object when nothing would change (so
  * callers can tell). The stores wrap these and mark the project as changed.
  */
-import type { ChoiceOption, Condition, Game, GameElement, GameElementKind, GameLink, GameNode, Project, Quest, QuestKind } from "./types";
+import type {
+  ChoiceOption, Condition, Game, GameElement, GameElementKind, GameItem, GameLink, GameNode, GameVariable, Project, Quest, QuestKind,
+} from "./types";
 import { SCENE_STATUSES, cleanColor } from "./labels";
-import { ELEMENT_KINDS, emptyGame, nodesInQuest } from "./game";
+import { ELEMENT_KINDS, cleanConditions, cleanEffects, emptyGame, nodesInQuest } from "./game";
 
 export type NewId = (prefix: string) => string;
 
@@ -428,3 +430,100 @@ export const nodeWordCount = (n: Pick<GameNode, "elements">): number =>
   n.elements
     .filter((e) => e.kind !== "note")
     .reduce((w, e) => w + (e.text.trim() ? e.text.trim().split(/\s+/).length : 0), 0);
+
+// ─── The registry: variables and items ───
+
+export function addVariable(p: Project, newId: NewId, kind: GameVariable["kind"] = "flag", label?: string): { project: Project; id: string } {
+  const g = gameOf(p);
+  const id = newId("var");
+  const variable: GameVariable = { id, kind: kind === "number" ? "number" : "flag", label: label?.trim() || (kind === "number" ? "New number" : "New flag"), notes: "" };
+  return { project: withGame(p, { ...g, variables: [...g.variables, variable] }), id };
+}
+
+export type VariableFields = Partial<Pick<GameVariable, "label" | "kind" | "notes">>;
+
+export function updateVariable(p: Project, id: string, fields: VariableFields): Project {
+  const g = gameOf(p);
+  const v = g.variables.find((x) => x.id === id);
+  if (!v) return p;
+  if (fields.kind !== undefined && fields.kind !== "flag" && fields.kind !== "number") return p;
+  const next = { ...v, ...fields };
+  if ((Object.keys(fields) as (keyof VariableFields)[]).every((k) => next[k] === v[k])) return p;
+  return withGame(p, { ...g, variables: g.variables.map((x) => (x.id === id ? next : x)) });
+}
+
+/** Delete a variable. Conditions and effects that mention it are left (the checks report them). */
+export function deleteVariable(p: Project, id: string): Project {
+  const g = gameOf(p);
+  return g.variables.some((x) => x.id === id) ? withGame(p, { ...g, variables: g.variables.filter((x) => x.id !== id) }) : p;
+}
+
+export function addItem(p: Project, newId: NewId, name?: string): { project: Project; id: string } {
+  const g = gameOf(p);
+  const id = newId("it");
+  const item: GameItem = { id, name: name?.trim() || "New item", description: "" };
+  return { project: withGame(p, { ...g, items: [...g.items, item] }), id };
+}
+
+export type ItemFields = Partial<Pick<GameItem, "name" | "description">>;
+
+export function updateItem(p: Project, id: string, fields: ItemFields): Project {
+  const g = gameOf(p);
+  const it = g.items.find((x) => x.id === id);
+  if (!it) return p;
+  const next = { ...it, ...fields };
+  if ((Object.keys(fields) as (keyof ItemFields)[]).every((k) => next[k] === it[k])) return p;
+  return withGame(p, { ...g, items: g.items.map((x) => (x.id === id ? next : x)) });
+}
+
+export function deleteItem(p: Project, id: string): Project {
+  const g = gameOf(p);
+  return g.items.some((x) => x.id === id) ? withGame(p, { ...g, items: g.items.filter((x) => x.id !== id) }) : p;
+}
+
+// ─── Conditions and effects ───
+
+/** Where a list of conditions or effects lives. A quest and a link have only conditions. */
+export type RuleTarget =
+  | { kind: "quest"; questId: string }
+  | { kind: "node"; nodeId: string }
+  | { kind: "link"; nodeId: string; linkId: string }
+  | { kind: "option"; nodeId: string; elementId: string; optionId: string };
+
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Replace the conditions (`requires`) or effects of a target with `rows`. The rows are cleaned the
+ * way a loaded file is (unreadable ones are dropped). Returns the same project when nothing
+ * changes, or when the target does not have that kind of list.
+ */
+export function setRules(p: Project, target: RuleTarget, list: "requires" | "effects", rows: unknown): Project {
+  const value = list === "requires" ? cleanConditions(rows) : cleanEffects(rows);
+  const g = gameOf(p);
+  switch (target.kind) {
+    case "quest": {
+      if (list !== "requires") return p;
+      const q = g.quests.find((x) => x.id === target.questId);
+      if (!q || sameJson(q.requires, value)) return p;
+      return withGame(p, { ...g, quests: g.quests.map((x) => (x.id === q.id ? { ...x, requires: value as Condition[] } : x)) });
+    }
+    case "node":
+      return editNode(p, target.nodeId, (n) => (sameJson(n[list], value) ? n : { ...n, [list]: value }));
+    case "link":
+      if (list !== "requires") return p;
+      return editNode(p, target.nodeId, (n) => {
+        const l = n.links.find((x) => x.id === target.linkId);
+        if (!l || sameJson(l.requires, value)) return n;
+        return { ...n, links: n.links.map((x) => (x.id === l.id ? { ...x, requires: value as Condition[] } : x)) };
+      });
+    case "option":
+      return editNode(p, target.nodeId, (n) => {
+        const at = n.elements.findIndex((e) => e.id === target.elementId && e.kind === "choice");
+        if (at === -1) return n;
+        const o = n.elements[at].options.find((x) => x.id === target.optionId);
+        if (!o || sameJson(o[list], value)) return n;
+        const options = n.elements[at].options.map((x) => (x.id === o.id ? { ...x, [list]: value } : x));
+        return { ...n, elements: n.elements.map((e, i) => (i === at ? { ...e, options } : e)) };
+      });
+  }
+}

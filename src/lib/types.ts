@@ -391,4 +391,4 @@ export interface Project {
 }
 
 export type MainView = "timeline" | "manuscript" | "cast";
-export type SidePanel = "characters" | "places" | "abilities" | "notes" | null;
+export type SidePanel = "characters" | "places" | "abilities" | "state" | "notes" | null;
