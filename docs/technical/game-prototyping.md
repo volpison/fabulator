@@ -83,7 +83,7 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 2. **Timeline:** quest lanes and nodes, add / move / delete, status and colour. ✅ done (File → New game (preview)).
 3. **Writing view:** the node editor with its text elements, choice options and plain links (no conditions yet). ✅ done.
 4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them. ✅ done (State panel; `gamerules.ts`).
-5. **Check, Playtest and Graph:** the checks above, the playtest, the graph view.
+5. **Check, Playtest and Graph:** the checks above, the playtest, the graph view. ✅ done (Tools → Check & playtest…; Lanes | Graph toggle on the Timeline; `gamecheck.ts`, `gameplay.ts`, `gamegraph.ts`).
 6. **Exports:** quest bible, CSVs, the Markdown folder.
 7. **Shared tools:** Search, Replace, Snapshots, goals and reports for nodes; the format becomes ready.
 

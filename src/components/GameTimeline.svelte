@@ -18,8 +18,12 @@
   import { contextOf, describeConditions, describeEffects } from "../lib/gamerules";
   import { exitsOf, nodeBadges, nodeIsEmpty, questSummary } from "../lib/gameedit";
   import RulesEditor from "./RulesEditor.svelte";
+  import GameGraph from "./GameGraph.svelte";
   import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/labels";
   import type { Condition, GameNode, QuestKind } from "../lib/types";
+
+  /** Lanes (one row of cards per quest) or the graph of how nodes lead to each other. */
+  let layout: "lanes" | "graph" = "lanes";
 
   $: game = $project?.game ?? null;
   $: ctx = contextOf($project ?? { game: undefined, characters: [], abilities: [] });
@@ -91,10 +95,17 @@
     <div class="toolbar">
       <button class="add" on:click={onAddNode}>+ Add node</button>
       <button class="add" on:click={() => addGameQuest()}>+ Add quest</button>
+      <span class="seg" role="group" aria-label="Layout">
+        <button class:on={layout === "lanes"} aria-pressed={layout === "lanes"} on:click={() => (layout = "lanes")}>Lanes</button>
+        <button class:on={layout === "graph"} aria-pressed={layout === "graph"} on:click={() => (layout = "graph")}>Graph</button>
+      </span>
       <span class="preview" title="The Game Prototyping mode is being built step by step">Preview</span>
       <span class="hint">Click a node to edit its details · Double-click (or Enter) to write it · 🔒 conditions · ⚡ effects · ⑂ a branch · Declare flags, numbers and items in the State panel</span>
     </div>
 
+    {#if layout === "graph"}
+      <GameGraph />
+    {:else}
     <div class="scroll">
       {#each quests as quest, qi (quest.id)}
         {@const sum = questSummary($project, quest.id)}
@@ -205,6 +216,7 @@
         </section>
       {/each}
     </div>
+    {/if}
 
     {#if selected}
       {@const n = selected}
@@ -294,6 +306,9 @@
   .add:hover {
     border-color: var(--accent);
   }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg button { font-size: 0.8rem; padding: 0.3rem 0.7rem; background: var(--bg); color: var(--text-muted); }
+  .seg button.on { background: var(--bg-sidebar); color: var(--text); font-weight: 600; }
   .preview {
     font-size: 0.72rem;
     padding: 0.15rem 0.5rem;

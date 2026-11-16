@@ -831,6 +831,8 @@ export const exportOpen = writable(false);
 export const replaceOpen = writable(false);
 /** Screenplay reports (scenes, characters, locations). */
 export const reportsOpen = writable(false);
+/** Check and Playtest dialog for game projects. */
+export const gameCheckOpen = writable(false);
 /** Distraction-free writing: only the manuscript is shown. */
 export const focusMode = writable(false);
 
