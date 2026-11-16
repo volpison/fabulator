@@ -1,8 +1,9 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { project, selectedScene, selectedPageId, selectedScriptSceneId, exportOpen } from "../lib/stores";
+  import { project, selectedScene, selectedPageId, selectedScriptSceneId, selectedNodeId, exportOpen } from "../lib/stores";
   import { COMIC_EXPORT_KINDS, type ComicExportKind } from "../lib/export/comic";
   import { pageNumber } from "../lib/comic";
+  import { GAME_EXPORT_KINDS, isGameCsv, type GameExportKind } from "../lib/export/game";
   import {
     DEFAULT_OPTIONS,
     exportPreview,
@@ -34,6 +35,7 @@
   let pageSize: "a4" | "letter" = saved.pageSize ?? "a4";
   let language = saved.language ?? "en";
   let comicKind: ComicExportKind = COMIC_EXPORT_KINDS.some((k) => k.id === saved.comicKind) ? (saved.comicKind as ComicExportKind) : "script";
+  let gameKind: GameExportKind = GAME_EXPORT_KINDS.some((k) => k.id === saved.gameKind) ? (saved.gameKind as GameExportKind) : "bible";
   let comicPlot = saved.comicPlot ?? true;
   let spTitlePage = saved.spTitlePage ?? true;
   let spSceneNumbers = saved.spSceneNumbers ?? false;
@@ -60,7 +62,7 @@
   $: options = {
     format,
     scope,
-    sceneId: isComic ? (selectedPage?.id ?? null) : (isScreenplay ? ($selectedScriptSceneId ?? null) : ($selectedScene?.id ?? null)),
+    sceneId: isGame ? ($selectedNodeId ?? null) : isComic ? (selectedPage?.id ?? null) : (isScreenplay ? ($selectedScriptSceneId ?? null) : ($selectedScene?.id ?? null)),
     author,
     chapterHeadings,
     sceneTitles,
@@ -68,23 +70,28 @@
     pageSize,
     language: language.trim() || "en",
     comicKind,
+    gameKind,
     comicPlot,
     spTitlePage,
     spSceneNumbers,
   } as ExportOptions;
 
   $: isScreenplay = $project?.story_format === "screenplay";
+  $: isGame = $project?.story_format === "game";
+  /** The CSV tables of a game have no file-format choice and no layout. */
+  $: isTable = isGame && isGameCsv(gameKind);
+  $: selectedGameNode = isGame ? ($project?.game?.nodes.find((n) => n.id === $selectedNodeId) ?? null) : null;
 
   $: isComic = $project?.story_format === "comic";
   /** The thumbnail sheet is always a printable HTML page: no file format, no Word layout options. */
   $: isSheet = isComic && comicKind === "thumbnails";
   $: selectedPage = isComic ? ($project?.pages.find((p) => p.id === $selectedPageId) ?? null) : null;
-  $: unitOne = isComic ? "page" : "scene";
+  $: unitOne = isGame ? "node" : isComic ? "page" : "scene";
   $: selectedScript = isScreenplay ? ($project?.script_scenes.find((s) => s.id === $selectedScriptSceneId) ?? null) : null;
-  $: groupOne = isComic ? "issue" : isScreenplay ? "act" : "chapter";
+  $: groupOne = isGame ? "quest" : isComic ? "issue" : isScreenplay ? "act" : "chapter";
 
   $: counts = $project ? exportPreview($project, options) : { scenes: 0, chapters: 0 };
-  $: canChooseScope = isComic ? !!selectedPage : isScreenplay ? !!selectedScript : !!$selectedScene;
+  $: canChooseScope = isGame ? !!selectedGameNode : isComic ? !!selectedPage : isScreenplay ? !!selectedScript : !!$selectedScene;
   $: if (!canChooseScope) scope = "all";
 
   function close() {
@@ -107,7 +114,7 @@
       try {
         localStorage.setItem(
           STORE_KEY,
-          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language, comicKind, comicPlot, spTitlePage, spSceneNumbers })
+          JSON.stringify({ format, author, chapterHeadings, sceneTitles, sceneBreak, pageSize, language, comicKind, gameKind, comicPlot, spTitlePage, spSceneNumbers })
         );
       } catch {
         /* remembering options is optional */
@@ -146,7 +153,22 @@
     </header>
 
     <div class="content">
-      {#if !isSheet}
+      {#if isGame}
+        <fieldset>
+          <legend>Kind of export</legend>
+          <div class="formats">
+            {#each GAME_EXPORT_KINDS as k}
+              <label class="format" class:active={gameKind === k.id}>
+                <input type="radio" bind:group={gameKind} value={k.id} />
+                <span class="name">{k.label}</span>
+                <span class="hint">{k.hint}</span>
+              </label>
+            {/each}
+          </div>
+        </fieldset>
+      {/if}
+
+      {#if !isSheet && !isTable}
       <fieldset>
         <legend>Format</legend>
         <div class="formats">
@@ -179,15 +201,17 @@
       <fieldset>
         <legend>What to export</legend>
         <label class="row">
-          <input type="radio" bind:group={scope} value="all" /> Whole story
+          <input type="radio" bind:group={scope} value="all" /> {isGame ? "Whole game" : "Whole story"}
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="chapter" disabled={!canChooseScope} />
-          {isComic ? "The issue of the selected page" : isScreenplay ? "The act of the selected scene" : "The chapter of the selected scene"}
+          {isGame ? "The quest of the selected node" : isComic ? "The issue of the selected page" : isScreenplay ? "The act of the selected scene" : "The chapter of the selected scene"}
         </label>
         <label class="row" class:disabled={!canChooseScope}>
           <input type="radio" bind:group={scope} value="scene" disabled={!canChooseScope} />
-          {#if isScreenplay}
+          {#if isGame}
+            Only the selected node{selectedGameNode ? ` (“${selectedGameNode.title.trim() || "Untitled node"}”)` : ""}
+          {:else if isScreenplay}
             Only the selected scene{selectedScript ? ` (${selectedScript.int_ext ? selectedScript.int_ext + ". " : ""}${selectedScript.location || selectedScript.title || "untitled"})` : ""}
           {:else if isComic}
             Only the selected page{selectedPage ? ` (page ${pageNumber(selectedPage)}${selectedPage.title ? `: “${selectedPage.title}”` : ""})` : ""}
@@ -197,13 +221,16 @@
         </label>
       </fieldset>
 
+      {#if !isTable}
       <fieldset>
         <legend>Layout</legend>
         <label class="field">
           Author
           <input type="text" bind:value={author} placeholder="Shown under the title" />
         </label>
-        {#if isComic}
+        {#if isGame}
+          <!-- nothing to choose: nodes carry their own headings -->
+        {:else if isComic}
           {#if comicKind === "script"}
             <label class="row"><input type="checkbox" bind:checked={comicPlot} /> Show each page's plot above its panels</label>
           {/if}
@@ -238,6 +265,7 @@
           </label>
         {/if}
       </fieldset>
+      {/if}
 
       {#if message}
         <p class="msg" class:failed>{message}</p>

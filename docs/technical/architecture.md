@@ -36,7 +36,7 @@ src/                       the web view
     gameedit.ts                             pure edit operations per format
     search.ts, replace.ts, snapshots.ts,    shared tools; each handles all formats
     wordcount.ts, goals.ts
-    export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails
+    export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails, game (quest bible, CSVs)
     platform/              the Platform layer (see below)
     patch.ts, mirror.ts    sending small changes to Rust
     persistence.ts         open, save, recover, folder: the flows that use the Platform

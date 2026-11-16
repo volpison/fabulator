@@ -3,6 +3,7 @@ import type { Project } from "../types";
 import { readingOrder } from "../model";
 import { htmlToBlocks, type Block } from "./html";
 import { buildComicBook, type ComicExportKind } from "./comic";
+import { buildGameBook, type GameExportKind } from "./game";
 
 export type ExportFormat = "markdown" | "text" | "docx" | "epub" | "pdf" | "fountain";
 export type ExportScope = "all" | "chapter" | "scene";
@@ -23,6 +24,8 @@ export type ExportOptions = {
   comicKind?: ComicExportKind;
   /** Comics only: put each page's plot above its panels in the full script. */
   comicPlot?: boolean;
+  /** Games only: the quest bible, or one of the CSV tables. */
+  gameKind?: GameExportKind;
   /** Screenplays only: a title page, and scene numbers (a shooting script). */
   spTitlePage?: boolean;
   spSceneNumbers?: boolean;
@@ -61,6 +64,7 @@ export const ORNAMENT = "* * *";
 
 export function buildBook(project: Project, options: ExportOptions): Book {
   if (project.story_format === "comic") return buildComicBook(project, options);
+  if (project.story_format === "game") return buildGameBook(project, options);
   let scenes = readingOrder(project);
   if (options.scope !== "all") {
     const target = scenes.find((s) => s.id === options.sceneId);

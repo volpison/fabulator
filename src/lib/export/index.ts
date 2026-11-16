@@ -11,6 +11,7 @@ import { paginate, titlePage } from "./screenplayLayout";
 import { renderPdf } from "./pdf";
 import { renderFountain } from "./fountain";
 import { renderScreenplayDocx } from "./screenplayDocx";
+import { gameNodesFor, isGameCsv, nodesCsv, stateCsv } from "./game";
 
 export * from "./book";
 
@@ -50,8 +51,26 @@ function exportScreenplay(project: Project, options: ExportOptions): ExportResul
   return { bytes, fileName: scriptFileName(doc, format), scenes: doc.scenes.length, chapters: doc.acts };
 }
 
+const isGame = (project: Project) => project.story_format === "game";
+const safeName = (t: string, fallback: string) => t.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim() || fallback;
+
+/** The CSV tables of a game: nodes (as many as the scope says) or the state table. A byte-order mark makes Excel read accents correctly. */
+function exportGameCsv(project: Project, options: ExportOptions): ExportResult {
+  const nodes = gameNodesFor(project, options);
+  const state = options.gameKind === "state-csv";
+  const body = state ? stateCsv(project) : nodesCsv(project, options);
+  const g = project.game;
+  return {
+    bytes: new TextEncoder().encode("\uFEFF" + body),
+    fileName: `${safeName(project.title, "game")} (${state ? "state" : "nodes"}).csv`,
+    scenes: state ? (g?.variables.length ?? 0) + (g?.items.length ?? 0) : nodes.length,
+    chapters: state ? 1 : new Set(nodes.map((n) => n.quest_id)).size,
+  };
+}
+
 export function exportProject(project: Project, options: ExportOptions): ExportResult {
   if (isScript(project)) return exportScreenplay(project, options);
+  if (isGame(project) && isGameCsv(options.gameKind)) return exportGameCsv(project, options);
   if (isSheet(project, options)) {
     const base = (project.title || "story").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim() || "story";
     return { bytes: new TextEncoder().encode(renderThumbnailSheet(project, options)), fileName: `${base} (thumbnails).html`, ...sheetCounts(project, options) };
@@ -65,6 +84,11 @@ export function exportProject(project: Project, options: ExportOptions): ExportR
     case "epub": bytes = renderEpub(book); break;
     default: bytes = renderDocx(book); // "docx"; PDF and Fountain are screenplay formats
   }
+  if (isGame(project)) {
+    // The bible's last chapter (State) is not a quest; count nodes and quests only.
+    const nodes = gameNodesFor(project, options);
+    return { bytes, fileName: suggestedFileName(book), scenes: nodes.length, chapters: new Set(nodes.map((n) => n.quest_id)).size };
+  }
   return { bytes, fileName: suggestedFileName(book), scenes: sceneCount(book), chapters: book.chapters.length };
 }
 
@@ -75,6 +99,15 @@ export function exportPreview(project: Project, options: ExportOptions) {
     return { scenes: doc.scenes.length, chapters: doc.acts };
   }
   if (isSheet(project, options)) return sheetCounts(project, options);
+  if (isGame(project) && isGameCsv(options.gameKind)) {
+    const g = project.game;
+    const nodes = gameNodesFor(project, options);
+    return options.gameKind === "state-csv" ? { scenes: (g?.variables.length ?? 0) + (g?.items.length ?? 0), chapters: 1 } : { scenes: nodes.length, chapters: new Set(nodes.map((n) => n.quest_id)).size };
+  }
+  if (isGame(project)) {
+    const nodes = gameNodesFor(project, options);
+    return { scenes: nodes.length, chapters: new Set(nodes.map((n) => n.quest_id)).size };
+  }
   const book = buildBook(project, options);
   return { scenes: sceneCount(book), chapters: book.chapters.length };
 }

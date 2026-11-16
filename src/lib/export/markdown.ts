@@ -41,6 +41,9 @@ export function renderMarkdown(book: Book): string {
   return out.join("\n\n").replace(/\n{3,}/g, "\n\n") + "\n";
 }
 
+/** Blocks as Markdown paragraphs (for exporters that write their own file around them). */
+export const renderBlocks = (blocks: Block[]): string => blocks.map(block).join("\n\n").replace(/\n{3,}/g, "\n\n");
+
 function block(b: Block): string {
   switch (b.type) {
     case "hr": return "---";
