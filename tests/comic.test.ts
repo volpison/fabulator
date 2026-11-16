@@ -37,7 +37,7 @@ function sampleComic(): Project {
 
 test("the comic format is ready: offered for new stories next to the novel", () => {
   assert.equal(STORY_FORMATS.comic.ready, true);
-  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic", "screenplay"]);
+  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic", "screenplay", "game"]);
   const p = sampleComic();
   assert.equal(formatOf(p).label, "Comic");
   assert.equal(noun(p, "group", 2), "issues");

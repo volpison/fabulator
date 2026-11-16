@@ -255,3 +255,23 @@ export function cleanGame(raw: unknown, plotlineIds: ReadonlySet<string> = new S
 /** The nodes of one quest, in order. */
 export const nodesInQuest = (nodes: GameNode[], questId: string): GameNode[] =>
   nodes.filter((n) => n.quest_id === questId).sort((a, b) => a.order - b.order);
+
+/**
+ * A node kept whole inside a snapshot: repaired like any node, or dropped if it is not one. Its links and
+ * options still point at the nodes it knew (checked against the live game when it is restored, not here).
+ */
+export function cleanNodeSnapshot(raw: unknown): GameNode | undefined {
+  if (!isObject(raw) || !str(raw.id)) return undefined;
+  const id = str(raw.id);
+  const quest = str(raw.quest_id) || "q-snapshot";
+  const targets = new Set<string>();
+  for (const l of arr(raw.links)) if (isObject(l) && str(l.to)) targets.add(str(l.to));
+  for (const e of arr(raw.elements)) {
+    if (isObject(e)) for (const o of arr(e.options)) if (isObject(o) && str(o.to)) targets.add(str(o.to));
+  }
+  targets.delete(id);
+  const stubs = [...targets].map((t) => ({ id: t, quest_id: quest }));
+  const g = cleanGame({ quests: [{ id: quest }], nodes: [{ ...raw, quest_id: quest }, ...stubs] });
+  const node = g.nodes.find((n) => n.id === id);
+  return node ? { ...node, quest_id: str(raw.quest_id) } : undefined;
+}

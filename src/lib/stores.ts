@@ -48,7 +48,6 @@ import {
   addNode as addNodeTo,
   updateNode as updateNodeIn,
   moveNode as moveNodeIn,
-  deleteNode as deleteNodeFrom,
   removeCastFromNodes,
   addElement as addGameElementTo,
   updateElement as updateGameElementIn,
@@ -72,12 +71,15 @@ import {
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
 import { applyReplace, type ReplaceFields, type ReplaceOptions } from "./replace";
+import { makeNodeSnapshot } from "./gamesnapshots";
 import {
   applyRestore,
   autoSnapshotPages,
   autoSnapshotScriptScenes,
+  autoSnapshotNodes,
   makeScriptSnapshot,
   deleteScriptSceneKeeping,
+  deleteNodeKeeping,
   deletePageKeeping,
   makePageSnapshot,
   hasContent,
@@ -163,8 +165,13 @@ export function openSearchHit(hit: SearchHit, terms: string[]) {
       selectedScriptSceneId.set(hit.id);
       mainView.set("manuscript");
       break;
+    case "node":
+      selectedNodeId.set(hit.id);
+      mainView.set("manuscript");
+      break;
     case "issue":
     case "act":
+    case "quest":
       mainView.set("timeline");
       break;
     case "character":
@@ -389,7 +396,7 @@ function editProject(fn: (p: Project) => Project) {
     // A page whose writing changed gets an auto snapshot of how it was (at most every 30 minutes).
     const edited = fn(proj);
     const id = () => uid("snap");
-    const next = autoSnapshotScriptScenes(proj, autoSnapshotPages(proj, edited, Date.now(), id), Date.now(), id);
+    const next = autoSnapshotNodes(proj, autoSnapshotScriptScenes(proj, autoSnapshotPages(proj, edited, Date.now(), id), Date.now(), id), Date.now(), id);
     if (next !== proj) touch();
     return next;
   });
@@ -561,7 +568,7 @@ export function moveGameNode(id: string, questId: string, index: number) {
 }
 
 export function deleteGameNode(id: string) {
-  editProject((p) => deleteNodeFrom(p, id));
+  editProject((p) => deleteNodeKeeping(p, id, Date.now(), () => uid("snap")));
   selectedNodeId.update((cur) => (cur === id ? null : cur));
 }
 
@@ -867,7 +874,8 @@ export function takeSnapshot(sceneId: string, label: string): string | null {
     const scene = proj.scenes.find((s) => s.id === sceneId);
     const page = scene ? undefined : proj.pages.find((pg) => pg.id === sceneId);
     const script = scene || page ? undefined : proj.script_scenes.find((x) => x.id === sceneId);
-    if (!scene && !page && !script) return proj;
+    const node = scene || page || script ? undefined : proj.game?.nodes.find((x) => x.id === sceneId);
+    if (!scene && !page && !script && !node) return proj;
     touch();
     taken = true;
     return {
@@ -878,7 +886,9 @@ export function takeSnapshot(sceneId: string, label: string): string | null {
           ? makeSnapshot(scene, "manual", label.trim(), Date.now(), id)
           : page
             ? makePageSnapshot(page, "manual", label.trim(), Date.now(), id)
-            : makeScriptSnapshot(script!, "manual", label.trim(), Date.now(), id),
+            : script
+              ? makeScriptSnapshot(script, "manual", label.trim(), Date.now(), id)
+              : makeNodeSnapshot(node!, "manual", label.trim(), Date.now(), id),
       ],
     };
   });

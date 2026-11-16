@@ -7,13 +7,15 @@
  * together with the story.
  */
 import { defaultStatusFor } from "./labels";
-import type { ComicPage, Project, Scene, ScriptScene, Snapshot, SnapshotKind } from "./types";
+import type { ComicPage, GameNode, Project, Scene, ScriptScene, Snapshot, SnapshotKind } from "./types";
 import { pageWords, wordsOfHtml } from "./wordcount";
 import { pagesInIssue } from "./comic";
 import { deletePage } from "./comicedit";
 import { sceneWordCount, slugLine } from "./screenplay";
 import { deleteScene as deleteScriptSceneFrom } from "./screenplayedit";
 import { htmlToPlainText } from "./mentions";
+import { deleteNode as deleteGameNodeFrom, nodeWordCount } from "./gameedit";
+import { makeNodeSnapshot, nodeHasContent, nodeToText, nodeWriting, recreateNode, restoreNodeInto } from "./gamesnapshots";
 
 /** An auto snapshot is taken at most this often per scene. */
 export const AUTO_INTERVAL_MS = 30 * 60 * 1000;
@@ -176,6 +178,41 @@ export function autoSnapshotScriptScenes(before: Project, after: Project, now: n
   return snapshots === after.snapshots ? after : { ...after, snapshots };
 }
 
+// ─── Game nodes (the pure helpers are in gamesnapshots.ts) ───
+
+/** Like maybeAutoPageSnapshot, for a game node that is about to change from `before`. */
+export function maybeAutoNodeSnapshot(snapshots: Snapshot[], before: GameNode, now: number, newId: () => string): Snapshot[] {
+  if (!nodeHasContent(before)) return snapshots;
+  let latest: Snapshot | null = null;
+  for (const s of snapshots) if (s.scene_id === before.id && (!latest || s.created_at > latest.created_at)) latest = s;
+  if (latest) {
+    if (now - latest.created_at < AUTO_INTERVAL_MS) return snapshots;
+    if (latest.node && nodeWriting(latest.node) === nodeWriting(before)) return snapshots;
+  }
+  return pruneAuto([...snapshots, makeNodeSnapshot(before, "auto", "Autosaved version", now, newId())]);
+}
+
+/** After an edit: give every game node whose writing changed an auto snapshot of how it was. Same object when none. */
+export function autoSnapshotNodes(before: Project, after: Project, now: number, newId: () => string): Project {
+  if (before.game?.nodes === after.game?.nodes || !before.game || !after.game) return after;
+  const old = new Map(before.game.nodes.map((n) => [n.id, n]));
+  let snapshots = after.snapshots;
+  for (const n of after.game.nodes) {
+    const was = old.get(n.id);
+    if (!was || was === n || nodeWriting(was) === nodeWriting(n)) continue;
+    snapshots = maybeAutoNodeSnapshot(snapshots, was, now, newId);
+  }
+  return snapshots === after.snapshots ? after : { ...after, snapshots };
+}
+
+/** Delete a game node, first keeping a safety copy (the ways out of other nodes into it are cut, as always). */
+export function deleteNodeKeeping(p: Project, nodeId: string, now: number, newId: () => string): Project {
+  const n = p.game?.nodes.find((x) => x.id === nodeId);
+  if (!n) return p;
+  const kept = nodeHasContent(n) ? [...p.snapshots, makeNodeSnapshot(n, "safety", "Deleted node", now, newId())] : p.snapshots;
+  return { ...deleteGameNodeFrom(p, nodeId), snapshots: kept };
+}
+
 /** Delete a screenplay scene, first keeping a safety copy. */
 export function deleteScriptSceneKeeping(p: Project, sceneId: string, now: number, newId: () => string): Project {
   const sc = p.script_scenes.find((x) => x.id === sceneId);
@@ -213,11 +250,13 @@ export function recreateScriptScene(
 
 /** The text of what a snapshot holds (scene text, a page or a screenplay scene as readable text). */
 export function snapshotText(snap: Snapshot, nameOf?: (id: string) => string): string {
+  if (snap.node) return nodeToText(snap.node, nameOf);
   if (snap.script_scene) return scriptSceneToText(snap.script_scene, nameOf);
   return snap.page ? pageToText(snap.page, nameOf) : htmlToPlainText(snap.content);
 }
 
 export function snapshotWords(snap: Snapshot): number {
+  if (snap.node) return nodeWordCount(snap.node);
   if (snap.script_scene) return sceneWordCount(snap.script_scene);
   return snap.page ? pageWords(snap.page) : wordsOfHtml(snap.content);
 }
@@ -458,6 +497,25 @@ export function applyRestore(
     return { sceneId: scene.id, project: { ...project, acts, script_scenes: [...project.script_scenes, scene] } };
   }
 
+  if (snap.node && project.game) {
+    // A game node: `sceneId` in the result is the node id.
+    const g = project.game;
+    const here = g.nodes.find((x) => x.id === snap.node!.id);
+    if (here) {
+      const was = restoreNodeInto(here, snap, new Set(g.nodes.map((x) => x.id)));
+      if (nodeWriting(here) === nodeWriting(was)) return { project, sceneId: here.id };
+      const safety = makeNodeSnapshot(here, "safety", `Before restoring “${snap.label || "a snapshot"}”`, now, newId("snap"));
+      return {
+        sceneId: here.id,
+        project: { ...project, snapshots: [...project.snapshots, safety], game: { ...g, nodes: g.nodes.map((x) => (x.id === here.id ? was : x)) } },
+      };
+    }
+    const quests = g.quests.length > 0 ? g.quests : [{ id: newId("ch"), title: "Quest 1", kind: "main" as const, summary: "", plotline_id: "", requires: [] }];
+    const questId = quests.some((q) => q.id === snap.node!.quest_id) ? snap.node.quest_id : quests[0].id;
+    const node = recreateNode({ ...project, game: { ...g, quests } }, snap, questId, () => newId("sc"));
+    return { sceneId: node.id, project: { ...project, game: { ...g, quests, nodes: [...g.nodes, node] } } };
+  }
+
   const existing = project.scenes.find((s) => s.id === snap.scene_id);
   if (existing) {
     const identical =
@@ -503,8 +561,9 @@ export type DeletedScene = {
 };
 
 /** Scenes that no longer exist but still have snapshots, most recently saved first. */
-export function deletedScenes(project: Pick<Project, "scenes" | "snapshots"> & Partial<Pick<Project, "pages" | "script_scenes">>): DeletedScene[] {
+export function deletedScenes(project: Pick<Project, "scenes" | "snapshots"> & Partial<Pick<Project, "pages" | "script_scenes" | "game">>): DeletedScene[] {
   const alive = new Set([
+    ...(project.game?.nodes ?? []).map((x) => x.id),
     ...project.scenes.map((s) => s.id),
     ...(project.pages ?? []).map((pg) => pg.id),
     ...(project.script_scenes ?? []).map((x) => x.id),

@@ -56,13 +56,21 @@ export type WordStats = {
   byChapter: Map<string, number>;
 };
 
-/** Per scene (a comic page counts as one) and per chapter (a comic issue counts as one). */
-export function wordStats(project: Pick<Project, "scenes" | "chapters"> & Partial<Pick<Project, "pages" | "issues" | "script_scenes" | "acts">>): WordStats {
+/** Per scene (a comic page or a game node counts as one) and per chapter (a comic issue or a game quest counts as one). */
+export function wordStats(project: Pick<Project, "scenes" | "chapters"> & Partial<Pick<Project, "pages" | "issues" | "script_scenes" | "acts" | "game">>): WordStats {
   const byScene = new Map<string, number>();
   const byChapter = new Map<string, number>(project.chapters.map((c) => [c.id, 0]));
   let total = 0;
   for (const i of project.issues ?? []) byChapter.set(i.id, 0);
   for (const a of project.acts ?? []) byChapter.set(a.id, 0);
+  for (const q of project.game?.quests ?? []) byChapter.set(q.id, 0);
+  for (const nd of project.game?.nodes ?? []) {
+    // Narration, dialogue and choice text; private notes do not count (same rule as gameedit.nodeWordCount).
+    const n = nd.elements.filter((e) => e.kind !== "note").reduce((w, e) => w + countWordsInText(e.text), 0);
+    byScene.set(nd.id, n);
+    byChapter.set(nd.quest_id, (byChapter.get(nd.quest_id) ?? 0) + n);
+    total += n;
+  }
   for (const sc of project.script_scenes ?? []) {
     const n = sceneWordCount(sc);
     byScene.set(sc.id, n);

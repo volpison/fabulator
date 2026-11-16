@@ -178,6 +178,8 @@ export interface Snapshot {
   page?: ComicPage;
   /** Screenplays: the whole scene as it was (then `scene_id` holds the scene id and `content` is empty). */
   script_scene?: ScriptScene;
+  /** Games: the whole node as it was (then `scene_id` holds the node id and `content` is empty). */
+  node?: GameNode;
 }
 
 // ─── Screenplay documents (story_format "screenplay": act → scene → elements) ───

@@ -32,7 +32,7 @@ function sample(): Project {
 test("the screenplay format is ready: offered for new stories", () => {
   assert.equal(STORY_FORMATS.screenplay.ready, true);
   assert.deepEqual(STORY_FORMATS.screenplay.views, { timeline: true, manuscript: true });
-  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic", "screenplay"]);
+  assert.deepEqual(readyFormats().map((f) => f.id), ["novel", "comic", "screenplay", "game"]);
   const p = sample();
   assert.equal(formatOf(p).label, "Screenplay");
   assert.equal(noun(p, "group", 2), "acts");

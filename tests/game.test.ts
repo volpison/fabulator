@@ -8,10 +8,10 @@ import { cleanConditions, cleanEffects, cleanGame, nodesInQuest } from "../src/l
 const ids = (p: string) => `${p}-1`;
 const blank = () => JSON.parse(JSON.stringify(blankProjectFor("game", ids)));
 
-test("game is a known format that is not ready yet", () => {
+test("game is a known, ready format", () => {
   assert.equal(readStoryFormat("game"), "game");
-  assert.equal(STORY_FORMATS.game.ready, false);
-  assert.equal(readyFormats().some((f) => f.id === "game"), false);
+  assert.equal(STORY_FORMATS.game.ready, true);
+  assert.equal(readyFormats().some((f) => f.id === "game"), true);
   assert.equal(STORY_FORMATS.game.vocabulary.group.one, "quest");
 });
 

@@ -7,6 +7,7 @@ import type {
   ChoiceOption, Condition, Game, GameElement, GameElementKind, GameItem, GameLink, GameNode, GameVariable, Project, Quest, QuestKind,
 } from "./types";
 import { SCENE_STATUSES, cleanColor } from "./labels";
+import { countWordsInText } from "./wordcount";
 import { ELEMENT_KINDS, cleanConditions, cleanEffects, emptyGame, nodesInQuest } from "./game";
 
 export type NewId = (prefix: string) => string;
@@ -429,7 +430,7 @@ export function nodeLabels(p: Pick<Project, "game">): Map<string, string> {
 export const nodeWordCount = (n: Pick<GameNode, "elements">): number =>
   n.elements
     .filter((e) => e.kind !== "note")
-    .reduce((w, e) => w + (e.text.trim() ? e.text.trim().split(/\s+/).length : 0), 0);
+    .reduce((w, e) => w + countWordsInText(e.text), 0);
 
 // ─── The registry: variables and items ───
 

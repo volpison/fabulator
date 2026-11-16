@@ -1,8 +1,8 @@
-# Writing a game (preview)
+# Writing a game
 
-The Game Prototyping mode plans a game's writing: quests and side-quests, the beats inside them, and (in later steps) the conditions and choices that connect them. **It is being built step by step**, so for now the Timeline, the writing view and the rules exist. The plan is in [Design: Game Prototyping](../technical/game-prototyping.md).
+The Game Prototyping mode plans a game's writing: quests and side-quests, the beats inside them, and the conditions and choices that connect them. It is for planning and writing, not for building the game: a node is a beat, an encounter or a conversation, and the rules are checked against each other, not run as code. The plan is in [Design: Game Prototyping](../technical/game-prototyping.md).
 
-Start one with *File → New game (preview)*.
+Start one with *File → New game*.
 
 ## Game Timeline (quests and nodes)
 
@@ -53,3 +53,12 @@ Click *Open node* to jump to the place. The check is optimistic: it assumes the 
 **Playtest** lets you set a state by hand (tick flags, type numbers and item counts) and shows which nodes the player can play right now, and which are closed and what each one still needs. *Play* applies a node's effects and marks it done; the choices of the node you are at can be chosen, applying their effects. *Reset* starts again. It follows the rules you wrote and nothing else: it is a planning aid, not a game engine.
 
 **Graph:** on the Timeline, switch **Lanes | Graph** to see nodes as boxes with arrows for every way out (dashed arrows have conditions, loops back are drawn over the top). Show one quest or all of them; click a node to edit it, double-click to write it.
+
+## The shared tools
+
+They work in a game like in the other modes, with a node as the unit:
+
+- **Search** (Ctrl+F) finds nodes (title, summary, narration, dialogue, choices and their options, private notes, tags) and quests. Opening a hit takes you to the node.
+- **Find & replace** (Ctrl+H) works in a node's narration, dialogue words, parentheticals, choice prompts and options, in titles and in summaries. Speaker names, conditions and effects are structured data and are not touched. Every node that changes is saved as a snapshot first.
+- **Snapshots** keep a whole node: its text, rules and ways out. An automatic one is taken when a node's writing changes (at most every 30 minutes), and a safety copy is kept before a delete or a restore. Restoring brings back the title, summary, text, rules, ways out and "may end here"; the node keeps its place, colour, status, cast and private notes. Ways out to nodes that no longer exist are left out. A deleted node can be brought back from *Deleted nodes* (the ways out *into* it from other nodes are not restored).
+- **Word count and goals** count the narration, dialogue and choice text of all nodes (private notes are not counted).

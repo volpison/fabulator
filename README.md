@@ -2,7 +2,7 @@
 
 **Pre-production writing suite.**
 
-Fabulator is where a project is planned and written down *before* it is made. It keeps the whole world of a story in one place (characters, places, notes, continuity, a timeline) and lets you write it as a **Novel**, a **Comic** or a **Screenplay**. A fourth mode, **Game Prototyping** (side-quests and conditional rules), is planned. It plans and writes; it does not produce images, video or audio.
+Fabulator is where a project is planned and written down *before* it is made. It keeps the whole world of a story in one place (characters, places, notes, continuity, a timeline) and lets you write it as a **Novel**, a **Comic** or a **Screenplay**. A fourth mode, **Game Prototyping** (quests and side-quests with conditional rules, a check, a playtest and a graph), plans a game's writing and structure. It plans and writes; it does not produce images, video or audio.
 
 ## What you can do
 

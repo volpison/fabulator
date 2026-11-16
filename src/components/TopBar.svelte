@@ -32,7 +32,7 @@
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
     { label: "New comic", action: () => void newProject("comic") },
     { label: "New screenplay", action: () => void newProject("screenplay") },
-    { label: "New game (preview)", action: () => void newProject("game") },
+    { label: "New game", action: () => void newProject("game") },
     { separator: true },
     { label: "Open…", shortcut: "Ctrl+O", action: () => void openProject() },
     { label: "Open recent", children: recentItems },

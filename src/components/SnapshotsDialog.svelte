@@ -7,6 +7,7 @@
     selectedSceneId,
     selectedPageId,
     selectedScriptSceneId,
+    selectedNodeId,
     mainView,
     snapshotsOpen,
     takeSnapshot,
@@ -24,6 +25,8 @@
     timeAgo,
   } from "../lib/snapshots";
   import { diffText } from "../lib/diff";
+  import { nodeToText } from "../lib/gamesnapshots";
+  import { nodeWordCount } from "../lib/gameedit";
   import { htmlToPlainText } from "../lib/mentions";
   import { pageWords, wordsOfHtml } from "../lib/wordcount";
   import { pageNumber } from "../lib/comic";
@@ -34,11 +37,19 @@
 
   $: isComic = $project?.story_format === "comic";
   $: isScreenplay = $project?.story_format === "screenplay";
-  $: unit = isComic ? "page" : "scene";
+  $: isGame = $project?.story_format === "game";
+  $: unit = isGame ? "node" : isComic ? "page" : "scene";
   $: names = new Map(($project?.characters ?? []).map((c) => [c.id, c.name]));
   $: nameOf = (id: string) => names.get(id) ?? "";
   /** What the snapshots are of right now: the selected scene, or the selected comic page. */
-  $: subject = isScreenplay
+  $: subject = isGame
+    ? (() => {
+        const n = $project?.game?.nodes.find((x) => x.id === $selectedNodeId);
+        return n
+          ? { id: n.id, title: n.title.trim() || "Untitled node", text: nodeToText(n, nameOf), words: nodeWordCount(n), shownTitle: n.title }
+          : null;
+      })()
+    : isScreenplay
     ? (() => {
         const sc = $project?.script_scenes.find((x) => x.id === $selectedScriptSceneId);
         return sc
@@ -122,7 +133,8 @@
     if (!ok) return;
     const sceneId = restoreSnapshot(id);
     if (sceneId) {
-      if (isComic) selectedPageId.set(sceneId);
+      if (isGame) selectedNodeId.set(sceneId);
+      else if (isComic) selectedPageId.set(sceneId);
       else if (isScreenplay) selectedScriptSceneId.set(sceneId);
       else selectedSceneId.set(sceneId);
       mainView.set("manuscript");
@@ -155,6 +167,11 @@
     (s.script_scene && slugLine(s.script_scene)) || s.title || "Untitled";
 
   function chapterName(chapterId: string): string {
+    if (isGame) {
+      const n = $project?.game?.quests.findIndex((c) => c.id === chapterId) ?? -1;
+      const q = n === -1 ? null : $project?.game?.quests[n];
+      return q ? `Quest ${n + 1}${q.title.trim() ? ` · ${q.title.trim()}` : ""}` : "—";
+    }
     if (isScreenplay) {
       const n = $project?.acts.findIndex((c) => c.id === chapterId) ?? -1;
       return n === -1 || !$project ? "—" : `Act ${n + 1}${$project.acts[n].title ? ` · ${$project.acts[n].title}` : ""}`;

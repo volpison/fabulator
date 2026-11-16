@@ -1,6 +1,6 @@
 # Design: Game Prototyping mode
 
-> **Status: decided, being built.** Steps 1 (the data), 2 (the Timeline), 3 (the writing view) and 4 (state and rules) are done; the rest are not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
+> **Status: built.** All seven steps are done and Game Prototyping is ready; this page stays as the design record (the facts also live in the user guide and in the file-format page). It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
 
 ## What it is for
 
@@ -85,7 +85,7 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them. ✅ done (State panel; `gamerules.ts`).
 5. **Check, Playtest and Graph:** the checks above, the playtest, the graph view. ✅ done (Tools → Check & playtest…; Lanes | Graph toggle on the Timeline; `gamecheck.ts`, `gameplay.ts`, `gamegraph.ts`).
 6. **Exports:** quest bible, CSVs, the Markdown folder. ✅ done (`export/game.ts`, `gamefolder.ts`; the bible reuses the Word / EPUB / Markdown / text writers; no PDF yet; the game folder is one-way).
-7. **Shared tools:** Search, Replace, Snapshots, goals and reports for nodes; the format becomes ready.
+7. **Shared tools:** Search, Replace, Snapshots, goals for nodes; the format becomes ready. ✅ done (a snapshot may hold a whole node; `gamesnapshots.ts`). Game Prototyping is **ready**. Still open for later: Markdown folder that can be opened again, PDF for the quest bible, reports for games (variables per quest, cast per quest), dotted list names in patches.
 
 ## Decisions
 

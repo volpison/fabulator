@@ -13,6 +13,7 @@ import type { Project } from "./types";
 import { readingOrder } from "./model";
 import { comicReadingOrder, pageNumber } from "./comic";
 import { sceneNumbers, screenplayReadingOrder, slugLine } from "./screenplay";
+import { gameReadingOrder, nodeLabels } from "./gameedit";
 import {
   blockTextWithPositions,
   foldText,
@@ -20,13 +21,14 @@ import {
   type BlockLike,
 } from "./mentions";
 
-export type SearchKind = "scene" | "page" | "script_scene" | "character" | "place" | "ability" | "note" | "chapter" | "issue" | "act";
+export type SearchKind = "scene" | "page" | "script_scene" | "node" | "character" | "place" | "ability" | "note" | "chapter" | "issue" | "act" | "quest";
 
 /** Display order of result groups. */
 export const KIND_ORDER: SearchKind[] = [
   "scene",
   "page",
   "script_scene",
+  "node",
   "character",
   "place",
   "ability",
@@ -34,12 +36,14 @@ export const KIND_ORDER: SearchKind[] = [
   "chapter",
   "issue",
   "act",
+  "quest",
 ];
 
 export const KIND_LABEL: Record<SearchKind, string> = {
   scene: "Scenes",
   page: "Pages",
   script_scene: "Scenes",
+  node: "Nodes",
   character: "Characters",
   place: "Places",
   ability: "Abilities",
@@ -47,6 +51,7 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   chapter: "Chapters",
   issue: "Issues",
   act: "Acts",
+  quest: "Quests",
 };
 
 export type Snippet = { before: string; match: string; after: string };
@@ -203,13 +208,13 @@ export function search(
 ): SearchResult {
   const terms = parseQuery(query);
   const counts: Record<SearchKind, number> = {
-    scene: 0, page: 0, script_scene: 0, character: 0, place: 0, ability: 0, note: 0, chapter: 0, issue: 0, act: 0,
+    scene: 0, page: 0, script_scene: 0, node: 0, character: 0, place: 0, ability: 0, note: 0, chapter: 0, issue: 0, act: 0, quest: 0,
   };
   if (terms.length === 0) return { hits: [], counts, terms };
 
   const foldedTerms = terms.map((t) => foldText(t).folded);
   const byKind: Record<SearchKind, { hit: SearchHit; score: number }[]> = {
-    scene: [], page: [], script_scene: [], character: [], place: [], ability: [], note: [], chapter: [], issue: [], act: [],
+    scene: [], page: [], script_scene: [], node: [], character: [], place: [], ability: [], note: [], chapter: [], issue: [], act: [], quest: [],
   };
 
   const consider = (
@@ -284,6 +289,29 @@ export function search(
       { label: "Tags", text: sc.tags.join(", ") },
     ]);
   }
+  // Game nodes: title, summary, the text (narration, dialogue with its speaker, choices and their options), private notes, tags.
+  const questIndex = new Map((project.game?.quests ?? []).map((q, n) => [q.id, n + 1]));
+  const labels = nodeLabels(project);
+  for (const n of gameReadingOrder(project)) {
+    const text = n.elements
+      .filter((e) => e.kind !== "note")
+      .map((e) =>
+        e.kind === "dialogue"
+          ? [names.get(e.speaker_id) ?? "", e.parenthetical, e.text].filter(Boolean).join(": ")
+          : e.kind === "choice"
+            ? [e.text, ...e.options.map((o) => o.text)].filter(Boolean).join("\n")
+            : e.text
+      )
+      .filter(Boolean)
+      .join("\n");
+    consider("node", n.id, n.title, `Quest ${questIndex.get(n.quest_id) ?? "?"} · Node ${labels.get(n.id) ?? "?"}`, [
+      { label: "Title", text: n.title, isTitle: true },
+      { label: "Summary", text: n.summary },
+      { label: "Text", text },
+      { label: "Notes", text: [n.notes, ...n.elements.filter((e) => e.kind === "note").map((e) => e.text)].filter(Boolean).join("\n") },
+      { label: "Tags", text: n.tags.join(", ") },
+    ]);
+  }
   for (const c of project.characters) {
     consider("character", c.id, c.name, [c.role, c.category].filter(Boolean).join(" · "), [
       { label: "Name", text: c.name, isTitle: true },
@@ -336,6 +364,13 @@ export function search(
     consider("act", c.id, c.title, `Act ${i + 1}`, [
       { label: "Title", text: c.title, isTitle: true },
       { label: "Summary", text: c.summary },
+    ]);
+  });
+
+  (project.game?.quests ?? []).forEach((q, i) => {
+    consider("quest", q.id, q.title, `${q.kind === "main" ? "Main quest" : "Side-quest"} ${i + 1}`, [
+      { label: "Title", text: q.title, isTitle: true },
+      { label: "Summary", text: q.summary },
     ]);
   });
 
