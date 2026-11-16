@@ -39,8 +39,8 @@ export function slug(text: string): string {
   return s || "untitled";
 }
 
-const pad = (n: number, width: number) => String(n + 1).padStart(width, "0");
-const widthFor = (count: number) => Math.max(2, String(count).length);
+export const pad = (n: number, width: number) => String(n + 1).padStart(width, "0");
+export const widthFor = (count: number) => Math.max(2, String(count).length);
 
 // ─── Headers (a small YAML subset) ─────────────────────────
 
@@ -54,7 +54,7 @@ function scalar(v: string): string {
 
 const list = (items: string[]) => `[${items.map((i) => JSON.stringify(i)).join(", ")}]`;
 
-function header(fields: [string, string | string[] | undefined][]): string {
+export function header(fields: [string, string | string[] | undefined][]): string {
   const lines = fields
     .filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0))
     .map(([k, v]) => `${k}: ${Array.isArray(v) ? list(v) : scalar(v as string)}`);
@@ -118,7 +118,7 @@ const asList = (v: string | string[] | undefined) => (Array.isArray(v) ? v : typ
 
 // ─── Project -> files ──────────────────────────────────────
 
-const withNewline = (s: string) => (s.endsWith("\n") ? s : s + "\n");
+export const withNewline = (s: string) => (s.endsWith("\n") ? s : s + "\n");
 
 export function toFolder(p: Project): FolderFile[] {
   const files: FolderFile[] = [];
@@ -220,6 +220,9 @@ export function fromFolder(files: FolderFile[], newId: (prefix: string) => strin
     m = parsed as Record<string, unknown>;
   } catch (e) {
     return { ok: false, error: `${PROJECT_FILE} is not valid JSON (${(e as Error).message}).` };
+  }
+  if (m.story_format === "game") {
+    return { ok: false, error: "This folder holds a game. Game folders are an export for reading and git only; they cannot be opened as a project yet. Keep using the .fabulator.json file." };
   }
   if (m.format !== FOLDER_FORMAT) return { ok: false, error: `${PROJECT_FILE} is not a Fabulator folder (format “${String(m.format)}”).` };
   if (typeof m.version === "number" && m.version > FOLDER_VERSION) {

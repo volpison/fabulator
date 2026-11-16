@@ -7,6 +7,7 @@ import { get } from "svelte/store";
 import type { Project } from "./types";
 import { migrateProject } from "./migrate";
 import { toFolder, fromFolder } from "./folder";
+import { gameToFolder } from "./gamefolder";
 import { platform } from "./platform";
 import type { Location } from "./platform/types";
 import { rememberRecent, forgetRecent } from "./recentStore";
@@ -234,7 +235,7 @@ async function openAt(location: Location, fromRecent: boolean): Promise<void> {
 export async function exportFolder(): Promise<void> {
   const proj = get(project);
   if (!proj) return;
-  if (proj.story_format !== "novel") {
+  if (proj.story_format !== "novel" && proj.story_format !== "game") {
     // The folder format only knows chapters and scenes: refuse instead of writing a copy that lacks the pages.
     await platform().notify(
       `Exporting a ${formatOf(proj).label.toLowerCase()} as a Markdown folder is not supported yet.\n\nYour project file is not affected: save it as usual.`,
@@ -247,13 +248,15 @@ export async function exportFolder(): Promise<void> {
   });
   if (!chosen) return;
   try {
-    const files = toFolder(proj);
+    const game = proj.story_format === "game";
+    const files = game ? gameToFolder(proj) : toFolder(proj);
     const r = await platform().writeProjectFolder(chosen, files);
+    const count = game ? (proj.game?.nodes.length ?? 0) : proj.scenes.length;
     await platform().notify(
-      `Exported ${proj.scenes.length} scene${proj.scenes.length === 1 ? "" : "s"} to the folder.\n` +
+      `Exported ${count} ${game ? "node" : "scene"}${count === 1 ? "" : "s"} to the folder.\n` +
         `${r.written} file${r.written === 1 ? "" : "s"} written, ${r.unchanged} unchanged` +
         (r.removed ? `, ${r.removed} no longer needed and removed` : "") +
-        ".\n\nSaved versions (snapshots) are not included.",
+        (game ? ".\n\nA game folder is for reading and git: it cannot be opened as a project yet. Saved versions (snapshots) are not included." : ".\n\nSaved versions (snapshots) are not included."),
       { title: "Export as folder", kind: "info" }
     );
   } catch (e) {
