@@ -16,12 +16,14 @@
     addGameLink,
     updateGameLink,
     deleteGameLink,
+    setGameRules,
   } from "../lib/stores";
   import { ELEMENT_KINDS, ELEMENT_LABEL, nodesInQuest } from "../lib/game";
   import { gameReadingOrder, nodeLabels, nodeWordCount, replySpeaker } from "../lib/gameedit";
   import { characterNamed } from "../lib/screenplayedit";
   import { SCENE_STATUSES, STATUS_LABEL, type SceneStatus } from "../lib/labels";
-  import type { GameElement, GameElementKind, GameNode } from "../lib/types";
+  import RulesEditor from "./RulesEditor.svelte";
+  import type { Condition, Effect, GameElement, GameElementKind, GameNode } from "../lib/types";
 
   $: game = $project?.game ?? null;
   $: quests = game?.quests ?? [];
@@ -274,6 +276,21 @@
                           {/each}
                         </select>
                         <button class="x" title="Remove option" aria-label="Remove option" on:click={() => deleteGameOption(n.id, el.id, o.id)}>✕</button>
+                        <details class="rules-d">
+                          <summary>Conditions and effects{o.requires.length + o.effects.length ? ` (${o.requires.length + o.effects.length})` : ""}</summary>
+                          <RulesEditor
+                            mode="conditions"
+                            title="Offered only when"
+                            rows={o.requires}
+                            onchange={(rows) => setGameRules({ kind: "option", nodeId: n.id, elementId: el.id, optionId: o.id }, "requires", rows as Condition[])}
+                          />
+                          <RulesEditor
+                            mode="effects"
+                            title="Choosing it"
+                            rows={o.effects}
+                            onchange={(rows) => setGameRules({ kind: "option", nodeId: n.id, elementId: el.id, optionId: o.id }, "effects", rows as Effect[])}
+                          />
+                        </details>
                       </li>
                     {/each}
                   </ol>
@@ -302,9 +319,24 @@
           </div>
         </div>
 
+        <section class="node-rules" aria-label="Rules of this node">
+          <RulesEditor
+            mode="conditions"
+            title="This node is available when"
+            rows={n.requires}
+            onchange={(rows) => setGameRules({ kind: "node", nodeId: n.id }, "requires", rows as Condition[])}
+          />
+          <RulesEditor
+            mode="effects"
+            title="When this node happens"
+            rows={n.effects}
+            onchange={(rows) => setGameRules({ kind: "node", nodeId: n.id }, "effects", rows as Effect[])}
+          />
+        </section>
+
         <section class="links" aria-label="Where this node leads">
           <h3>Leads to</h3>
-          <p class="hint">Ways out of this node besides the options of a choice. Conditions on a way out come in the next step.</p>
+          <p class="hint">Ways out of this node besides the options of a choice. A way out may be open only when some conditions hold.</p>
           {#each n.links as l (l.id)}
             <div class="link-row">
               <select value={l.to} aria-label="Leads to" on:change={(e) => updateGameLink(n.id, l.id, { to: valueOf(e) })}>
@@ -316,6 +348,15 @@
               <input value={l.label} placeholder="Label (optional)" aria-label="Label" on:input={(e) => updateGameLink(n.id, l.id, { label: valueOf(e) })} />
               <button class="x" title="Remove" aria-label="Remove this way out" on:click={() => deleteGameLink(n.id, l.id)}>✕</button>
             </div>
+            <details class="rules-d link-rules">
+              <summary>Open only when{l.requires.length ? ` (${l.requires.length})` : ""}</summary>
+              <RulesEditor
+                mode="conditions"
+                title="This way out is open when"
+                rows={l.requires}
+                onchange={(rows) => setGameRules({ kind: "link", nodeId: n.id, linkId: l.id }, "requires", rows as Condition[])}
+              />
+            </details>
           {/each}
           {#if targets.length > 0}
             <select class="add-link" value="" aria-label="Add a way out" on:change={(e) => { const to = valueOf(e); if (to) addGameLink(n.id, to); e.currentTarget.value = ""; }}>
@@ -680,6 +721,24 @@
     background: var(--bg);
     color: var(--text);
     min-width: 0;
+  }
+  .node-rules {
+    max-width: 44rem;
+    margin: 1rem auto 0;
+  }
+  .rules-d {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .rules-d summary {
+    cursor: pointer;
+  }
+  .options li {
+    flex-wrap: wrap;
+  }
+  .link-rules {
+    margin: -0.1rem 0 0.4rem 0.4rem;
   }
   .add-link {
     margin-top: 0.3rem;

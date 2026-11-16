@@ -11,14 +11,18 @@
     updateGameNode,
     moveGameNode,
     deleteGameNode,
+    setGameRules,
   } from "../lib/stores";
   import { platform } from "../lib/platform";
   import { nodesInQuest } from "../lib/game";
+  import { contextOf, describeConditions, describeEffects } from "../lib/gamerules";
   import { exitsOf, nodeBadges, nodeIsEmpty, questSummary } from "../lib/gameedit";
+  import RulesEditor from "./RulesEditor.svelte";
   import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/labels";
-  import type { GameNode, QuestKind } from "../lib/types";
+  import type { Condition, GameNode, QuestKind } from "../lib/types";
 
   $: game = $project?.game ?? null;
+  $: ctx = contextOf($project ?? { game: undefined, characters: [], abilities: [] });
   $: quests = game?.quests ?? [];
   $: selected = game?.nodes.find((n) => n.id === $selectedNodeId) ?? null;
   $: selectedQuest = selected ? quests.find((q) => q.id === selected.quest_id) ?? null : null;
@@ -88,7 +92,7 @@
       <button class="add" on:click={onAddNode}>+ Add node</button>
       <button class="add" on:click={() => addGameQuest()}>+ Add quest</button>
       <span class="preview" title="The Game Prototyping mode is being built step by step">Preview</span>
-      <span class="hint">Click a node to edit its details · Double-click (or Enter) to write it · A node is one beat, encounter or conversation · Conditions and effects come in the next step</span>
+      <span class="hint">Click a node to edit its details · Double-click (or Enter) to write it · 🔒 conditions · ⚡ effects · ⑂ a branch · Declare flags, numbers and items in the State panel</span>
     </div>
 
     <div class="scroll">
@@ -122,6 +126,16 @@
               <button class="icon" title="Delete this empty quest" aria-label="Delete empty quest" on:click={() => deleteGameQuest(quest.id)}>✕</button>
             {/if}
           </header>
+
+          <details class="quest-rules">
+            <summary>Offered when{quest.requires.length ? ` (${quest.requires.length})` : ""}</summary>
+            <RulesEditor
+              mode="conditions"
+              title="This quest is offered when"
+              rows={quest.requires}
+              onchange={(rows) => setGameRules({ kind: "quest", questId: quest.id }, "requires", rows as Condition[])}
+            />
+          </details>
 
           {#if nodes.length === 0}
             <p class="empty">
@@ -168,8 +182,8 @@
                   </div>
                 {/if}
                 <div class="card-bottom">
-                  {#if badges.requires}<span class="badge" title="Conditions to be available">🔒 {badges.requires}</span>{/if}
-                  {#if badges.effects}<span class="badge" title="Effects when it happens">⚡ {badges.effects}</span>{/if}
+                  {#if badges.requires}<span class="badge" title={"Available when " + describeConditions(ctx, n.requires)}>🔒 {badges.requires}</span>{/if}
+                  {#if badges.effects}<span class="badge" title={"Then " + describeEffects(ctx, n.effects)}>⚡ {badges.effects}</span>{/if}
                   {#if badges.exits > 1}<span class="badge" title="A branch: several ways out">⑂ {badges.exits}</span>{/if}
                   <span class="spacer"></span>
                   <select
@@ -339,6 +353,15 @@
     color: var(--accent);
     text-decoration: underline;
     font-size: inherit;
+  }
+
+  .quest-rules {
+    margin-bottom: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .quest-rules summary {
+    cursor: pointer;
   }
 
   .cards {

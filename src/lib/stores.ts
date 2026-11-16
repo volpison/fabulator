@@ -60,6 +60,14 @@ import {
   addLink as addGameLinkTo,
   updateLink as updateGameLinkIn,
   deleteLink as deleteGameLinkFrom,
+  addVariable as addGameVariableTo,
+  updateVariable as updateGameVariableIn,
+  deleteVariable as deleteGameVariableFrom,
+  addItem as addGameItemTo,
+  updateItem as updateGameItemIn,
+  deleteItem as deleteGameItemFrom,
+  setRules as setGameRulesIn,
+  type RuleTarget,
 } from "./gameedit";
 import type { SearchHit } from "./search";
 import type { Location } from "./platform/types";
@@ -615,6 +623,49 @@ export function updateGameLink(nodeId: string, linkId: string, fields: Parameter
 
 export function deleteGameLink(nodeId: string, linkId: string) {
   editProject((p) => deleteGameLinkFrom(p, nodeId, linkId));
+}
+
+// The game's registry (variables and items) and its conditions and effects.
+
+export function addGameVariable(kind: "flag" | "number" = "flag", label?: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addGameVariableTo(p, uid, kind, label);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameVariable(id: string, fields: Parameters<typeof updateGameVariableIn>[2]) {
+  editProject((p) => updateGameVariableIn(p, id, fields));
+}
+
+export function deleteGameVariable(id: string) {
+  editProject((p) => deleteGameVariableFrom(p, id));
+}
+
+export function addGameItem(name?: string): string {
+  let id = "";
+  editProject((p) => {
+    const r = addGameItemTo(p, uid, name);
+    id = r.id;
+    return r.project;
+  });
+  return id;
+}
+
+export function updateGameItem(id: string, fields: Parameters<typeof updateGameItemIn>[2]) {
+  editProject((p) => updateGameItemIn(p, id, fields));
+}
+
+export function deleteGameItem(id: string) {
+  editProject((p) => deleteGameItemFrom(p, id));
+}
+
+/** Replace the conditions ("requires") or effects of a quest, node, link or choice option. */
+export function setGameRules(target: RuleTarget, list: "requires" | "effects", rows: unknown) {
+  editProject((p) => setGameRulesIn(p, target, list, rows));
 }
 
 // Elements of a screenplay scene (the writing view).

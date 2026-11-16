@@ -1,6 +1,6 @@
 # Design: Game Prototyping mode
 
-> **Status: decided, being built.** Steps 1 (the data), 2 (the Timeline) and 3 (the writing view) are done; the rest are not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
+> **Status: decided, being built.** Steps 1 (the data), 2 (the Timeline), 3 (the writing view) and 4 (state and rules) are done; the rest are not. It was written first because this mode is not a straight sequence like the other three: it is a **graph with state**, and the choices below shape the file format, the editor and the views. The decisions are at the end. When the mode is built, the facts move into the other technical pages and this page is deleted.
 
 ## What it is for
 
@@ -82,7 +82,7 @@ For pre-production the useful outputs are documents: a **quest bible** (Word/PDF
 1. **Data:** the `game` model, schema v13, the format entry (not ready), Rust sample and tests, docs. ✅ done.
 2. **Timeline:** quest lanes and nodes, add / move / delete, status and colour. ✅ done (File → New game (preview)).
 3. **Writing view:** the node editor with its text elements, choice options and plain links (no conditions yet). ✅ done.
-4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them.
+4. **State and rules:** the registry of variables and items, the conditions and effects editors, readable text for them. ✅ done (State panel; `gamerules.ts`).
 5. **Check, Playtest and Graph:** the checks above, the playtest, the graph view.
 6. **Exports:** quest bible, CSVs, the Markdown folder.
 7. **Shared tools:** Search, Replace, Snapshots, goals and reports for nodes; the format becomes ready.

@@ -63,12 +63,16 @@
     { id: "cast", label: "Cast", hint: "Who appears in which scenes (Ctrl+3)" },
   ];
 
-  const panels: { id: Exclude<SidePanel, null>; label: string }[] = [
+  const allPanels: { id: Exclude<SidePanel, null>; label: string }[] = [
     { id: "characters", label: "Characters" },
     { id: "places", label: "Places" },
     { id: "abilities", label: "Abilities" },
+    { id: "state", label: "State" },
     { id: "notes", label: "Notes" },
   ];
+  // "State" (a game's variables and items) only exists in a game project.
+  $: if ($sidePanel === "state" && $project && $project.story_format !== "game") sidePanel.set("characters");
+  $: panels = allPanels.filter((p) => p.id !== "state" || $project?.story_format === "game");
 
   function togglePanel(panel: SidePanel) {
     sidePanel.update((current) => (current === panel ? null : panel));
