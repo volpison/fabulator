@@ -77,6 +77,23 @@ export interface Platform {
    */
   saveProject(location: Location, project: Project, options: { forceBackup: boolean }): Promise<void>;
 
+  /**
+   * After the person picked a project file to open: the location to actually open. Desktop: the same
+   * one. Android: a private working copy made from the picked file (the picked address cannot be
+   * saved back to safely).
+   */
+  adoptProject(picked: Location): Promise<Location>;
+  /**
+   * Where a project should be saved the first time (or "Save as"). Desktop: a save dialog. Android: a
+   * free file name in the app's private folder, with no dialog. Resolves to null if cancelled.
+   */
+  pickProjectSavePath(options: { title: string; defaultName: string; filters: FileFilter[] }): Promise<Location | null>;
+  /**
+   * Android: write a copy of the saved project `from` to a place the person picks on the device.
+   * Resolves false if they cancelled. Only offered when `capabilities.deviceCopies`.
+   */
+  saveCopyToDevice(from: Location, options: { title: string; defaultName: string; filters: FileFilter[] }): Promise<boolean>;
+
   // ── Other files ──────────────────────────────────────────
   readText(location: Location): Promise<string>;
   /** Write bytes (an export, a theme file) to a chosen location. */

@@ -3,7 +3,7 @@ mod models;
 mod patch;
 mod storage;
 
-use commands::{folder, project, themes, unsaved};
+use commands::{device, folder, project, themes, unsaved};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,11 +11,15 @@ pub fn run() {
         .manage(unsaved::UnsavedWork::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             project::sample_project,
             project::open_project,
             project::save_project,
             project::write_export,
+            device::import_project_copy,
+            device::new_project_path,
+            device::export_project_copy,
             folder::write_project_folder,
             folder::read_project_folder,
             unsaved::keep_unsaved,

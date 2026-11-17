@@ -4,7 +4,7 @@ import { get } from "svelte/store";
 import { setPlatform, toLocation } from "../src/lib/platform/index.ts";
 import { recentFiles, clearRecents } from "../src/lib/recentStore.ts";
 import {
-  loadInitialProject, manualSave, saveNow, ensureSafeToLeave, newProject, loadSample, openProject, startMirror,
+  loadInitialProject, saveCopyToDevice, manualSave, saveNow, ensureSafeToLeave, newProject, loadSample, openProject, startMirror,
 } from "../src/lib/persistence.ts";
 import { project, currentPath, isDirty, markDirty, markClean, saveState, updateSceneTitle } from "../src/lib/stores.ts";
 import { blankProject } from "../src/lib/blank.ts";
@@ -470,4 +470,49 @@ test("a new screenplay can be started, saved and reopened with all its scenes", 
   await openRecent(toLocation("C:\\Stories\\s.fabulator.json"));
   assert.equal(get(project)!.story_format, "screenplay");
   assert.deepEqual(get(project)!.script_scenes, p.script_scenes);
+});
+
+test("Open asks the platform to adopt the picked file, and opens what it returns", async () => {
+  await loadInitialProject();
+  // The platform turns the picked address into another location (as on Android).
+  fake.platform.adoptProject = async (picked) => {
+    fake.state.log.push(`adopt ${picked}`);
+    return toLocation("/app/projects/Copy.fabulator.json");
+  };
+  fake.state.files.set("/app/projects/Copy.fabulator.json", { ...blankProject(newId), title: "Copied in" });
+  fake.state.openAnswers.push("content://picked/1");
+  await openProject();
+  assert.ok(fake.state.log.includes("adopt content://picked/1"));
+  assert.equal(get(project)!.title, "Copied in");
+  assert.equal(get(currentPath), "/app/projects/Copy.fabulator.json");
+});
+
+test("a file that cannot be adopted is reported and the open story stays", async () => {
+  await loadInitialProject();
+  const before = get(project)!.title;
+  fake.platform.adoptProject = async () => {
+    throw new Error("That file is not a Fabulator project.");
+  };
+  fake.state.openAnswers.push("content://picked/2");
+  await openProject();
+  assert.equal(get(project)!.title, before);
+  assert.ok(fake.state.notices.some((m) => m.includes("not a Fabulator project")));
+});
+
+test("Save a copy to your device saves inside the app first, then writes the copy", async () => {
+  await loadInitialProject();
+  fake.state.saveAnswers.push("/app/projects/Story.fabulator.json"); // first save (inside the app)
+  fake.state.saveAnswers.push("content://device/Story.fabulator.json"); // where the copy goes
+  await saveCopyToDevice();
+  assert.ok(fake.state.files.has("/app/projects/Story.fabulator.json"));
+  assert.ok(fake.state.files.has("content://device/Story.fabulator.json"));
+  assert.equal(get(currentPath), "/app/projects/Story.fabulator.json");
+  assert.ok(fake.state.notices.some((m) => m.includes("copy was saved")));
+});
+
+test("cancelling the location of a copy writes nothing and says nothing", async () => {
+  await loadInitialProject();
+  fake.state.saveAnswers.push("/app/projects/Story.fabulator.json");
+  await saveCopyToDevice(); // the second picker answer is "cancel"
+  assert.equal(fake.state.notices.length, 0);
 });

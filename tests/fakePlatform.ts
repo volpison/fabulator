@@ -65,6 +65,21 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
       const a = state.saveAnswers.shift();
       return a ? toLocation(a) : null;
     },
+    async adoptProject(picked) {
+      note(`adopt ${picked}`);
+      return picked;
+    },
+    async pickProjectSavePath() {
+      const a = state.saveAnswers.shift();
+      return a ? toLocation(a) : null;
+    },
+    async saveCopyToDevice(from) {
+      const a = state.saveAnswers.shift();
+      if (!a) return false;
+      state.files.set(a, clone(state.files.get(from)));
+      note(`copy ${from} -> ${a}`);
+      return true;
+    },
     async pickFolder() {
       const a = state.folderAnswers.shift();
       return a ? toLocation(a) : null;

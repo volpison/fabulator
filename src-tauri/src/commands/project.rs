@@ -85,9 +85,9 @@ pub(super) fn write_project_file(
     Ok(())
 }
 
-/// Write an exported file (.docx, .epub, .md, .txt) to the path the user picked.
-/// Atomic, so a failed export can never leave a half-written file behind.
+/// Write an exported file (.docx, .epub, .md, .txt) to the path (or Android content address) the user picked.
+/// Atomic for a path, so a failed export can never leave a half-written file behind.
 #[tauri::command]
-pub fn write_export(path: String, bytes: Vec<u8>) -> Result<(), String> {
-    storage::write_atomic(&PathBuf::from(path), &bytes).map_err(|e| format!("Write error: {e}"))
+pub fn write_export(app: tauri::AppHandle, path: String, bytes: Vec<u8>) -> Result<(), String> {
+    super::device::write_location(&app, &path, &bytes)
 }

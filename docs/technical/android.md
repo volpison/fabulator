@@ -62,3 +62,11 @@ On A the Android `Location` is an ordinary path inside the app's data directory,
 - `src/lib/platform/capabilities.ts`: `folders` and `windowClose`, chosen from the user-agent (an Android WebView says "Android"). Desktop is unchanged. The File menu hides *Open folder…* and *Export as folder (Markdown)…*, and the theme dialog hides *Import folder…*, where `folders` is false. `onCloseRequested` does nothing without `windowClose`; the existing page-hide autosave covers a paused app.
 - `.github/workflows/android.yml`: builds a debug APK for 64-bit ARM on request (Actions → **Android APK** → Run workflow) and attaches it to the run. It creates the Android project each time (`tauri android init`), as proposed.
 - Decided by merging this page without objection: option A (private working copy) and generate-in-CI.
+
+## Step 3: what is in
+
+- **Rust** (`src-tauri/src/commands/device.rs`): `import_project_copy` reads a picked file (a `content://` address, opened with the file-system plugin's `open`) and writes a copy into `<app data>/projects/` under a free name made from the story title; `new_project_path` gives a free private name for a new story; `export_project_copy` writes a saved project to a picked address. `write_export` and `read_text_file` now accept content addresses too, so exports and theme-file imports work from the pickers. Name logic (`storage/names.rs`) is plain Rust with unit tests.
+- **Platform** gains `adoptProject`, `pickProjectSavePath` and `saveCopyToDevice`, and the capability `deviceCopies`. Desktop: adopt returns the same location, the save path is a save dialog, nothing else changes.
+- **Menu on Android:** *Save as…* is replaced by *Save a copy to your device…*, which saves inside the app first so the copy is current. *Open…* copies the picked file in; opening the same file twice makes a second copy named `… (2)`.
+- Everything after the copy (atomic saves, backups, crash recovery, recent files) is the unchanged desktop code working on ordinary paths.
+- Unverified until it runs on a device: that the plugin can open the addresses the picker returns (read and write), and that the picker lets a new file be created and overwritten.

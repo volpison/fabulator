@@ -8,7 +8,11 @@ use super::themes_dir;
 
 /// Read a small text file the user picked (e.g. a colour theme to import).
 #[tauri::command]
-pub fn read_text_file(path: String) -> Result<String, String> {
+pub fn read_text_file(app: tauri::AppHandle, path: String) -> Result<String, String> {
+    if super::device::is_content_uri(&path) {
+        let bytes = super::device::read_location(&app, &path, storage::MAX_THEME_BYTES)?;
+        return String::from_utf8(bytes).map_err(|_| "Read error: the file is not text.".to_string());
+    }
     storage::read_text_limited(&PathBuf::from(path), storage::MAX_THEME_BYTES)
         .map_err(|e| format!("Read error: {e}"))
 }
