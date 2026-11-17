@@ -78,6 +78,13 @@ button:focus-visible {
 html.android body {
   padding-top: max(env(safe-area-inset-top, 0px), 28px);
   padding-right: env(safe-area-inset-right, 0px);
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
   padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* A tablet's taskbar is taller than a phone's gesture bar: keep the status line above it. */
+@media (min-width: 600px) {
+  html.android body {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 64px);
+  }
 }
