@@ -7,12 +7,15 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
 import { toLocation, type Platform, type Location, type FolderFile, type FolderWriteReport, type ThemeFileData } from "./types";
 import type { Project } from "../types";
+import { detectCapabilities } from "./capabilities";
 
 const single = (r: string | string[] | null): Location | null => (!r || Array.isArray(r) ? null : toLocation(r));
 
 const lastSegment = (path: string) => path.split(/[/\\]/).filter(Boolean).pop() ?? path;
 
 export const tauriPlatform: Platform = {
+  capabilities: detectCapabilities(typeof navigator === "undefined" ? "" : navigator.userAgent),
+
   displayName: (location) => lastSegment(location),
   describe: (location) => location,
 
@@ -58,8 +61,11 @@ export const tauriPlatform: Platform = {
     readFolder: (dir) => invoke<ThemeFileData[]>("read_theme_folder", { dir }),
   },
 
-  onCloseRequested: (handler) =>
-    getCurrentWindow().onCloseRequested(async (event) => {
+  onCloseRequested: async (handler) => {
+    // Android has no close button: the app is paused (autosave and the page-hide hook cover it).
+    if (!detectCapabilities(typeof navigator === "undefined" ? "" : navigator.userAgent).windowClose) return () => {};
+    return getCurrentWindow().onCloseRequested(async (event) => {
       if (!(await handler())) event.preventDefault();
-    }),
+    });
+  },
 };

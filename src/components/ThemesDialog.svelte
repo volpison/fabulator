@@ -158,7 +158,7 @@
     </div>
 
     <div class="actions">
-      <button on:click={onImportFolder} disabled={busy} title="Import every Base16 / Base24 / VS Code / Fabulator theme file in a folder">Import folder…</button>
+      {#if platform().capabilities.folders}<button on:click={onImportFolder} disabled={busy} title="Import every Base16 / Base24 / VS Code / Fabulator theme file in a folder">Import folder…</button>{/if}
       <button on:click={onImportFile} disabled={busy}>Import file…</button>
       <button on:click={openGallery}>Gallery…</button>
       {#if removable}

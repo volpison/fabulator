@@ -1,6 +1,6 @@
 # Design: Android port
 
-Status: **proposal**, for review before any code. Decided with the author: **tablet first**, first milestone **write and read**, tested on a **real device** with a debug APK built by CI.
+Status: **proposal, step 2 in progress** (capabilities and the APK workflow are in; nothing else yet). Decided with the author: **tablet first**, first milestone **write and read**, tested on a **real device** with a debug APK built by CI.
 
 ## What the first milestone is
 
@@ -56,3 +56,9 @@ On A the Android `Location` is an ordinary path inside the app's data directory,
 
 - Is a private working copy (option A) acceptable for the first milestone?
 - `src-tauri/gen/android`: generate it in CI each run (nothing to maintain, harder to customise) or commit it (needed once the manifest or Gradle needs changes)? Proposal: generate in CI for step 2, commit it when step 3 or 4 needs a change.
+
+## Step 2: what is in
+
+- `src/lib/platform/capabilities.ts`: `folders` and `windowClose`, chosen from the user-agent (an Android WebView says "Android"). Desktop is unchanged. The File menu hides *Open folder…* and *Export as folder (Markdown)…*, and the theme dialog hides *Import folder…*, where `folders` is false. `onCloseRequested` does nothing without `windowClose`; the existing page-hide autosave covers a paused app.
+- `.github/workflows/android.yml`: builds a debug APK for 64-bit ARM on request (Actions → **Android APK** → Run workflow) and attaches it to the run. It creates the Android project each time (`tauri android init`), as proposed.
+- Decided by merging this page without objection: option A (private working copy) and generate-in-CI.

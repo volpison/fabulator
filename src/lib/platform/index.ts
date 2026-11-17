@@ -5,6 +5,7 @@
  */
 import type { Platform } from "./types";
 export { toLocation } from "./types";
+export type { Capabilities } from "./capabilities";
 
 export type {
   Platform,
