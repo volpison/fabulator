@@ -47,7 +47,7 @@ Questions to settle when Comic starts: full-script versus plot-first (Marvel-met
 
 - Typewriter mode, and font and column-width options for focus mode.
 - A detachable side-panel window.
-- Android port (Tauri 2 mobile, same repository; content-URI file access is the main change; the Platform layer is already in place).
+- Android port (Tauri 2 mobile, same repository; content-URI file access is the main change; the Platform layer is already in place). [Design proposal](docs/technical/android.md): tablet first, write and read, private working copy.
 - Release builds from a tag (CI workflow exists; 0.2.0 is tagged).
 
 ## Already done

@@ -23,6 +23,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [Architecture](technical/architecture.md) | Stack, folder layout, the Platform layer, what Rust owns |
 | [The project file format](technical/file-format.md) | Data model, schema versions, compatibility rules, formats |
 | [Design: Game Prototyping](technical/game-prototyping.md) | The fourth mode: quests, conditions and rules (design and build steps) |
+| [Design: Android port](technical/android.md) | Proposal: tablet first, write and read, how files work on Android |
 | [Tests](technical/testing.md) | How the project is tested |
 
 ## Contributing
