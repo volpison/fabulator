@@ -10,7 +10,7 @@
     gameCheckOpen,
     project,
   } from "../lib/stores";
-  import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, loadSample, newProject } from "../lib/persistence";
+  import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, saveCopyToDevice, loadSample, newProject } from "../lib/persistence";
   import { recentFiles, clearRecents } from "../lib/recentStore";
   import { recentLabels } from "../lib/recent";
   import { platform } from "../lib/platform";
@@ -29,6 +29,7 @@
       ]) as MenuItem[];
 
   const folders = platform().capabilities.folders;
+  const deviceCopies = platform().capabilities.deviceCopies;
 
   $: fileItems = [
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
@@ -41,7 +42,9 @@
     ...(folders ? [{ label: "Open folder…", action: () => void openFolder() }] : []),
     { separator: true },
     { label: "Save", shortcut: "Ctrl+S", action: () => void manualSave() },
-    { label: "Save as…", shortcut: "Ctrl+Shift+S", action: () => void saveAs() },
+    ...(deviceCopies
+      ? [{ label: "Save a copy to your device…", action: () => void saveCopyToDevice() }]
+      : [{ label: "Save as…", shortcut: "Ctrl+Shift+S", action: () => void saveAs() }]),
     { separator: true },
     { label: "Export…", shortcut: "Ctrl+E", action: () => exportOpen.set(true) },
     ...(folders ? [{ label: "Export as folder (Markdown)…", action: () => void exportFolder() }] : []),

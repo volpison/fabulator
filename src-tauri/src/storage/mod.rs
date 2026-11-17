@@ -7,12 +7,14 @@
 mod atomic;
 mod backup;
 mod folder;
+mod names;
 mod recovery;
 mod themes;
 
 pub use atomic::*;
 pub use backup::*;
 pub use folder::*;
+pub use names::*;
 pub use recovery::*;
 pub use themes::*;
 

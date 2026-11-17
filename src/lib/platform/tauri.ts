@@ -13,11 +13,13 @@ const single = (r: string | string[] | null): Location | null => (!r || Array.is
 
 const lastSegment = (path: string) => path.split(/[/\\]/).filter(Boolean).pop() ?? path;
 
+const capabilities = detectCapabilities(typeof navigator === "undefined" ? "" : navigator.userAgent);
+
 export const tauriPlatform: Platform = {
-  capabilities: detectCapabilities(typeof navigator === "undefined" ? "" : navigator.userAgent),
+  capabilities,
 
   displayName: (location) => lastSegment(location),
-  describe: (location) => location,
+  describe: (location) => (capabilities.deviceCopies ? `${lastSegment(location)} (kept inside the app)` : location),
 
   confirm: (msg, o) =>
     ask(msg, { title: o.title, kind: o.kind ?? "warning", okLabel: o.okLabel, cancelLabel: o.cancelLabel }),
@@ -37,6 +39,22 @@ export const tauriPlatform: Platform = {
     return { data: r.data, backedUp: r.backed_up };
   },
   saveProject: (path, project, o) => invoke("save_project", { path, project, forceBackup: o.forceBackup }),
+
+  adoptProject: async (picked) =>
+    capabilities.deviceCopies ? toLocation(await invoke<string>("import_project_copy", { source: picked })) : picked,
+  pickProjectSavePath: async (o) => {
+    if (!capabilities.deviceCopies) {
+      const r = await save({ title: o.title, defaultPath: o.defaultName, filters: o.filters });
+      return r ? toLocation(r) : null;
+    }
+    return toLocation(await invoke<string>("new_project_path", { defaultName: o.defaultName }));
+  },
+  saveCopyToDevice: async (from, o) => {
+    const dest = await save({ title: o.title, defaultPath: o.defaultName, filters: o.filters });
+    if (!dest) return false;
+    await invoke("export_project_copy", { from, dest });
+    return true;
+  },
 
   readText: (path) => invoke<string>("read_text_file", { path }),
   writeBytes: (path, bytes) => invoke("write_export", { path, bytes: Array.from(bytes) }),
@@ -63,7 +81,7 @@ export const tauriPlatform: Platform = {
 
   onCloseRequested: async (handler) => {
     // Android has no close button: the app is paused (autosave and the page-hide hook cover it).
-    if (!detectCapabilities(typeof navigator === "undefined" ? "" : navigator.userAgent).windowClose) return () => {};
+    if (!capabilities.windowClose) return () => {};
     return getCurrentWindow().onCloseRequested(async (event) => {
       if (!(await handler())) event.preventDefault();
     });

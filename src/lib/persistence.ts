@@ -61,7 +61,7 @@ export function saveNow(opts: SaveOptions = {}): Promise<boolean> {
 
 async function pickSavePath(proj: Project): Promise<Location | null> {
   const safeName = proj.title.replace(/[<>:"/\\|?*]/g, "_") || "Untitled";
-  return platform().pickSaveFile({
+  return platform().pickProjectSavePath({
     title: "Save Fabulator Project",
     defaultName: `${safeName}.fabulator.json`,
     filters: FILE_FILTERS,
@@ -138,6 +138,29 @@ export async function saveAs(): Promise<boolean> {
 }
 
 /**
+ * Android: File → Save a copy to your device…. Saves the project inside the app first (so the copy is
+ * current), then writes a copy where the person chooses.
+ */
+export async function saveCopyToDevice(): Promise<void> {
+  const proj = get(project);
+  if (!proj) return;
+  if (!(await saveNow({ interactive: true, forceBackup: true }))) return;
+  const from = get(currentPath);
+  if (!from) return;
+  const safeName = proj.title.replace(/[<>:"/\\|?*]/g, "_") || "Untitled";
+  try {
+    const done = await platform().saveCopyToDevice(from, {
+      title: "Save a copy to your device",
+      defaultName: `${safeName}.fabulator.json`,
+      filters: FILE_FILTERS,
+    });
+    if (done) await platform().notify("A copy was saved to your device. The story you are editing stays inside Fabulator.", { title: "Save a copy", kind: "info" });
+  } catch (e) {
+    await platform().notify(`Could not save a copy.\n\n${String(e)}`, { title: "Save a copy", kind: "error" });
+  }
+}
+
+/**
  * Returns true when it is safe to replace/close the current project:
  * nothing unsaved, or it was just saved, or the user explicitly agreed to
  * discard changes.
@@ -193,7 +216,14 @@ export async function openProject(): Promise<void> {
 
   const chosen = await platform().pickOpenFile({ title: "Open Fabulator Project", filters: FILE_FILTERS });
   if (!chosen) return;
-  await openAt(chosen, false);
+  let location: Location;
+  try {
+    location = await platform().adoptProject(chosen);
+  } catch (e) {
+    await platform().notify(`Could not open that file.\n\n${String(e)}`, { title: "Open", kind: "error" });
+    return;
+  }
+  await openAt(location, false);
 }
 
 /** File → Open recent → a file from the list. */
