@@ -20,6 +20,14 @@ adb exec-out screencap -p > "$OUT/start.png"
 adb logcat -d > "$OUT/logcat.txt" 2>&1
 adb shell wm size 2>&1 | tee -a "$OUT/summary.txt"
 
+# Evidence in the job log, readable without downloading anything.
+echo "=== Text on screen (uiautomator) ==="
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+grep -o 'text="[^"]\+"' "$OUT/ui.xml" | head -80
+echo "=== Log lines about the app, errors and the web view ==="
+grep -iE "fatal|AndroidRuntime|chromium|Tauri|nv.fabulator|console|wry" "$OUT/logcat.txt" | tail -60
+
 if adb shell pidof "$PKG" >/dev/null 2>&1 && [ -n "$(adb shell pidof "$PKG" | tr -d '\r')" ]; then
   echo "RESULT: the app is running after 25 seconds" | tee -a "$OUT/summary.txt"
 else
