@@ -5,6 +5,7 @@
 import { CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
 import { applyPatch } from "../src/lib/patch.ts";
 import type { Project } from "../src/lib/types.ts";
+import { DESKTOP_CAPABILITIES } from "../src/lib/platform/capabilities.ts";
 import { toLocation, type Platform, type FolderFile, type ThemeFileData } from "../src/lib/platform/index.ts";
 
 export type Fake = ReturnType<typeof createFakePlatform>;
@@ -46,6 +47,7 @@ export function createFakePlatform(sample: unknown = { title: "SAMPLE" }) {
   const clone = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
   const platform: Platform = {
+    capabilities: DESKTOP_CAPABILITIES,
     displayName: (l) => l.split(/[/\\]/).filter(Boolean).pop() ?? l,
     describe: (l) => l,
     async confirm(message) {

@@ -1,0 +1,52 @@
+# Builds a DEBUG Android APK you can install on a device. It never publishes anything.
+# Run it by hand: Actions → "Android APK" → Run workflow (choose the branch), then
+# download the "fabulator-debug-apk" file from the finished run.
+name: Android APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/android.yml"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install JS dependencies
+        run: npm install
+
+      # The Android project is generated here each run (see docs/technical/android.md).
+      - name: Create the Android project
+        run: npm run tauri android init
+
+      # The runner image ships the Android SDK and NDK; point Tauri at the NDK.
+      - name: Build a debug APK (64-bit ARM devices)
+        run: |
+          export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          npm run tauri android build -- --debug --apk --target aarch64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fabulator-debug-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error

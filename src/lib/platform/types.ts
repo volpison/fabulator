@@ -16,6 +16,7 @@
  */
 import type { Project } from "../types";
 import type { ProjectPatch } from "../patch";
+import type { Capabilities } from "./capabilities";
 
 /**
  * Where a file or folder lives. Opaque: app code must never parse or build one (no
@@ -42,6 +43,9 @@ export type FolderWriteReport = { written: number; unchanged: number; removed: n
 export type ThemeFileData = { name: string; contents: string };
 
 export interface Platform {
+  /** What this platform can do; the screen hides what it cannot. */
+  readonly capabilities: Capabilities;
+
   // ── Naming locations (synchronous, so they can be used while rendering) ──
   /** Short name to show in lists and the status bar, e.g. "wolf.fabulator.json". */
   displayName(location: Location): string;

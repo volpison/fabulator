@@ -28,6 +28,8 @@
         { label: "Clear list", action: () => clearRecents() },
       ]) as MenuItem[];
 
+  const folders = platform().capabilities.folders;
+
   $: fileItems = [
     { label: "New story", shortcut: "Ctrl+N", action: () => void newProject() },
     { label: "New comic", action: () => void newProject("comic") },
@@ -36,13 +38,13 @@
     { separator: true },
     { label: "Open…", shortcut: "Ctrl+O", action: () => void openProject() },
     { label: "Open recent", children: recentItems },
-    { label: "Open folder…", action: () => void openFolder() },
+    ...(folders ? [{ label: "Open folder…", action: () => void openFolder() }] : []),
     { separator: true },
     { label: "Save", shortcut: "Ctrl+S", action: () => void manualSave() },
     { label: "Save as…", shortcut: "Ctrl+Shift+S", action: () => void saveAs() },
     { separator: true },
     { label: "Export…", shortcut: "Ctrl+E", action: () => exportOpen.set(true) },
-    { label: "Export as folder (Markdown)…", action: () => void exportFolder() },
+    ...(folders ? [{ label: "Export as folder (Markdown)…", action: () => void exportFolder() }] : []),
     { separator: true },
     {
       label: "Load sample story",
