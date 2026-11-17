@@ -16,6 +16,9 @@ echo "Package: $PKG" | tee -a "$OUT/summary.txt"
 adb logcat -c
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 sleep 25
+# The emulator's own launcher sometimes shows a "not responding" box over the app: close system dialogs.
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
+sleep 3
 adb exec-out screencap -p > "$OUT/start.png"
 adb logcat -d > "$OUT/logcat.txt" 2>&1
 adb shell wm size 2>&1 | tee -a "$OUT/summary.txt"

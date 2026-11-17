@@ -70,3 +70,9 @@ On A the Android `Location` is an ordinary path inside the app's data directory,
 - **Menu on Android:** *Save as…* is replaced by *Save a copy to your device…*, which saves inside the app first so the copy is current. *Open…* copies the picked file in; opening the same file twice makes a second copy named `… (2)`.
 - Everything after the copy (atomic saves, backups, crash recovery, recent files) is the unchanged desktop code working on ordinary paths.
 - Unverified until it runs on a device: that the plugin can open the addresses the picker returns (read and write), and that the picker lets a new file be created and overwritten.
+
+## Step 4 (in progress): tablet layout
+
+- **Safe areas** (done, checked in the CI emulator): the app is drawn under Android's status and navigation bars, so on Android `<html>` gets the class `android` and the page keeps clear of them: `env(safe-area-inset-*)` where the web view reports it, with floors (28px top; 24px bottom, 64px bottom on a tablet) for older web views that report 0. `viewport-fit=cover` is set.
+- **How it is checked without a tablet:** *Actions → Android emulator check → Run workflow* boots a tablet emulator, opens the app, and saves a screenshot and the text on screen (in the job log). The screenshot is also pushed to the throwaway branch `ci-emulator`.
+- Still to do: touch-sized buttons and menus without hover, Timeline touch interaction, the soft keyboard in the editor.
