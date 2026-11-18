@@ -1070,4 +1070,17 @@
     background: var(--bg-sidebar);
     color: var(--text);
   }
+  /* Touch screens cannot hover: show the controls that otherwise appear only when pointed at. */
+  @media (hover: none) {
+    .edit-btn {
+      opacity: 0.8;
+    }
+    .cell-add {
+      opacity: 0.55;
+    }
+    .ch-move,
+    .ch-delete {
+      opacity: 0.8;
+    }
+  }
 </style>

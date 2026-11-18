@@ -63,6 +63,42 @@ PY
   adb shell input tap $XY
 }
 
+# ── Drag a scene to another chapter with a finger (long-press drag) ──
+bounds_of() { # prints "x1 y1 x2 y2" of the first element whose text starts with $1
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+  python3 - "$1" <<'PY'
+import re, sys
+want = sys.argv[1]
+xml = open("emulator-out/ui.xml", encoding="utf-8", errors="replace").read()
+for m in re.finditer(r'<node[^>]*>', xml):
+    n = m.group(0)
+    t = re.search(r' text="([^"]*)"', n); b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
+    if t and b and t.group(1).startswith(want):
+        print(*b.groups()); break
+PY
+}
+tap_text "+ Add Chapter" && sleep 3
+CARD=$(bounds_of "Untitled scene"); CH2=$(bounds_of "Chapter 2")
+echo "DRAG: card at [$CARD], chapter 2 header at [$CH2]" | tee -a "$OUT/summary.txt"
+if [ -n "$CARD" ] && [ -n "$CH2" ]; then
+  set -- $CARD; CX=$(( ($1 + $3) / 2 )); CY=$(( ($2 + $4) / 2 ))
+  set -- $CH2; TX=$(( ($1 + $3) / 2 ))
+  adb exec-out screencap -p > "$OUT/drag1-before.png"
+  adb shell input draganddrop $CX $CY $TX $CY 1500; sleep 3
+  adb exec-out screencap -p > "$OUT/drag2-after.png"
+  AFTER=$(bounds_of "Untitled scene")
+  echo "DRAG: card after the drag at [$AFTER]" | tee -a "$OUT/summary.txt"
+  set -- $AFTER
+  if [ -n "${1:-}" ] && [ "$1" -gt $(( TX - 300 )) ]; then
+    echo "DRAG-RESULT: the card moved to chapter 2" | tee -a "$OUT/summary.txt"
+  else
+    echo "DRAG-RESULT: the card did NOT move (finger drag and drop does not work)" | tee -a "$OUT/summary.txt"
+  fi
+else
+  echo "DRAG-RESULT: could not find the card or chapter 2" | tee -a "$OUT/summary.txt"
+fi
+
 tap_text "Untitled scene" && sleep 4
 adb exec-out screencap -p > "$OUT/step2-writing.png"
 echo "=== Text on screen after tapping the scene ==="

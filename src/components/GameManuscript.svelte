@@ -743,4 +743,10 @@
   .add-link {
     margin-top: 0.3rem;
   }
+  /* Touch screens cannot hover: keep the element tools visible. */
+  @media (hover: none) {
+    .gutter {
+      opacity: 0.7;
+    }
+  }
 </style>
