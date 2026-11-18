@@ -86,7 +86,15 @@ adb exec-out screencap -p > "$OUT/step3b-typed-later.png"
 # Where is the page's bottom line (the status bar) while the keyboard is open? If it is lower than the
 # keyboard's top, the page was NOT resized and the keyboard covers it.
 echo "=== Bounds of page elements with the keyboard open ==="
-grep -oE 'text="(Not saved to a file yet|0 words|4 words|Once upon a time|No characters yet[^"]*)"[^>]*bounds="[^"]*"' "$OUT/ui3.xml" | sed 's/class="[^"]*"//' | cut -c1-160
+python3 - <<'PY'
+import re
+xml = open("emulator-out/ui3.xml", encoding="utf-8", errors="replace").read()
+for m in re.finditer(r'<node[^>]*>', xml):
+    n = m.group(0)
+    t = re.search(r' text="([^"]*)"', n); b = re.search(r'bounds="([^"]*)"', n)
+    if t and b and re.match(r'(Not saved to a file yet|\d+ words|Once upon a time|No characters yet|Untitled scene$)', t.group(1)):
+        print(t.group(1)[:40], b.group(1))
+PY
 echo "=== Window and keyboard state ==="
 adb shell dumpsys window | grep -iE "softInputMode|mInputMethodWindow|InputMethod.*Frame|imeLayeringTarget|isImeShowing|mImeShowing" | head -8 | cut -c1-200
 adb shell dumpsys input_method | grep -iE "mInputShown|mImeWindowVis|inputShown" | head -3
