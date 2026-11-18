@@ -1,6 +1,6 @@
 # Design: Android port
 
-Status: **proposal, step 2 in progress** (capabilities and the APK workflow are in; nothing else yet). Decided with the author: **tablet first**, first milestone **write and read**, tested on a **real device** with a debug APK built by CI.
+Status: **first version done (tablet, preview)**; the sections below record the design and each step as built. Decided with the author: **tablet first**, first milestone **write and read**, tested with a debug APK built by CI (the author has no tablet, so the checks run in a CI emulator; see the end of this page).
 
 ## What the first milestone is
 
@@ -89,3 +89,10 @@ The emulator check drives the system file picker (the platform's `DocumentsUI`) 
 - **Save a copy to your device…** — the save dialog opens with the story's name filled in; pressing **SAVE** writes the file into *Downloads* through `export_project_copy`, the app shows "A copy was saved to your device…", and the written file contains the story (title and `schema_version`).
 
 Still not covered: the picker on a real device and other file providers (cloud drives, SD cards), very large files, and cancelling inside the picker.
+
+## What is left
+
+- A **real device**: everything above was checked in a tablet emulator (Android 14, 2560×1600). Gboard, other navigation bars, other web view versions and other file providers (cloud drives, SD cards) are untested.
+- **Phones**, and touch alternatives to dragging in the Manuscript scene list and the comic, screenplay and game lists.
+- **Folding the keyboard-hidden details** in the comic, screenplay and game writing views.
+- **Release builds:** only a debug APK exists. A signed release (and any store) would need a signing key kept in repository secrets and a decision about distribution.

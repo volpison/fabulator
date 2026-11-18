@@ -21,6 +21,10 @@ npm install
 npm run tauri dev
 ```
 
+## Android (preview)
+
+A tablet build (a debug APK made by GitHub Actions) is available as a preview: see [On an Android tablet](docs/user-guide/android.md).
+
 ## Documentation
 
 Start at the [documentation index](docs/index.md), or jump straight in:

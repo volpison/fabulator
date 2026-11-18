@@ -11,6 +11,8 @@ npm run tauri dev
 
 Windows installers are built from release tags; the installer is not code-signed, so Windows SmartScreen may warn on first run (choose *More info*, then *Run anyway*).
 
+On an Android tablet there is a preview build: see [On an Android tablet](android.md).
+
 ## Your first story
 
 - A new session starts with an empty story: one chapter, one plotline and one empty scene.

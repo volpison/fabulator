@@ -47,9 +47,11 @@ Questions to settle when Comic starts: full-script versus plot-first (Marvel-met
 
 - Typewriter mode, and font and column-width options for focus mode.
 - A detachable side-panel window.
-- Android port (Tauri 2 mobile, same repository; content-URI file access is the main change; the Platform layer is already in place). [Design proposal](docs/technical/android.md): tablet first, write and read, private working copy.
+- Android port, next steps: a phone layout, touch alternatives to dragging in the Manuscript, comic, screenplay and game lists, testing on a real device, and (only if wanted) a signed release build. The first version (tablet, preview) is done; see below.
 - Release builds from a tag (CI workflow exists; 0.2.0 is tagged).
 
 ## Already done
+
+**Android, first version (tablet, preview).** The Tauri 2 Android build, made by a CI workflow as a debug APK; stories kept inside the app with *Open* (copies a file in) and *Save a copy to your device* through the system file chooser; touch menus, the page rising above the on-screen keyboard, and touch alternatives to dragging on the Timeline. Checked in a tablet emulator with the real file chooser; not yet on a real device. See [On an Android tablet](docs/user-guide/android.md) and the [technical notes](docs/technical/android.md).
 
 The groundwork for formats and for other front ends: a Platform layer (all machine access behind one interface), open/backup/recovery rules in Rust, and Rust holding the current project with small patches and saves from its own copy. See [Architecture](docs/technical/architecture.md).

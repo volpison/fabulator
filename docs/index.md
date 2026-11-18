@@ -15,6 +15,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [Export](user-guide/export.md) | Word, EPUB, PDF, Fountain, scripts, thumbnails |
 | [Interface, themes and shortcuts](user-guide/interface.md) | Colours, themes, keyboard shortcuts |
 | [Safety, backups and recovery](user-guide/safety-and-backups.md) | Autosave, backups, crash recovery, Markdown folder |
+| [On an Android tablet](user-guide/android.md) | Preview: install, where stories live, writing and moving things by touch |
 
 ## Technical
 
@@ -23,7 +24,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [Architecture](technical/architecture.md) | Stack, folder layout, the Platform layer, what Rust owns |
 | [The project file format](technical/file-format.md) | Data model, schema versions, compatibility rules, formats |
 | [Design: Game Prototyping](technical/game-prototyping.md) | The fourth mode: quests, conditions and rules (design and build steps) |
-| [Design: Android port](technical/android.md) | Proposal: tablet first, write and read, how files work on Android |
+| [Android port](technical/android.md) | Design and notes: private working copy, capabilities, keyboard, how it is checked in an emulator |
 | [Tests](technical/testing.md) | How the project is tested |
 
 ## Contributing
