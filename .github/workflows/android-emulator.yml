@@ -52,6 +52,12 @@ jobs:
           export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
           npm run tauri android build -- --debug --apk --target x86_64
 
+      # A project file to open through the real Android file picker.
+      - name: Make a sample project file
+        run: |
+          mkdir -p emulator-in
+          node --experimental-strip-types --no-warnings --import ./tests/register.mjs scripts/make-sample-project.ts emulator-in/Imported.fabulator.json
+
       - name: Allow the emulator to use hardware acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

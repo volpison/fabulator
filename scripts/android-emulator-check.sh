@@ -139,6 +139,70 @@ adb exec-out screencap -p > "$OUT/step4-file-menu.png"
 echo "=== Text on screen with the File menu ==="
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui4.xml"
 grep -o 'text="[^"]\+"' "$OUT/ui4.xml" | head -40
+# ── Open a file with the real Android file picker (File → Open…) ──
+# The File menu is still open from the step above.
+dump_texts() { # label
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+  echo "=== $1 ==="
+  grep -o 'text="[^"]\+"' "$OUT/ui.xml" | head -40
+}
+if [ -f emulator-in/Imported.fabulator.json ]; then
+  adb push emulator-in/Imported.fabulator.json /sdcard/Download/Imported.fabulator.json 2>&1 | tail -1
+  tap_text "Open…" && sleep 4
+  dump_texts "After choosing Open…"
+  adb exec-out screencap -p > "$OUT/picker0-after-open.png"
+  # The open story has unsaved typing: the app asks before replacing it.
+  tap_text "Discard changes" && sleep 5
+  dump_texts "Picker (first screen)"
+  adb exec-out screencap -p > "$OUT/picker1.png"
+  if ! grep -q "Imported.fabulator.json" "$OUT/ui.xml"; then
+    # Show the Downloads folder: open the side menu, then Downloads.
+    adb shell input tap 88 112; sleep 2   # the picker's menu button (top left)
+    dump_texts "Picker side menu"
+    adb exec-out screencap -p > "$OUT/picker1b-menu.png"
+    tap_text "Downloads" && sleep 3 || true
+    dump_texts "Picker (after choosing Downloads)"
+    adb exec-out screencap -p > "$OUT/picker2.png"
+  fi
+  # The file is a tile in a grid: tap its middle (tapping the name's own box hits a small preview icon).
+  adb shell input tap 216 660; sleep 6
+  adb exec-out screencap -p > "$OUT/picker3-opened.png"
+  dump_texts "After picking the file"
+  if grep -q "Imported from the device" "$OUT/ui.xml"; then
+    echo "PICKER-OPEN: the story picked with the Android file picker was opened" | tee -a "$OUT/summary.txt"
+  else
+    echo "PICKER-OPEN: the picked story was NOT opened" | tee -a "$OUT/summary.txt"
+  fi
+else
+  echo "PICKER-OPEN: no sample file was made (skipped)" | tee -a "$OUT/summary.txt"
+fi
+
+# ── Save a copy to the device through the real Android file picker ──
+if grep -q "Imported from the device" "$OUT/ui.xml"; then
+  adb shell ls /sdcard/Download > "$OUT/download-before.txt" 2>&1
+  tap_text "File" && sleep 2
+  tap_text "Save a copy to your device" && sleep 5
+  dump_texts "Save-a-copy picker (first screen)"
+  adb exec-out screencap -p > "$OUT/save1.png"
+  # The save dialog already shows Downloads with the file name filled in: press its SAVE button.
+  tap_text "SAVE" && sleep 5 || true
+  dump_texts "After saving the copy"
+  adb exec-out screencap -p > "$OUT/save3.png"
+  adb shell ls -la /sdcard/Download | tee "$OUT/download-after.txt"
+  NEW=$(adb shell ls /sdcard/Download | grep -c "fabulator.json")
+  if [ "$NEW" -ge 2 ]; then
+    COPY=$(adb shell cat "/sdcard/Download/Imported from the device.fabulator.json" 2>/dev/null | tr -d '\r')
+    if echo "$COPY" | grep -q '"title": "Imported from the device"' && echo "$COPY" | grep -q '"schema_version"'; then
+      echo "SAVE-COPY: a valid copy of the story was written to Downloads through the file picker" | tee -a "$OUT/summary.txt"
+    else
+      echo "SAVE-COPY: a file appeared but its content is not the story" | tee -a "$OUT/summary.txt"
+    fi
+  else
+    echo "SAVE-COPY: no new copy appeared in Downloads" | tee -a "$OUT/summary.txt"
+  fi
+fi
+
 echo "=== App state at the end ==="
 echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
 adb logcat -d > "$OUT/logcat-end.txt" 2>&1

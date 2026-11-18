@@ -80,3 +80,12 @@ On A the Android `Location` is an ordinary path inside the app's data directory,
 - **A flaky emulator:** the emulator image with Google services let Google Play services crash and take the app with it ("depends on provider … in dying proc"), so the check uses the plain image (`target: default`).
 - **Timeline by touch** (done, checked in the emulator). HTML5 drag and drop does **not** work with a finger in the Android web view (a long-press drag of a scene card did nothing). So: controls that only appear on hover (a card's *Edit* label, the *+* in a cell, a chapter's ◄ ► ✕, the game writing view's element tools) are shown on touch screens (`@media (hover: none)`); the scene's Edit mode, which already had *Chapter* and *Plotline* choices, gained **▲ ▼** to move the scene within its cell. Moving to another chapter or plotline therefore works without dragging; chapters are moved with ◄ ►. The Manuscript scene list and the comic, screenplay and game lists are still reordered by dragging only.
 - Still to do: touch alternatives for dragging in the other lists, the other writing views (comic, screenplay, game) folding on the keyboard, and a real device.
+
+## Checked with the real Android file picker (emulator)
+
+The emulator check drives the system file picker (the platform's `DocumentsUI`) with uiautomator:
+
+- **Open…** — a project file pushed to the emulator's *Downloads* is chosen in the picker; the app copies it into its private folder and opens the copy (status line shows the story and its private file name). This exercises `import_project_copy` with a real `content://` address.
+- **Save a copy to your device…** — the save dialog opens with the story's name filled in; pressing **SAVE** writes the file into *Downloads* through `export_project_copy`, the app shows "A copy was saved to your device…", and the written file contains the story (title and `schema_version`).
+
+Still not covered: the picker on a real device and other file providers (cloud drives, SD cards), very large files, and cancelling inside the picker.
