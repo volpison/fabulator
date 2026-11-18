@@ -43,6 +43,10 @@ jobs:
       - name: Create the Android project
         run: npm run tauri android init
 
+      # Make the on-screen keyboard resize the page (see the script).
+      - name: Patch the Android project
+        run: bash scripts/android-patch.sh
+
       - name: Build a debug APK for the emulator
         run: |
           export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
@@ -58,7 +62,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
-          target: google_apis
+          target: default
           arch: x86_64
           profile: Nexus 10
           force-avd-creation: false
@@ -78,7 +82,7 @@ jobs:
         if: always() && github.event.pull_request.head.repo.full_name == github.repository || always() && github.event_name == 'workflow_dispatch'
         run: |
           [ -f emulator-out/start.png ] || exit 0
-          mkdir -p /tmp/shots && cp emulator-out/start.png emulator-out/summary.txt /tmp/shots/
+          mkdir -p /tmp/shots && cp emulator-out/*.png emulator-out/summary.txt /tmp/shots/
           cd /tmp/shots
           git init -q -b ci-emulator
           git config user.name "github-actions"

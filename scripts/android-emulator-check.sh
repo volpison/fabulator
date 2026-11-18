@@ -37,3 +37,85 @@ else
   echo "RESULT: the app is NOT running (it crashed or never started)" | tee -a "$OUT/summary.txt"
   exit 1
 fi
+
+# ── Touch and typing (best effort: a failure here is reported, not fatal) ──
+# tap_text "words": tap the centre of the first screen element whose text contains the words.
+tap_text() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+  XY=$(python3 - "$1" <<'PY'
+import re, sys
+want = sys.argv[1]
+xml = open("emulator-out/ui.xml", encoding="utf-8", errors="replace").read()
+for m in re.finditer(r'<node[^>]*>', xml):
+    node = m.group(0)
+    t = re.search(r' text="([^"]*)"', node)
+    d = re.search(r' content-desc="([^"]*)"', node)
+    b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node)
+    if b and ((t and want in t.group(1)) or (d and want in d.group(1))):
+        x1, y1, x2, y2 = map(int, b.groups())
+        print((x1 + x2) // 2, (y1 + y2) // 2)
+        break
+PY
+)
+  if [ -z "$XY" ]; then echo "TAP: could not find '$1' on screen" | tee -a "$OUT/summary.txt"; return 1; fi
+  echo "TAP: '$1' at $XY" | tee -a "$OUT/summary.txt"
+  adb shell input tap $XY
+}
+
+tap_text "Untitled scene" && sleep 4
+adb exec-out screencap -p > "$OUT/step2-writing.png"
+echo "=== Text on screen after tapping the scene ==="
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui2.xml"
+grep -o 'text="[^"]\+"' "$OUT/ui2.xml" | head -40
+
+# Tap inside the page area (centre of the screen) and type.
+SIZE=$(adb shell wm size | grep -o '[0-9]\+x[0-9]\+' | tail -1); W=${SIZE%x*}; H=${SIZE#*x}
+adb shell input tap $((W / 2)) $((H / 2)); sleep 2
+adb shell input text "Once%supon%sa%stime"; sleep 3
+adb exec-out screencap -p > "$OUT/step3-typed.png"
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui3.xml"
+if grep -q "Once upon a time" "$OUT/ui3.xml"; then
+  echo "TYPING: the typed text reached the editor" | tee -a "$OUT/summary.txt"
+else
+  echo "TYPING: the typed text was NOT found in the editor" | tee -a "$OUT/summary.txt"
+fi
+
+sleep 6
+adb exec-out screencap -p > "$OUT/step3b-typed-later.png"
+# Where is the page's bottom line (the status bar) while the keyboard is open? If it is lower than the
+# keyboard's top, the page was NOT resized and the keyboard covers it.
+echo "=== Bounds of page elements with the keyboard open ==="
+python3 - <<'PY'
+import re
+xml = open("emulator-out/ui3.xml", encoding="utf-8", errors="replace").read()
+for m in re.finditer(r'<node[^>]*>', xml):
+    n = m.group(0)
+    t = re.search(r' text="([^"]*)"', n); b = re.search(r'bounds="([^"]*)"', n)
+    if t and b and re.match(r'(Not saved to a file yet|\d+ words|Once upon a time|No characters yet|Untitled scene$)', t.group(1)):
+        print(t.group(1)[:40], b.group(1))
+PY
+echo "=== Window and keyboard state ==="
+adb shell dumpsys window | grep -iE "softInputMode|mInputMethodWindow|InputMethod.*Frame|imeLayeringTarget|isImeShowing|mImeShowing" | head -8 | cut -c1-200
+adb shell dumpsys input_method | grep -iE "mInputShown|mImeWindowVis|inputShown" | head -3
+if grep -q "No characters yet" "$OUT/ui3.xml"; then
+  echo "KEYBOARD-FOLD: the scene details are still shown with the keyboard open" | tee -a "$OUT/summary.txt"
+else
+  echo "KEYBOARD-FOLD: the scene details are folded away while the keyboard is open" | tee -a "$OUT/summary.txt"
+fi
+
+# Open the File menu by touch.
+tap_text "File" && sleep 2
+adb exec-out screencap -p > "$OUT/step4-file-menu.png"
+echo "=== Text on screen with the File menu ==="
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui4.xml"
+grep -o 'text="[^"]\+"' "$OUT/ui4.xml" | head -40
+echo "=== App state at the end ==="
+echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
+adb logcat -d > "$OUT/logcat-end.txt" 2>&1
+echo "=== Crash buffer ==="
+adb logcat -b crash -d 2>&1 | tail -40 | cut -c1-220
+echo "=== Lines about the app dying ==="
+grep -E "nv\.fabulator" "$OUT/logcat-end.txt" | grep -iE "died|kill|fatal|crash|signal|abort|lowmem|anr" | tail -15 | cut -c1-220
+grep -E "lmkd" "$OUT/logcat-end.txt" | tail -8 | cut -c1-220
+exit 0

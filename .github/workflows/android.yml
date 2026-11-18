@@ -39,6 +39,10 @@ jobs:
       - name: Create the Android project
         run: npm run tauri android init
 
+      # Make the on-screen keyboard resize the page (see the script).
+      - name: Patch the Android project
+        run: bash scripts/android-patch.sh
+
       # The runner image ships the Android SDK and NDK; point Tauri at the NDK.
       - name: Build a debug APK (64-bit ARM devices)
         run: |
