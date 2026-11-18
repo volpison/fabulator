@@ -139,6 +139,43 @@ adb exec-out screencap -p > "$OUT/step4-file-menu.png"
 echo "=== Text on screen with the File menu ==="
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui4.xml"
 grep -o 'text="[^"]\+"' "$OUT/ui4.xml" | head -40
+# ── Open a file with the real Android file picker (File → Open…) ──
+# The File menu is still open from the step above.
+dump_texts() { # label
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+  echo "=== $1 ==="
+  grep -o 'text="[^"]\+"' "$OUT/ui.xml" | head -40
+}
+if [ -f emulator-in/Imported.fabulator.json ]; then
+  adb push emulator-in/Imported.fabulator.json /sdcard/Download/Imported.fabulator.json 2>&1 | tail -1
+  tap_text "Open…" && sleep 4
+  dump_texts "After choosing Open…"
+  adb exec-out screencap -p > "$OUT/picker0-after-open.png"
+  # The open story has unsaved typing: the app asks before replacing it.
+  tap_text "Discard changes" && sleep 5
+  dump_texts "Picker (first screen)"
+  adb exec-out screencap -p > "$OUT/picker1.png"
+  if ! grep -q "Imported.fabulator.json" "$OUT/ui.xml"; then
+    # Show the Downloads folder: open the side menu, then Downloads.
+    adb shell input keyevent KEYCODE_MENU >/dev/null 2>&1
+    tap_text "Show roots" && sleep 2 || true
+    tap_text "Downloads" && sleep 3 || true
+    dump_texts "Picker (after choosing Downloads)"
+    adb exec-out screencap -p > "$OUT/picker2.png"
+  fi
+  tap_text "Imported.fabulator.json" && sleep 6
+  adb exec-out screencap -p > "$OUT/picker3-opened.png"
+  dump_texts "After picking the file"
+  if grep -q "Imported from the device" "$OUT/ui.xml"; then
+    echo "PICKER-OPEN: the story picked with the Android file picker was opened" | tee -a "$OUT/summary.txt"
+  else
+    echo "PICKER-OPEN: the picked story was NOT opened" | tee -a "$OUT/summary.txt"
+  fi
+else
+  echo "PICKER-OPEN: no sample file was made (skipped)" | tee -a "$OUT/summary.txt"
+fi
+
 echo "=== App state at the end ==="
 echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
 adb logcat -d > "$OUT/logcat-end.txt" 2>&1
