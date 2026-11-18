@@ -158,8 +158,9 @@ if [ -f emulator-in/Imported.fabulator.json ]; then
   adb exec-out screencap -p > "$OUT/picker1.png"
   if ! grep -q "Imported.fabulator.json" "$OUT/ui.xml"; then
     # Show the Downloads folder: open the side menu, then Downloads.
-    adb shell input keyevent KEYCODE_MENU >/dev/null 2>&1
-    tap_text "Show roots" && sleep 2 || true
+    adb shell input tap 88 112; sleep 2   # the picker's menu button (top left)
+    dump_texts "Picker side menu"
+    adb exec-out screencap -p > "$OUT/picker1b-menu.png"
     tap_text "Downloads" && sleep 3 || true
     dump_texts "Picker (after choosing Downloads)"
     adb exec-out screencap -p > "$OUT/picker2.png"
