@@ -192,7 +192,12 @@ if grep -q "Imported from the device" "$OUT/ui.xml"; then
   adb shell ls -la /sdcard/Download | tee "$OUT/download-after.txt"
   NEW=$(adb shell ls /sdcard/Download | grep -c "fabulator.json")
   if [ "$NEW" -ge 2 ]; then
-    echo "SAVE-COPY: a copy of the story was written to Downloads through the file picker" | tee -a "$OUT/summary.txt"
+    COPY=$(adb shell cat "/sdcard/Download/Imported from the device.fabulator.json" 2>/dev/null | tr -d '\r')
+    if echo "$COPY" | grep -q '"title": "Imported from the device"' && echo "$COPY" | grep -q '"schema_version"'; then
+      echo "SAVE-COPY: a valid copy of the story was written to Downloads through the file picker" | tee -a "$OUT/summary.txt"
+    else
+      echo "SAVE-COPY: a file appeared but its content is not the story" | tee -a "$OUT/summary.txt"
+    fi
   else
     echo "SAVE-COPY: no new copy appeared in Downloads" | tee -a "$OUT/summary.txt"
   fi
