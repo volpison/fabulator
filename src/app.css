@@ -104,3 +104,8 @@ html.keyboard .editor-header .meta,
 html.keyboard .editor-header .links {
   display: none;
 }
+
+/* The keyboard sits where the navigation bar was: no extra bottom margin while it is open. */
+html.android.keyboard body {
+  padding-bottom: 0;
+}
