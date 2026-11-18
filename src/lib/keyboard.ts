@@ -24,14 +24,27 @@ export function watchKeyboard(win: Window = window): () => void {
     win.setTimeout(update, 250);
     win.setTimeout(update, 700);
   };
+  // Some Android web views report the smaller page late and without an event: while a text field has
+  // focus, look every 300 ms.
+  let poll: number | undefined;
+  const startPolling = () => {
+    soon();
+    if (poll === undefined) poll = win.setInterval(update, 300);
+  };
+  const stopPolling = () => {
+    soon();
+    if (poll !== undefined) win.clearInterval(poll);
+    poll = undefined;
+  };
   win.addEventListener("resize", soon);
   win.visualViewport?.addEventListener("resize", soon);
-  win.addEventListener("focusin", soon);
-  win.addEventListener("focusout", soon);
+  win.addEventListener("focusin", startPolling);
+  win.addEventListener("focusout", stopPolling);
   return () => {
     win.removeEventListener("resize", soon);
     win.visualViewport?.removeEventListener("resize", soon);
-    win.removeEventListener("focusin", soon);
-    win.removeEventListener("focusout", soon);
+    win.removeEventListener("focusin", startPolling);
+    win.removeEventListener("focusout", stopPolling);
+    if (poll !== undefined) win.clearInterval(poll);
   };
 }
