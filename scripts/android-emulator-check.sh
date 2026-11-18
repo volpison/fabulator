@@ -90,5 +90,9 @@ grep -o 'text="[^"]\+"' "$OUT/ui4.xml" | head -40
 echo "=== App state at the end ==="
 echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
 adb logcat -d > "$OUT/logcat-end.txt" 2>&1
-grep -iE "FATAL|AndroidRuntime|has died|Force finishing|ANR in|crash" "$OUT/logcat-end.txt" | tail -25 | cut -c1-220
+echo "=== Crash buffer ==="
+adb logcat -b crash -d 2>&1 | tail -40 | cut -c1-220
+echo "=== Lines about the app dying ==="
+grep -E "nv\.fabulator" "$OUT/logcat-end.txt" | grep -iE "died|kill|fatal|crash|signal|abort|lowmem|anr" | tail -15 | cut -c1-220
+grep -E "lmkd" "$OUT/logcat-end.txt" | tail -8 | cut -c1-220
 exit 0
