@@ -81,6 +81,8 @@ else
   echo "TYPING: the typed text was NOT found in the editor" | tee -a "$OUT/summary.txt"
 fi
 
+sleep 6
+adb exec-out screencap -p > "$OUT/step3b-typed-later.png"
 if grep -q "Short synopsis" "$OUT/ui3.xml"; then
   echo "KEYBOARD-FOLD: the scene details are still shown with the keyboard open" | tee -a "$OUT/summary.txt"
 else
