@@ -1,0 +1,20 @@
+APK: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+Performing Streamed Install
+Success
+Package: com.nv.fabulator
+Physical size: 2560x1600
+RESULT: the app is running after 25 seconds
+EDIT-BY-TOUCH: the scene's Edit mode opened (chapter, plotline, move up/down, Done)
+TAP: 'Done' at 687 888
+TAP: 'Untitled scene' at 556 536
+TYPING: the typed text reached the editor
+KEYBOARD-FOLD: the scene details are folded away while the keyboard is open
+TAP: 'File' at 243 102
+TAP: 'Open…' at 439 565
+TAP: 'Discard changes' at 1758 878
+TAP: 'Downloads' at 376 328
+PICKER-OPEN: the story picked with the Android file picker was opened
+TAP: 'File' at 243 102
+TAP: 'Save a copy to your device' at 439 851
+TAP: 'SAVE' at 2444 1432
+SAVE-COPY: a file appeared but its content is not the story
