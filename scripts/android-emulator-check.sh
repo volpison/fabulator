@@ -80,6 +80,17 @@ PY
 }
 tap_text "+ Add Chapter" && sleep 3
 CARD=$(bounds_of "Untitled scene"); CH2=$(bounds_of "Chapter 2")
+adb exec-out screencap -p > "$OUT/drag0-after-add-chapter.png"
+echo "=== Elements after adding a chapter ==="
+python3 - <<'PY'
+import re
+xml = open("emulator-out/ui.xml", encoding="utf-8", errors="replace").read()
+for m in re.finditer(r'<node[^>]*>', xml):
+    n = m.group(0)
+    t = re.search(r' text="([^"]*)"', n); d = re.search(r' content-desc="([^"]*)"', n); b = re.search(r'bounds="([^"]*)"', n)
+    label = (t.group(1) if t and t.group(1) else (d.group(1) if d else ""))
+    if label and b and re.search(r'hapter|scene|^\+|^\d+$|w$', label): print(label[:50], b.group(1))
+PY
 echo "DRAG: card at [$CARD], chapter 2 header at [$CH2]" | tee -a "$OUT/summary.txt"
 if [ -n "$CARD" ] && [ -n "$CH2" ]; then
   set -- $CARD; CX=$(( ($1 + $3) / 2 )); CY=$(( ($2 + $4) / 2 ))
