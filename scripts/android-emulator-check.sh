@@ -178,6 +178,29 @@ else
   echo "PICKER-OPEN: no sample file was made (skipped)" | tee -a "$OUT/summary.txt"
 fi
 
+# ── Save a copy to the device through the real Android file picker ──
+if grep -q "Imported from the device" "$OUT/ui.xml"; then
+  adb shell ls /sdcard/Download > "$OUT/download-before.txt" 2>&1
+  tap_text "File" && sleep 2
+  tap_text "Save a copy to your device" && sleep 5
+  dump_texts "Save-a-copy picker (first screen)"
+  adb exec-out screencap -p > "$OUT/save1.png"
+  adb shell input tap 88 112; sleep 2
+  tap_text "Downloads" && sleep 3 || true
+  dump_texts "Save-a-copy picker (Downloads)"
+  adb exec-out screencap -p > "$OUT/save2.png"
+  tap_text "Save" && sleep 5 || true
+  dump_texts "After saving the copy"
+  adb exec-out screencap -p > "$OUT/save3.png"
+  adb shell ls -la /sdcard/Download | tee "$OUT/download-after.txt"
+  NEW=$(adb shell ls /sdcard/Download | grep -c "fabulator.json")
+  if [ "$NEW" -ge 2 ]; then
+    echo "SAVE-COPY: a copy of the story was written to Downloads through the file picker" | tee -a "$OUT/summary.txt"
+  else
+    echo "SAVE-COPY: no new copy appeared in Downloads" | tee -a "$OUT/summary.txt"
+  fi
+fi
+
 echo "=== App state at the end ==="
 echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
 adb logcat -d > "$OUT/logcat-end.txt" 2>&1
