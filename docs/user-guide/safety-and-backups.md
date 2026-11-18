@@ -68,3 +68,5 @@ The web view still owns the project, but while there are unsaved changes it send
 ## On an Android tablet (preview)
 
 Fabulator keeps your stories **inside the app**. **File → Open…** makes a copy of the file you pick; your original is not touched. **File → Save a copy to your device…** saves your story and writes a copy to a place you choose, so it is not stranded inside the app. Opening the same file twice gives two copies (the second is named “… (2)”). Autosave, backups and crash recovery work as on the computer.
+
+On a tablet you cannot drag with a finger. To move a scene, tap **Edit** on its card: choose another chapter or plotline from the lists, or use ▲ ▼ to move it up or down. Chapters have ◄ ► buttons in their header.

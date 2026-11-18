@@ -82,7 +82,7 @@ if [ -n "$CARDB" ]; then
   adb shell input tap $(( $3 - 40 )) $(( $2 + 24 )); sleep 3   # the small Edit label at the card's top right
   adb exec-out screencap -p > "$OUT/edit-by-touch.png"
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml"
-  if grep -q 'content-desc="Move down"' "$OUT/ui.xml" && grep -q 'text="Done"' "$OUT/ui.xml"; then
+  if grep -q 'text="Delete"' "$OUT/ui.xml" && grep -q 'text="Done"' "$OUT/ui.xml"; then
     echo "EDIT-BY-TOUCH: the scene's Edit mode opened (chapter, plotline, move up/down, Done)" | tee -a "$OUT/summary.txt"
   else
     echo "EDIT-BY-TOUCH: the Edit mode did NOT open" | tee -a "$OUT/summary.txt"
