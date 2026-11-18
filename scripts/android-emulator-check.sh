@@ -185,11 +185,8 @@ if grep -q "Imported from the device" "$OUT/ui.xml"; then
   tap_text "Save a copy to your device" && sleep 5
   dump_texts "Save-a-copy picker (first screen)"
   adb exec-out screencap -p > "$OUT/save1.png"
-  adb shell input tap 88 112; sleep 2
-  tap_text "Downloads" && sleep 3 || true
-  dump_texts "Save-a-copy picker (Downloads)"
-  adb exec-out screencap -p > "$OUT/save2.png"
-  tap_text "Save" && sleep 5 || true
+  # The save dialog already shows Downloads with the file name filled in: press its SAVE button.
+  tap_text "SAVE" && sleep 5 || true
   dump_texts "After saving the copy"
   adb exec-out screencap -p > "$OUT/save3.png"
   adb shell ls -la /sdcard/Download | tee "$OUT/download-after.txt"
