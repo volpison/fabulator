@@ -165,7 +165,8 @@ if [ -f emulator-in/Imported.fabulator.json ]; then
     dump_texts "Picker (after choosing Downloads)"
     adb exec-out screencap -p > "$OUT/picker2.png"
   fi
-  tap_text "Imported.fabulator.json" && sleep 6
+  # The file is a tile in a grid: tap its middle (tapping the name's own box hits a small preview icon).
+  adb shell input tap 216 660; sleep 6
   adb exec-out screencap -p > "$OUT/picker3-opened.png"
   dump_texts "After picking the file"
   if grep -q "Imported from the device" "$OUT/ui.xml"; then
