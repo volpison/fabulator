@@ -81,6 +81,12 @@ else
   echo "TYPING: the typed text was NOT found in the editor" | tee -a "$OUT/summary.txt"
 fi
 
+if grep -q "Short synopsis" "$OUT/ui3.xml"; then
+  echo "KEYBOARD-FOLD: the scene details are still shown with the keyboard open" | tee -a "$OUT/summary.txt"
+else
+  echo "KEYBOARD-FOLD: the scene details are folded away while the keyboard is open" | tee -a "$OUT/summary.txt"
+fi
+
 # Open the File menu by touch.
 tap_text "File" && sleep 2
 adb exec-out screencap -p > "$OUT/step4-file-menu.png"

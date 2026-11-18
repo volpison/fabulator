@@ -13,10 +13,25 @@ export function keyboardOpen(currentHeight: number, tallestHeight: number): bool
 export function watchKeyboard(win: Window = window): () => void {
   let tallest = win.innerHeight;
   const update = () => {
+    const height = win.visualViewport?.height ?? win.innerHeight;
     // A rotation or a window change makes the page taller: remember the new tallest height.
-    if (win.innerHeight > tallest) tallest = win.innerHeight;
-    win.document.documentElement.classList.toggle("keyboard", keyboardOpen(win.innerHeight, tallest));
+    if (height > tallest) tallest = height;
+    win.document.documentElement.classList.toggle("keyboard", keyboardOpen(height, tallest));
   };
-  win.addEventListener("resize", update);
-  return () => win.removeEventListener("resize", update);
+  // The keyboard's animation and the page's resize do not arrive in a fixed order: look again shortly after.
+  const soon = () => {
+    update();
+    win.setTimeout(update, 250);
+    win.setTimeout(update, 700);
+  };
+  win.addEventListener("resize", soon);
+  win.visualViewport?.addEventListener("resize", soon);
+  win.addEventListener("focusin", soon);
+  win.addEventListener("focusout", soon);
+  return () => {
+    win.removeEventListener("resize", soon);
+    win.visualViewport?.removeEventListener("resize", soon);
+    win.removeEventListener("focusin", soon);
+    win.removeEventListener("focusout", soon);
+  };
 }
