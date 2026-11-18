@@ -83,7 +83,14 @@ fi
 
 sleep 6
 adb exec-out screencap -p > "$OUT/step3b-typed-later.png"
-if grep -q "Short synopsis" "$OUT/ui3.xml"; then
+# Where is the page's bottom line (the status bar) while the keyboard is open? If it is lower than the
+# keyboard's top, the page was NOT resized and the keyboard covers it.
+echo "=== Bounds of page elements with the keyboard open ==="
+grep -oE 'text="(Not saved to a file yet|0 words|4 words|Once upon a time|No characters yet[^"]*)"[^>]*bounds="[^"]*"' "$OUT/ui3.xml" | sed 's/class="[^"]*"//' | cut -c1-160
+echo "=== Window and keyboard state ==="
+adb shell dumpsys window | grep -iE "softInputMode|mInputMethodWindow|InputMethod.*Frame|imeLayeringTarget|isImeShowing|mImeShowing" | head -8 | cut -c1-200
+adb shell dumpsys input_method | grep -iE "mInputShown|mImeWindowVis|inputShown" | head -3
+if grep -q "No characters yet" "$OUT/ui3.xml"; then
   echo "KEYBOARD-FOLD: the scene details are still shown with the keyboard open" | tee -a "$OUT/summary.txt"
 else
   echo "KEYBOARD-FOLD: the scene details are folded away while the keyboard is open" | tee -a "$OUT/summary.txt"
