@@ -78,7 +78,7 @@ jobs:
         if: always() && github.event.pull_request.head.repo.full_name == github.repository || always() && github.event_name == 'workflow_dispatch'
         run: |
           [ -f emulator-out/start.png ] || exit 0
-          mkdir -p /tmp/shots && cp emulator-out/start.png emulator-out/summary.txt /tmp/shots/
+          mkdir -p /tmp/shots && cp emulator-out/*.png emulator-out/summary.txt /tmp/shots/
           cd /tmp/shots
           git init -q -b ci-emulator
           git config user.name "github-actions"
