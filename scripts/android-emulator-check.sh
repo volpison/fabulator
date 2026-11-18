@@ -87,4 +87,8 @@ adb exec-out screencap -p > "$OUT/step4-file-menu.png"
 echo "=== Text on screen with the File menu ==="
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui4.xml"
 grep -o 'text="[^"]\+"' "$OUT/ui4.xml" | head -40
+echo "=== App state at the end ==="
+echo "pid: $(adb shell pidof "$PKG" | tr -d '\r')"
+adb logcat -d > "$OUT/logcat-end.txt" 2>&1
+grep -iE "FATAL|AndroidRuntime|has died|Force finishing|ANR in|crash" "$OUT/logcat-end.txt" | tail -25 | cut -c1-220
 exit 0
