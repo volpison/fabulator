@@ -79,6 +79,8 @@ for m in re.finditer(r'<node[^>]*>', xml):
 PY
 }
 tap_text "+ Add Chapter" && sleep 3
+# A new chapter opens its title for editing (and the keyboard): confirm the default title.
+adb shell input keyevent KEYCODE_ENTER; sleep 3
 CARD=$(bounds_of "Untitled scene"); CH2=$(bounds_of "Chapter 2")
 adb exec-out screencap -p > "$OUT/drag0-after-add-chapter.png"
 echo "=== Elements after adding a chapter ==="
