@@ -3,11 +3,15 @@ import App from "./App.svelte";
 import "./app.css";
 import { initAppearance } from "./lib/appearance";
 import { installWebviewGuards } from "./lib/webviewGuards";
+import { watchKeyboard } from "./lib/keyboard";
 import { setPlatform } from "./lib/platform";
 import { tauriPlatform } from "./lib/platform/tauri";
 
 // On Android the app draws under the status bar and navigation bar: let the style sheet keep clear of them.
-if (/\bAndroid\b/i.test(navigator.userAgent)) document.documentElement.classList.add("android");
+if (/\bAndroid\b/i.test(navigator.userAgent)) {
+  document.documentElement.classList.add("android");
+  watchKeyboard();
+}
 
 // The desktop backend (Rust via Tauri). Everything else talks to the Platform interface only.
 setPlatform(tauriPlatform);

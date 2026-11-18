@@ -14,7 +14,9 @@
         : $isDirty
           ? $currentPath
             ? "Unsaved changes — autosaving…"
-            : "Unsaved — press Ctrl+S to choose a file"
+            : platform().capabilities.deviceCopies
+              ? "Unsaved — choose File → Save to keep it"
+              : "Unsaved — press Ctrl+S to choose a file"
           : $saveState.at
             ? `Saved ${new Date($saveState.at).toLocaleTimeString()}`
             : "";

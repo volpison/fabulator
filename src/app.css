@@ -88,3 +88,19 @@ html.android body {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 64px);
   }
 }
+
+/* Touch: no keyboard shortcuts on a tablet, and menu rows big enough for a finger (about 48px). */
+html.android [role="menuitem"] {
+  min-height: 2.75rem;
+  align-items: center;
+}
+html.android [role="menuitem"] .keys:not([aria-hidden="true"]) {
+  display: none;
+}
+
+/* With the on-screen keyboard open, fold away the scene's secondary details to leave room to write. */
+html.keyboard .summary-input,
+html.keyboard .editor-header .meta,
+html.keyboard .editor-header .links {
+  display: none;
+}
