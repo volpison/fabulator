@@ -25,6 +25,7 @@ Fabulator is a **pre-production writing suite**. These pages explain how to use 
 | [The project file format](technical/file-format.md) | Data model, schema versions, compatibility rules, formats |
 | [Design: Game Prototyping](technical/game-prototyping.md) | The fourth mode: quests, conditions and rules (design and build steps) |
 | [Android port](technical/android.md) | Design and notes: private working copy, capabilities, keyboard, how it is checked in an emulator |
+| [Design: front-end folders](technical/frontend-structure.md) | Proposal: where every file in `src/lib` and `src/components` goes, and the steps |
 | [Tests](technical/testing.md) | How the project is tested |
 
 ## Contributing
