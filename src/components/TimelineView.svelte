@@ -459,6 +459,34 @@
                           </select>
                         </div>
                         <div class="edit-actions">
+                          <span class="reorder" title="Move within this chapter and plotline (no dragging needed)">
+                            <button
+                              type="button"
+                              aria-label="Move up"
+                              disabled={i === 0}
+                              on:click={() =>
+                                moveScene(scene.id, {
+                                  chapterId: chapter.id,
+                                  plotlineId: plotline.id,
+                                  beforeSceneId: list[i - 1]?.id ?? null,
+                                })}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Move down"
+                              disabled={i === list.length - 1}
+                              on:click={() =>
+                                moveScene(scene.id, {
+                                  chapterId: chapter.id,
+                                  plotlineId: plotline.id,
+                                  beforeSceneId: list[i + 2]?.id ?? null,
+                                })}
+                            >
+                              ▼
+                            </button>
+                          </span>
                           <button
                             class="danger"
                             on:click={(e) =>
@@ -1070,6 +1098,22 @@
     background: var(--bg-sidebar);
     color: var(--text);
   }
+  .reorder {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-right: auto;
+  }
+  .reorder button {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .reorder button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
   /* Touch screens cannot hover: show the controls that otherwise appear only when pointed at. */
   @media (hover: none) {
     .edit-btn {

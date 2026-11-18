@@ -63,53 +63,33 @@ PY
   adb shell input tap $XY
 }
 
-# ── Drag a scene to another chapter with a finger (long-press drag) ──
-bounds_of() { # prints "x1 y1 x2 y2" of the first element whose text starts with $1
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
-  adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
-  python3 - "$1" <<'PY'
-import re, sys
-want = sys.argv[1]
-xml = open("emulator-out/ui.xml", encoding="utf-8", errors="replace").read()
-for m in re.finditer(r'<node[^>]*>', xml):
-    n = m.group(0)
-    t = re.search(r' text="([^"]*)"', n); b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
-    if t and b and t.group(1).startswith(want):
-        print(*b.groups()); break
-PY
-}
-tap_text "+ Add Chapter" && sleep 3
-# A new chapter opens its title for editing (and the keyboard): confirm the default title.
-adb shell input keyevent KEYCODE_ENTER; sleep 3
-CARD=$(bounds_of "Untitled scene"); CH2=$(bounds_of "Chapter 2")
-adb exec-out screencap -p > "$OUT/drag0-after-add-chapter.png"
-echo "=== Elements after adding a chapter ==="
-python3 - <<'PY'
+# ── Edit a scene card by touch (finger drag and drop does not work in the Android web view, so the
+#    Edit mode has the chapter and plotline choices and move up/down buttons) ──
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml" 2>/dev/null
+CARDB=$(python3 - <<'PY'
 import re
 xml = open("emulator-out/ui.xml", encoding="utf-8", errors="replace").read()
 for m in re.finditer(r'<node[^>]*>', xml):
     n = m.group(0)
-    t = re.search(r' text="([^"]*)"', n); d = re.search(r' content-desc="([^"]*)"', n); b = re.search(r'bounds="([^"]*)"', n)
-    label = (t.group(1) if t and t.group(1) else (d.group(1) if d else ""))
-    if label and b and re.search(r'hapter|scene|^\+|^\d+$|w$', label): print(label[:50], b.group(1))
+    t = re.search(r' text="([^"]*)"', n); b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
+    if t and b and t.group(1).startswith("Untitled scene") and "Edit" in t.group(1):
+        print(*b.groups()); break
 PY
-echo "DRAG: card at [$CARD], chapter 2 header at [$CH2]" | tee -a "$OUT/summary.txt"
-if [ -n "$CARD" ] && [ -n "$CH2" ]; then
-  set -- $CARD; CX=$(( ($1 + $3) / 2 )); CY=$(( ($2 + $4) / 2 ))
-  set -- $CH2; TX=$(( ($1 + $3) / 2 ))
-  adb exec-out screencap -p > "$OUT/drag1-before.png"
-  adb shell input draganddrop $CX $CY $TX $CY 1500; sleep 3
-  adb exec-out screencap -p > "$OUT/drag2-after.png"
-  AFTER=$(bounds_of "Untitled scene")
-  echo "DRAG: card after the drag at [$AFTER]" | tee -a "$OUT/summary.txt"
-  set -- $AFTER
-  if [ -n "${1:-}" ] && [ "$1" -gt $(( TX - 300 )) ]; then
-    echo "DRAG-RESULT: the card moved to chapter 2" | tee -a "$OUT/summary.txt"
+)
+if [ -n "$CARDB" ]; then
+  set -- $CARDB
+  adb shell input tap $(( $3 - 40 )) $(( $2 + 24 )); sleep 3   # the small Edit label at the card's top right
+  adb exec-out screencap -p > "$OUT/edit-by-touch.png"
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml > "$OUT/ui.xml"
+  if grep -q 'content-desc="Move down"' "$OUT/ui.xml" && grep -q 'text="Done"' "$OUT/ui.xml"; then
+    echo "EDIT-BY-TOUCH: the scene's Edit mode opened (chapter, plotline, move up/down, Done)" | tee -a "$OUT/summary.txt"
   else
-    echo "DRAG-RESULT: the card did NOT move (finger drag and drop does not work)" | tee -a "$OUT/summary.txt"
+    echo "EDIT-BY-TOUCH: the Edit mode did NOT open" | tee -a "$OUT/summary.txt"
   fi
+  tap_text "Done" && sleep 2
 else
-  echo "DRAG-RESULT: could not find the card or chapter 2" | tee -a "$OUT/summary.txt"
+  echo "EDIT-BY-TOUCH: could not find the scene card" | tee -a "$OUT/summary.txt"
 fi
 
 tap_text "Untitled scene" && sleep 4
