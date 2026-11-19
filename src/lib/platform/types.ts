@@ -14,8 +14,8 @@
  *  - A `Location` is opaque to the app: a path on desktop, perhaps a content URI elsewhere.
  *  - Pickers resolve to null when the person cancels (that is not an error).
  */
-import type { Project } from "../types";
-import type { ProjectPatch } from "../patch";
+import type { Project } from "../model/types";
+import type { ProjectPatch } from "../model/patch";
 import type { Capabilities } from "./capabilities";
 
 /**

@@ -10,7 +10,7 @@
     updateScreenplayScene,
     moveScreenplayScene,
     deleteScreenplayScene,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import { platform } from "../lib/platform";
   import {
     SLUG_PLACES,
@@ -23,10 +23,10 @@
     sceneNumbers,
     slugLine,
     screenplayLength,
-  } from "../lib/screenplay";
-  import { actSummary, sceneIsEmpty } from "../lib/screenplayedit";
-  import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/labels";
-  import type { ScriptScene, SlugPlace } from "../lib/types";
+  } from "../lib/screenplay/screenplay";
+  import { actSummary, sceneIsEmpty } from "../lib/screenplay/screenplayedit";
+  import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/model/labels";
+  import type { ScriptScene, SlugPlace } from "../lib/model/types";
 
   $: acts = $project?.acts ?? [];
   $: selected = $project?.script_scenes.find((s) => s.id === $selectedScriptSceneId) ?? null;

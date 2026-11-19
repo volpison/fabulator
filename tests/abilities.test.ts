@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { blankProject } from "../src/lib/blank.ts";
-import { toFolder, fromFolder } from "../src/lib/folder.ts";
-import { LIST_FIELDS } from "../src/lib/patch.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
+import { toFolder, fromFolder } from "../src/lib/files/folder.ts";
+import { LIST_FIELDS } from "../src/lib/model/patch.ts";
 
 const base = () => JSON.parse(JSON.stringify(blankProject((p) => `${p}-1`)));
 

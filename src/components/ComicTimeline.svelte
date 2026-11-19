@@ -10,7 +10,7 @@
     moveComicPage,
     deleteComicPage,
     mainView,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import { platform } from "../lib/platform";
   import {
     COMIC_STAGES,
@@ -21,9 +21,9 @@
     isAfterPageTurn,
     plotWordCount,
     SCRIPT_STYLE_LABEL,
-  } from "../lib/comic";
-  import { spreadRows, issueSummary } from "../lib/comicedit";
-  import type { ComicPage, ComicStage } from "../lib/types";
+  } from "../lib/comic/comic";
+  import { spreadRows, issueSummary } from "../lib/comic/comicedit";
+  import type { ComicPage, ComicStage } from "../lib/model/types";
 
   $: issues = $project?.issues ?? [];
   $: selected = $project?.pages.find((pg) => pg.id === $selectedPageId) ?? null;

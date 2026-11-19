@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { appearanceReport, castGrid, clearAppearanceCache } from "../src/lib/appearances.ts";
-import type { Project } from "../src/lib/types.ts";
+import { appearanceReport, castGrid, clearAppearanceCache } from "../src/lib/model/appearances.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 beforeEach(() => clearAppearanceCache());
 

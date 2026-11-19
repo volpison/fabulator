@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { settings, updateSettings, resetSettings, customThemes } from "../lib/appearance";
-  import { THEMES, type ThemeInfo } from "../lib/themes";
-  import { importThemeFromFile, exportCurrentTheme, removeUserTheme } from "../lib/userthemes";
+  import { settings, updateSettings, resetSettings, customThemes } from "../lib/appearance/appearance";
+  import { THEMES, type ThemeInfo } from "../lib/appearance/themes";
+  import { importThemeFromFile, exportCurrentTheme, removeUserTheme } from "../lib/appearance/userthemes";
   import {
     UI_SCALES,
     EDITOR_FONTS,
@@ -15,8 +15,8 @@
     type LineSpacing,
     type TypewriterMode,
     type ThemeChoice,
-  } from "../lib/settings";
-  import { focusMode, mainView, galleryOpen, themesOpen } from "../lib/stores";
+  } from "../lib/appearance/settings";
+  import { focusMode, mainView, galleryOpen, themesOpen } from "../lib/app/stores";
 
   let open = false;
   let root: HTMLElement | undefined;

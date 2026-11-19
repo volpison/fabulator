@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { typewriterScrollTop, typewriterBottomPadding, TYPEWRITER_POSITION } from "../src/lib/typewriter.ts";
-import { sanitizeSettings, DEFAULT_SETTINGS, cssVarsFor } from "../src/lib/settings.ts";
+import { typewriterScrollTop, typewriterBottomPadding, TYPEWRITER_POSITION } from "../src/lib/editor/typewriter.ts";
+import { sanitizeSettings, DEFAULT_SETTINGS, cssVarsFor } from "../src/lib/appearance/settings.ts";
 
 const view = { viewTop: 100, viewHeight: 600, scrollTop: 0 };
 

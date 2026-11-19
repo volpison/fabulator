@@ -1,14 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankScreenplay } from "../src/lib/blank.ts";
-import { newElement } from "../src/lib/screenplay.ts";
+import { blankScreenplay } from "../src/lib/files/blank.ts";
+import { newElement } from "../src/lib/screenplay/screenplay.ts";
 import { exportProject, exportPreview, DEFAULT_OPTIONS, type ExportOptions } from "../src/lib/export/index.ts";
 import { buildScript } from "../src/lib/export/screenplayDoc.ts";
 import { paginate, wrap, titlePage } from "../src/lib/export/screenplayLayout.ts";
 import { renderFountain } from "../src/lib/export/fountain.ts";
 import { pdfString, renderPdf } from "../src/lib/export/pdf.ts";
-import { addAct, addScene, updateScene, addElement, updateElement } from "../src/lib/screenplayedit.ts";
-import type { Project } from "../src/lib/types.ts";
+import { addAct, addScene, updateScene, addElement, updateElement } from "../src/lib/screenplay/screenplayedit.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

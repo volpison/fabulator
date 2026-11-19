@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { clampPanelWidth, PANEL_MIN, PANEL_MAX, PANEL_DEFAULT } from "../src/lib/layout.ts";
+import { clampPanelWidth, PANEL_MIN, PANEL_MAX, PANEL_DEFAULT } from "../src/lib/app/layout.ts";
 
 test("panel width is clamped to sensible limits", () => {
   assert.equal(clampPanelWidth(400), 400);

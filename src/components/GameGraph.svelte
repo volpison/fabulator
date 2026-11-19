@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { project, selectedNodeId, mainView } from "../lib/stores";
-  import { layoutGraph, GRAPH_NODE_H, GRAPH_NODE_W } from "../lib/gamegraph";
-  import { nodeLabels } from "../lib/gameedit";
-  import { colorHex } from "../lib/labels";
+  import { project, selectedNodeId, mainView } from "../lib/app/stores";
+  import { layoutGraph, GRAPH_NODE_H, GRAPH_NODE_W } from "../lib/game/gamegraph";
+  import { nodeLabels } from "../lib/game/gameedit";
+  import { colorHex } from "../lib/model/labels";
 
   /** "" = every quest. */
   let scope = "";

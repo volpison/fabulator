@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { project } from "../lib/stores";
-  import { formatOf } from "../lib/formats";
+  import { project } from "../lib/app/stores";
+  import { formatOf } from "../lib/model/formats";
 
   /** Which view is missing ("Manuscript"). */
   export let view = "";

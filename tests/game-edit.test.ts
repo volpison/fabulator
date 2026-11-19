@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProjectFor } from "../src/lib/blank.ts";
-import { nodesInQuest } from "../src/lib/game.ts";
+import { blankProjectFor } from "../src/lib/files/blank.ts";
+import { nodesInQuest } from "../src/lib/game/game.ts";
 import {
   addNode, addQuest, deleteNode, deleteQuest, exitsOf, moveNode, moveQuest, nodeBadges, nodeIsEmpty, questSummary,
   removeCastFromNodes, updateNode, updateQuest,
-} from "../src/lib/gameedit.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/game/gameedit.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const id = (p: string) => `${p}-${++n}`;
@@ -145,7 +145,7 @@ test("a deleted character or place leaves the nodes", () => {
 import {
   addElement, addLink, addOption, deleteElement, deleteLink, deleteOption, gameReadingOrder, moveElement,
   nodeLabels, nodeWordCount, replySpeaker, updateElement, updateLink, updateOption,
-} from "../src/lib/gameedit.ts";
+} from "../src/lib/game/gameedit.ts";
 
 function twoNodes() {
   let p = fresh();

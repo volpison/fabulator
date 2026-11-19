@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { THEMES, THEME_TOKENS, contrastReport } from "../src/lib/themes.ts";
+import { THEMES, THEME_TOKENS, contrastReport } from "../src/lib/appearance/themes.ts";
 import {
   DEFAULT_SETTINGS, sanitizeSettings, resolveTheme, resolveThemeInfo, cssVarsFor, EDITOR_SIZE_MAX, EDITOR_SIZE_MIN,
-} from "../src/lib/settings.ts";
+} from "../src/lib/appearance/settings.ts";
 
 test("every theme defines exactly the same tokens", () => {
   for (const t of THEMES) {

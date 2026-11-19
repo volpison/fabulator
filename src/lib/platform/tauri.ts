@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
 import { toLocation, type Platform, type Location, type FolderFile, type FolderWriteReport, type ThemeFileData } from "./types";
-import type { Project } from "../types";
+import type { Project } from "../model/types";
 import { detectCapabilities } from "./capabilities";
 
 const single = (r: string | string[] | null): Location | null => (!r || Array.isArray(r) ? null : toLocation(r));

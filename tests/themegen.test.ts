@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeHex, mix, ensureContrast, buildPalette, rgbToHex, hexToRgb, type BaseColors } from "../src/lib/themegen.ts";
-import { contrastRatio, contrastReport, isPalette, THEME_TOKENS, THEMES } from "../src/lib/themes.ts";
+import { normalizeHex, mix, ensureContrast, buildPalette, rgbToHex, hexToRgb, type BaseColors } from "../src/lib/appearance/themegen.ts";
+import { contrastRatio, contrastReport, isPalette, THEME_TOKENS, THEMES } from "../src/lib/appearance/themes.ts";
 
 test("normalizeHex accepts #rgb / #rrggbb with or without #, rejects the rest", () => {
   assert.equal(normalizeHex("#ABC"), "#aabbcc");

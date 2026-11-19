@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { project, gameCheckOpen, selectedNodeId, mainView } from "../lib/stores";
-  import { checkGame, countIssues, type CheckSeverity } from "../lib/gamecheck";
-  import { applyEffects, candidates, chooseOption, emptyState, holdsAll, openExits, playNode, type GameState } from "../lib/gameplay";
-  import { describeEffects, contextOf } from "../lib/gamerules";
-  import { nodeLabels } from "../lib/gameedit";
+  import { project, gameCheckOpen, selectedNodeId, mainView } from "../lib/app/stores";
+  import { checkGame, countIssues, type CheckSeverity } from "../lib/game/gamecheck";
+  import { applyEffects, candidates, chooseOption, emptyState, holdsAll, openExits, playNode, type GameState } from "../lib/game/gameplay";
+  import { describeEffects, contextOf } from "../lib/game/gamerules";
+  import { nodeLabels } from "../lib/game/gameedit";
 
   let tab: "checks" | "playtest" = "checks";
   let state: GameState = emptyState();

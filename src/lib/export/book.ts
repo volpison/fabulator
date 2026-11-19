@@ -1,6 +1,6 @@
 /** Turns a Project + options into the ordered book every writer consumes. */
-import type { Project } from "../types";
-import { readingOrder } from "../model";
+import type { Project } from "../model/types";
+import { readingOrder } from "../model/model";
 import { htmlToBlocks, type Block } from "./html";
 import { buildComicBook, type ComicExportKind } from "./comic";
 import { buildGameBook, type GameExportKind } from "./game";

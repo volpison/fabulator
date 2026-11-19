@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { project, selectedSceneId, mainView } from "../lib/stores";
-  import { chronology } from "../lib/storytime";
-  import { STATUS_LABEL, cleanStatus } from "../lib/labels";
+  import { project, selectedSceneId, mainView } from "../lib/app/stores";
+  import { chronology } from "../lib/model/storytime";
+  import { STATUS_LABEL, cleanStatus } from "../lib/model/labels";
   import WhenField from "./WhenField.svelte";
 
   $: chrono = $project ? chronology($project) : null;

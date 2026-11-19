@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProjectFor } from "../src/lib/blank.ts";
-import { addElement, addLink, addNode, addOption, setRules, updateElement, updateNode, updateOption, updateQuest } from "../src/lib/gameedit.ts";
-import { search } from "../src/lib/search.ts";
-import { applyReplace, DEFAULT_REPLACE_FIELDS, DEFAULT_REPLACE_OPTIONS, planReplace } from "../src/lib/replace.ts";
-import { applyRestore, autoSnapshotNodes, deleteNodeKeeping, deletedScenes, maybeAutoNodeSnapshot, snapshotText, snapshotWords, snapshotsFor } from "../src/lib/snapshots.ts";
-import { makeNodeSnapshot, nodeHasContent, nodeToText, recreateNode, restoreNodeInto } from "../src/lib/gamesnapshots.ts";
-import { cleanNodeSnapshot } from "../src/lib/game.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { wordStats } from "../src/lib/wordcount.ts";
-import type { Project } from "../src/lib/types.ts";
+import { blankProjectFor } from "../src/lib/files/blank.ts";
+import { addElement, addLink, addNode, addOption, setRules, updateElement, updateNode, updateOption, updateQuest } from "../src/lib/game/gameedit.ts";
+import { search } from "../src/lib/tools/search.ts";
+import { applyReplace, DEFAULT_REPLACE_FIELDS, DEFAULT_REPLACE_OPTIONS, planReplace } from "../src/lib/tools/replace.ts";
+import { applyRestore, autoSnapshotNodes, deleteNodeKeeping, deletedScenes, maybeAutoNodeSnapshot, snapshotText, snapshotWords, snapshotsFor } from "../src/lib/tools/snapshots.ts";
+import { makeNodeSnapshot, nodeHasContent, nodeToText, recreateNode, restoreNodeInto } from "../src/lib/game/gamesnapshots.ts";
+import { cleanNodeSnapshot } from "../src/lib/game/game.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { wordStats } from "../src/lib/tools/wordcount.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const id = (p: string) => `${p}-${++n}`;

@@ -4,8 +4,8 @@ import {
   AUTO_INTERVAL_MS, AUTO_KEEP_PER_SCENE, AUTO_KEEP_TOTAL,
   makeSnapshot, maybeAutoSnapshot, pruneAuto, snapshotsFor,
   restoreInto, recreateScene, deletedScenes, timeAgo, wordsOf, applyRestore,
-} from "../src/lib/snapshots.ts";
-import type { Project, Scene, Snapshot } from "../src/lib/types.ts";
+} from "../src/lib/tools/snapshots.ts";
+import type { Project, Scene, Snapshot } from "../src/lib/model/types.ts";
 
 const scene = (over: Partial<Scene> = {}): Scene => ({
   id: "s1", title: "Title", summary: "Syn", content: "<p>Original text here.</p>",

@@ -1,6 +1,6 @@
 # Design: folders for the front end
 
-Status: **proposal**, for approval before any file moves. Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
+Status: **approved**; step 2 (`src/lib`) is done, the rest follows. Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
 
 ## Why
 
@@ -49,7 +49,8 @@ tools  →  comic, export, game, model, screenplay
 export →  comic, game, model, screenplay
 game   →  model, tools (one import, see below)
 comic, screenplay, platform → model
-model, appearance → nothing else in the app
+appearance → platform
+model → nothing else in the app
 ```
 
 Read it as layers, top to bottom: `files` and `editor` on top; then `app`; then `tools`; then the modes and `export`; then `model` and `platform`.

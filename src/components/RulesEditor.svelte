@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { project } from "../lib/stores";
-  import { blankCondition, blankEffect, contextOf, describeConditions, describeEffects } from "../lib/gamerules";
+  import { project } from "../lib/app/stores";
+  import { blankCondition, blankEffect, contextOf, describeConditions, describeEffects } from "../lib/game/gamerules";
   import SimpleConditionFields from "./SimpleConditionFields.svelte";
   import EffectFields from "./EffectFields.svelte";
-  import type { Condition, Effect, SimpleCondition } from "../lib/types";
+  import type { Condition, Effect, SimpleCondition } from "../lib/model/types";
 
   /** What the rows are: conditions ("Available when…") or effects ("When it happens…"). */
   export let mode: "conditions" | "effects";

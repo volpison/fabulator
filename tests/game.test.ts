@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CURRENT_SCHEMA_VERSION, MIN_READER_VERSION, migrateProject } from "../src/lib/migrate.ts";
-import { blankProjectFor } from "../src/lib/blank.ts";
-import { STORY_FORMATS, readyFormats, readStoryFormat } from "../src/lib/formats.ts";
-import { cleanConditions, cleanEffects, cleanGame, nodesInQuest } from "../src/lib/game.ts";
+import { CURRENT_SCHEMA_VERSION, MIN_READER_VERSION, migrateProject } from "../src/lib/files/migrate.ts";
+import { blankProjectFor } from "../src/lib/files/blank.ts";
+import { STORY_FORMATS, readyFormats, readStoryFormat } from "../src/lib/model/formats.ts";
+import { cleanConditions, cleanEffects, cleanGame, nodesInQuest } from "../src/lib/game/game.ts";
 
 const ids = (p: string) => `${p}-1`;
 const blank = () => JSON.parse(JSON.stringify(blankProjectFor("game", ids)));

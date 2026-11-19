@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankComic } from "../src/lib/blank.ts";
-import { newPanel, pagesInIssue } from "../src/lib/comic.ts";
+import { blankComic } from "../src/lib/files/blank.ts";
+import { newPanel, pagesInIssue } from "../src/lib/comic/comic.ts";
 import {
   addIssue, updateIssue, deleteIssue, moveIssue, addPage, updatePage, movePage, deletePage,
   removeCastFromPages, spreadRows, issueSummary,
-} from "../src/lib/comicedit.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/comic/comicedit.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;
@@ -150,10 +150,10 @@ test("issue summary counts pages, panels and stages", () => {
 
 import {
   addPanel, updatePanel, movePanel, deletePanel, addLine, updateLine, moveLine, deleteLine,
-} from "../src/lib/comicedit.ts";
+} from "../src/lib/comic/comicedit.ts";
 import {
   lineWords, balloonTooLong, panelWords, panelTooWordy, pageTooBusy, BALLOON_WORD_LIMIT, PANEL_WORD_LIMIT, PAGE_PANEL_LIMIT,
-} from "../src/lib/comic.ts";
+} from "../src/lib/comic/comic.ts";
 
 const words = (k: number) => Array.from({ length: k }, () => "w").join(" ");
 

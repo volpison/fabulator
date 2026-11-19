@@ -1,18 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankComic } from "../src/lib/blank.ts";
-import { newPage, newPanel, newLine } from "../src/lib/comic.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { search } from "../src/lib/search.ts";
-import { planReplace, applyReplace, DEFAULT_REPLACE_OPTIONS } from "../src/lib/replace.ts";
+import { blankComic } from "../src/lib/files/blank.ts";
+import { newPage, newPanel, newLine } from "../src/lib/comic/comic.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { search } from "../src/lib/tools/search.ts";
+import { planReplace, applyReplace, DEFAULT_REPLACE_OPTIONS } from "../src/lib/tools/replace.ts";
 import {
   makePageSnapshot, applyRestore, deletedScenes, autoSnapshotPages, deletePageKeeping, snapshotText,
   snapshotWords, maybeAutoPageSnapshot, AUTO_INTERVAL_MS,
-} from "../src/lib/snapshots.ts";
-import { pageWords, wordStats } from "../src/lib/wordcount.ts";
-import { diffProject, applyPatch } from "../src/lib/patch.ts";
-import { updatePage, updatePanel } from "../src/lib/comicedit.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/tools/snapshots.ts";
+import { pageWords, wordStats } from "../src/lib/tools/wordcount.ts";
+import { diffProject, applyPatch } from "../src/lib/model/patch.ts";
+import { updatePage, updatePanel } from "../src/lib/comic/comicedit.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

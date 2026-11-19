@@ -11,8 +11,8 @@
  *
  * Pure (no Svelte, no Tauri).
  */
-import type { ComicLine, ComicPage, Project } from "../types";
-import { comicReadingOrder, isAfterPageTurn, pageNumber, pagesInIssue } from "../comic";
+import type { ComicLine, ComicPage, Project } from "../model/types";
+import { comicReadingOrder, isAfterPageTurn, pageNumber, pagesInIssue } from "../comic/comic";
 import type { Block, Run } from "./html";
 import type { Book, BookChapter, BookScene, ExportOptions } from "./book";
 

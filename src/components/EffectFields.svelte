@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { project } from "../lib/stores";
-  import { EFFECT_KINDS, EFFECT_LABEL, blankEffect, contextOf } from "../lib/gamerules";
-  import type { Effect } from "../lib/types";
+  import { project } from "../lib/app/stores";
+  import { EFFECT_KINDS, EFFECT_LABEL, blankEffect, contextOf } from "../lib/game/gamerules";
+  import type { Effect } from "../lib/model/types";
 
   export let effect: Effect;
   export let onchange: (e: Effect) => void;

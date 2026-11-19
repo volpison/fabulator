@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProjectFor } from "../src/lib/blank.ts";
-import { addElement, addLink, addNode, addOption, addItem, addQuest, addVariable, deleteItem, deleteVariable, setRules, updateItem, updateVariable } from "../src/lib/gameedit.ts";
-import { blankCondition, blankEffect, contextOf, describeCondition, describeConditions, describeEffect, describeEffects, itemUsage, variableUsage } from "../src/lib/gamerules.ts";
-import type { Project } from "../src/lib/types.ts";
+import { blankProjectFor } from "../src/lib/files/blank.ts";
+import { addElement, addLink, addNode, addOption, addItem, addQuest, addVariable, deleteItem, deleteVariable, setRules, updateItem, updateVariable } from "../src/lib/game/gameedit.ts";
+import { blankCondition, blankEffect, contextOf, describeCondition, describeConditions, describeEffect, describeEffects, itemUsage, variableUsage } from "../src/lib/game/gamerules.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const id = (p: string) => `${p}-${++n}`;

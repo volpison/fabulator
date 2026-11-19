@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { stats } from "../lib/goalsStore";
+  import { stats } from "../lib/app/goalsStore";
   import FilterBar from "./FilterBar.svelte";
   import SceneLabels from "./SceneLabels.svelte";
   import ChronologyView from "./ChronologyView.svelte";
   import PlotlineLabel from "./PlotlineLabel.svelte";
-  import { sceneFilter } from "../lib/stores";
-  import { colorHex, isFilterActive, matchScene, STATUS_LABEL, cleanStatus } from "../lib/labels";
-  import { formatCount } from "../lib/wordcount";
+  import { sceneFilter } from "../lib/app/stores";
+  import { colorHex, isFilterActive, matchScene, STATUS_LABEL, cleanStatus } from "../lib/model/labels";
+  import { formatCount } from "../lib/tools/wordcount";
   import { platform } from "../lib/platform";
   import {
     project,
@@ -21,9 +21,9 @@
     moveChapter,
     deleteChapter,
     addPlotlineToProject,
-  } from "../lib/stores";
-  import type { Project, Scene } from "../lib/types";
-  import { scenesInChapter } from "../lib/model";
+  } from "../lib/app/stores";
+  import type { Project, Scene } from "../lib/model/types";
+  import { scenesInChapter } from "../lib/model/model";
 
   $: filterOn = isFilterActive($sceneFilter);
 

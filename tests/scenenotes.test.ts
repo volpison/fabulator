@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import {
   cleanTodos, addTodoTo, toggleTodoIn, editTodoIn, removeTodoFrom, clearDone, todoCounts, summaryLine,
   todosToLines, linesToTodos, MAX_TODO_LENGTH,
-} from "../src/lib/scenenotes.ts";
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
-import { toFolder, fromFolder } from "../src/lib/folder.ts";
-import { blankProject } from "../src/lib/blank.ts";
+} from "../src/lib/model/scenenotes.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
+import { toFolder, fromFolder } from "../src/lib/files/folder.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
 
 const td = (id: string, text: string, done = false) => ({ id, text, done });
 

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { project } from "../lib/stores";
-  import { CONDITION_KINDS, CONDITION_LABEL, blankCondition, contextOf } from "../lib/gamerules";
-  import { COMPARE_OPS } from "../lib/game";
-  import type { CompareOp, Condition, SimpleCondition } from "../lib/types";
+  import { project } from "../lib/app/stores";
+  import { CONDITION_KINDS, CONDITION_LABEL, blankCondition, contextOf } from "../lib/game/gamerules";
+  import { COMPARE_OPS } from "../lib/game/game";
+  import type { CompareOp, Condition, SimpleCondition } from "../lib/model/types";
 
   /** The condition being edited (a simple one; the "any of" group is edited by RulesEditor). */
   export let cond: SimpleCondition;

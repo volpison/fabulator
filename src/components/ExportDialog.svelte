@@ -1,8 +1,8 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { project, selectedScene, selectedPageId, selectedScriptSceneId, selectedNodeId, exportOpen } from "../lib/stores";
+  import { project, selectedScene, selectedPageId, selectedScriptSceneId, selectedNodeId, exportOpen } from "../lib/app/stores";
   import { COMIC_EXPORT_KINDS, type ComicExportKind } from "../lib/export/comic";
-  import { pageNumber } from "../lib/comic";
+  import { pageNumber } from "../lib/comic/comic";
   import { GAME_EXPORT_KINDS, isGameCsv, type GameExportKind } from "../lib/export/game";
   import {
     DEFAULT_OPTIONS,

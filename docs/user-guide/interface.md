@@ -23,7 +23,7 @@ How the app looks and behaves, and how to change it.
   (F5, Ctrl+R, Ctrl+P, Alt+←/→) are disabled. If something still tries to reload while there are unsaved changes,
   you are asked first.
 - Colours in components are theme tokens (`var(--text)`, `var(--danger)`…), defined in
-  `src/lib/themes.ts`; to add a theme, add a palette there.
+  `src/lib/appearance/themes.ts`; to add a theme, add a palette there.
 
 ## Colour themes: import, export, file format
 
@@ -49,7 +49,7 @@ is added as "Name (2)" or "Name (Base24)", and files that are not themes are lis
 Catppuccin (Latte, Frappé, Macchiato, Mocha), Rosé Pine (Rosé Pine, Moon, Dawn), Tokyo Night (and Storm), Solarized
 (Dark, Light), Gruvbox (Dark, Light), One (Dark, Light), GitHub (Light, Dark), Everforest (Dark, Light), Kanagawa Wave.
 Adding saves it like an imported theme (editable, removable) and switches to it; a name you already have is never
-overwritten. The data is in `src/lib/gallery.ts`, with author, licence and home page for each family (all MIT as far
+overwritten. The data is in `src/lib/appearance/gallery.ts`, with author, licence and home page for each family (all MIT as far
 as we know; only colour values are used, no code or assets, but check each project page before redistributing).
 Text colours are nudged where needed so every theme passes the contrast rules. To add a scheme, append an `entry(...)`
 there; `npm test` checks names, colours and contrast.
@@ -85,7 +85,7 @@ adjusted until text is readable (the same contrast rules the built-in themes pas
 
 - Required: `colors.background`, `colors.foreground`, `colors.accent` (`#rgb` or `#rrggbb`). All other
   `colors` are optional. `dark` is guessed from the background if left out.
-- `tokens` (optional) pins individual interface colours exactly (names in `src/lib/themes.ts`);
+- `tokens` (optional) pins individual interface colours exactly (names in `src/lib/appearance/themes.ts`);
   *Export…* writes every token, so an exported theme reproduces perfectly.
 - `version` is the format version (currently 1); files from a newer format are refused with a message.
 - Base16 mapping: base00/01 backgrounds, base02 borders, base04 dim text, base05 text, base08 danger,

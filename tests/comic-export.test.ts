@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankComic } from "../src/lib/blank.ts";
-import { newPage, newPanel, newLine } from "../src/lib/comic.ts";
+import { blankComic } from "../src/lib/files/blank.ts";
+import { newPage, newPanel, newLine } from "../src/lib/comic/comic.ts";
 import { exportProject, exportPreview, DEFAULT_OPTIONS } from "../src/lib/export/index.ts";
 import { buildComicBook } from "../src/lib/export/comic.ts";
-import type { Project } from "../src/lib/types.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

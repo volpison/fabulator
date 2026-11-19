@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { project } from "../lib/stores";
-  import { stats, progress, goalState, setGoals, restartTodayCount } from "../lib/goalsStore";
-  import { formatCount } from "../lib/wordcount";
+  import { project } from "../lib/app/stores";
+  import { stats, progress, goalState, setGoals, restartTodayCount } from "../lib/app/goalsStore";
+  import { formatCount } from "../lib/tools/wordcount";
 
   let open = false;
   let root: HTMLElement | undefined;

@@ -7,8 +7,8 @@
  *
  * Pure (no Svelte, no Tauri).
  */
-import type { ComicPage, Project } from "../types";
-import { isAfterPageTurn, pageNumber, pagesInIssue, spreadOf } from "../comic";
+import type { ComicPage, Project } from "../model/types";
+import { isAfterPageTurn, pageNumber, pagesInIssue, spreadOf } from "../comic/comic";
 import { escapeXml } from "./book";
 import type { ExportOptions } from "./book";
 import { comicPagesFor, issueHeading } from "./comic";

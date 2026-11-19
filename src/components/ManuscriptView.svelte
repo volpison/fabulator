@@ -16,15 +16,15 @@
     moveScene,
     addCharacter,
     addPlace,
-  } from "../lib/stores";
-  import type { Scene, Character, Place } from "../lib/types";
-  import { readingOrder, chapterNumber, sceneDropTarget } from "../lib/model";
+  } from "../lib/app/stores";
+  import type { Scene, Character, Place } from "../lib/model/types";
+  import { readingOrder, chapterNumber, sceneDropTarget } from "../lib/model/model";
   import RichTextEditor from "./RichTextEditor.svelte";
   import ContinuityPanel from "./ContinuityPanel.svelte";
   import SceneNotes from "./SceneNotes.svelte";
   import WhenField from "./WhenField.svelte";
-  import { stats } from "../lib/goalsStore";
-  import { formatCount } from "../lib/wordcount";
+  import { stats } from "../lib/app/goalsStore";
+  import { formatCount } from "../lib/tools/wordcount";
   import SceneLabels from "./SceneLabels.svelte";
   import {
     entitiesOf,
@@ -32,7 +32,7 @@
     type EntityType,
     type MentionInfo,
     type MentionSuggestion,
-  } from "../lib/mentions";
+  } from "../lib/model/mentions";
 
   /** Dismissed suggestion keys for this session: "sceneId:type:entityId" */
   let dismissed = new Set<string>();

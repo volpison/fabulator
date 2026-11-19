@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findAtQuery, buildOptions, tidyNewName, MAX_MATCHES } from "../src/lib/atMention.ts";
-import type { Entity } from "../src/lib/mentions.ts";
+import { findAtQuery, buildOptions, tidyNewName, MAX_MATCHES } from "../src/lib/editor/atMention.ts";
+import type { Entity } from "../src/lib/model/mentions.ts";
 
 const E = (type: "character" | "place", id: string, name: string, ...aliases: string[]): Entity => ({
   type, id, name, terms: [name, ...aliases],

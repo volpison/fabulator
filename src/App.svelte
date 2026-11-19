@@ -15,7 +15,7 @@
     reportsOpen,
     gameCheckOpen,
     focusMode,
-  } from "./lib/stores";
+  } from "./lib/app/stores";
   import {
     loadInitialProject,
     manualSave,
@@ -25,10 +25,10 @@
     startAutosave,
     startMirror,
     installCloseGuard,
-  } from "./lib/persistence";
-  import { loadUserThemes } from "./lib/userthemes";
-  import { settings, updateSettings } from "./lib/appearance";
-  import { startGoals } from "./lib/goalsStore";
+  } from "./lib/files/persistence";
+  import { loadUserThemes } from "./lib/appearance/userthemes";
+  import { settings, updateSettings } from "./lib/appearance/appearance";
+  import { startGoals } from "./lib/app/goalsStore";
 
   import TopBar from "./components/TopBar.svelte";
   import FormatNotReady from "./components/FormatNotReady.svelte";
@@ -38,7 +38,7 @@
   import GameManuscript from "./components/GameManuscript.svelte";
   import ScreenplayManuscript from "./components/ScreenplayManuscript.svelte";
   import ComicManuscript from "./components/ComicManuscript.svelte";
-  import { formatOf } from "./lib/formats";
+  import { formatOf } from "./lib/model/formats";
   import StatusBar from "./components/StatusBar.svelte";
   import TimelineView from "./components/TimelineView.svelte";
   import ManuscriptView from "./components/ManuscriptView.svelte";

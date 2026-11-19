@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { exportProject, DEFAULT_OPTIONS, exportPreview } from "../src/lib/export/index.ts";
-import type { Project } from "../src/lib/types.ts";
+import type { Project } from "../src/lib/model/types.ts";
 import { hasTool } from "./tools.ts";
 
 const docxTools = hasTool("python3", ["-c", "import docx"]) && hasTool("soffice") && hasTool("cat");

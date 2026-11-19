@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { countWordsInText, wordsOfHtml, sceneWords, wordStats, clearWordCache } from "../src/lib/wordcount.ts";
-import type { Project } from "../src/lib/types.ts";
+import { countWordsInText, wordsOfHtml, sceneWords, wordStats, clearWordCache } from "../src/lib/tools/wordcount.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 test("what counts as a word", () => {
   assert.equal(countWordsInText(""), 0);

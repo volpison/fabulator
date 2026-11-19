@@ -14,7 +14,7 @@
     deleteSnapshot,
     deleteSceneSnapshots,
     restoreSnapshot,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import {
     snapshotsFor,
     deletedScenes,
@@ -23,15 +23,15 @@
     pageToText,
     scriptSceneToText,
     timeAgo,
-  } from "../lib/snapshots";
-  import { diffText } from "../lib/diff";
-  import { nodeToText } from "../lib/gamesnapshots";
-  import { nodeWordCount } from "../lib/gameedit";
-  import { htmlToPlainText } from "../lib/mentions";
-  import { pageWords, wordsOfHtml } from "../lib/wordcount";
-  import { pageNumber } from "../lib/comic";
-  import { sceneWordCount, slugLine } from "../lib/screenplay";
-  import type { SnapshotKind } from "../lib/types";
+  } from "../lib/tools/snapshots";
+  import { diffText } from "../lib/tools/diff";
+  import { nodeToText } from "../lib/game/gamesnapshots";
+  import { nodeWordCount } from "../lib/game/gameedit";
+  import { htmlToPlainText } from "../lib/model/mentions";
+  import { pageWords, wordsOfHtml } from "../lib/tools/wordcount";
+  import { pageNumber } from "../lib/comic/comic";
+  import { sceneWordCount, slugLine } from "../lib/screenplay/screenplay";
+  import type { SnapshotKind } from "../lib/model/types";
 
   type Tab = "scene" | "deleted";
 

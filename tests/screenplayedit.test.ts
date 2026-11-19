@@ -1,18 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
-import { blankScreenplay } from "../src/lib/blank.ts";
-import { newElement, scenesInAct, newScriptScene } from "../src/lib/screenplay.ts";
+import { blankScreenplay } from "../src/lib/files/blank.ts";
+import { newElement, scenesInAct, newScriptScene } from "../src/lib/screenplay/screenplay.ts";
 import {
   addAct, updateAct, deleteAct, moveAct, addScene, updateScene, moveScene, deleteScene, removeCastFromScenes,
   sceneIsEmpty, actSummary,
-} from "../src/lib/screenplayedit.ts";
+} from "../src/lib/screenplay/screenplayedit.ts";
 import {
   project, selectedScriptSceneId, isDirty, markClean, addScreenplayAct, renameScreenplayAct, deleteScreenplayAct,
   moveScreenplayAct, addScreenplayScene, updateScreenplayScene, moveScreenplayScene, deleteScreenplayScene,
   deleteCharacter, addCharacter, deletePlace, addPlace,
-} from "../src/lib/stores.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/app/stores.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;
@@ -161,11 +161,11 @@ test("deleting a character or a place removes them from screenplay scenes too", 
 
 import {
   addElement, updateElement, moveElement, deleteElement, replySpeaker, placeNamed, characterNamed,
-} from "../src/lib/screenplayedit.ts";
+} from "../src/lib/screenplay/screenplayedit.ts";
 import {
   addScreenplayElement, updateScreenplayElement, moveScreenplayElement, deleteScreenplayElement,
-} from "../src/lib/stores.ts";
-import { needsContd } from "../src/lib/screenplay.ts";
+} from "../src/lib/app/stores.ts";
+import { needsContd } from "../src/lib/screenplay/screenplay.ts";
 
 function scene(p: Project) { return p.script_scenes[0]; }
 

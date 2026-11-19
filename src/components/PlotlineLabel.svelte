@@ -1,8 +1,8 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { PLOTLINE_COLORS } from "../lib/plotlines";
-  import { updatePlotline, deletePlotline, movePlotline } from "../lib/stores";
-  import type { Plotline } from "../lib/types";
+  import { PLOTLINE_COLORS } from "../lib/model/plotlines";
+  import { updatePlotline, deletePlotline, movePlotline } from "../lib/app/stores";
+  import type { Plotline } from "../lib/model/types";
 
   export let plotline: Plotline;
   export let index: number;

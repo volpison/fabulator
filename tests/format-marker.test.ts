@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CURRENT_SCHEMA_VERSION, FILE_TYPE, MIN_READER_VERSION, migrateProject } from "../src/lib/migrate.ts";
-import { blankProject } from "../src/lib/blank.ts";
+import { CURRENT_SCHEMA_VERSION, FILE_TYPE, MIN_READER_VERSION, migrateProject } from "../src/lib/files/migrate.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
 
 const blank = () => JSON.parse(JSON.stringify(blankProject((p) => `${p}-1`)));
 

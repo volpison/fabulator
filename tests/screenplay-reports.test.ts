@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankScreenplay } from "../src/lib/blank.ts";
-import { addScene, updateScene, addElement, updateElement } from "../src/lib/screenplayedit.ts";
-import { sceneReport, characterReport, locationReport, reportCsv } from "../src/lib/screenplayreports.ts";
-import type { Project } from "../src/lib/types.ts";
+import { blankScreenplay } from "../src/lib/files/blank.ts";
+import { addScene, updateScene, addElement, updateElement } from "../src/lib/screenplay/screenplayedit.ts";
+import { sceneReport, characterReport, locationReport, reportCsv } from "../src/lib/screenplay/screenplayreports.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p = "x") => `${p}-${++n}`;

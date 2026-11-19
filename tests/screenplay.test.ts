@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankScreenplay, blankProject, blankProjectFor } from "../src/lib/blank.ts";
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
-import { STORY_FORMATS, readyFormats, formatOf, noun } from "../src/lib/formats.ts";
+import { blankScreenplay, blankProject, blankProjectFor } from "../src/lib/files/blank.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
+import { STORY_FORMATS, readyFormats, formatOf, noun } from "../src/lib/model/formats.ts";
 import {
   cleanActs, cleanScriptScenes, scenesInAct, screenplayReadingOrder, sceneNumbers, slugLine, parseSlug, needsContd,
   sceneWordCount, sceneLines, pagesFromLines, formatPages, scenePages, screenplayLength, newElement, newScriptScene,
   LINES_PER_PAGE,
-} from "../src/lib/screenplay.ts";
-import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/patch.ts";
-import type { Project, ScriptElement } from "../src/lib/types.ts";
+} from "../src/lib/screenplay/screenplay.ts";
+import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/model/patch.ts";
+import type { Project, ScriptElement } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

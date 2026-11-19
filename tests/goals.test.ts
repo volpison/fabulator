@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   EMPTY_STATE, localDateKey, cleanGoal, sanitizeGoalState, trackDay, goalProgress, restartToday, withGoals, MAX_GOAL,
-} from "../src/lib/goals.ts";
+} from "../src/lib/tools/goals.ts";
 
 test("local date key uses the local calendar day, zero padded", () => {
   assert.equal(localDateKey(new Date(2026, 0, 5, 23, 59)), "2026-01-05");

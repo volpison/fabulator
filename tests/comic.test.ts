@@ -1,16 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankComic, blankProject, blankProjectFor } from "../src/lib/blank.ts";
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
-import { STORY_FORMATS, readyFormats, formatOf, noun } from "../src/lib/formats.ts";
+import { blankComic, blankProject, blankProjectFor } from "../src/lib/files/blank.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
+import { STORY_FORMATS, readyFormats, formatOf, noun } from "../src/lib/model/formats.ts";
 import {
   cleanIssues, cleanPages, cleanStage, cleanScriptStyle, COMIC_STAGES, STAGE_LABEL, SCRIPT_STYLES,
   pagesInIssue, comicReadingOrder, pageNumber, pageSide, spreadOf, isAfterPageTurn,
   panelCount, wordsIn, lettersWordCount, plotWordCount, newPage, newPanel, newLine,
-} from "../src/lib/comic.ts";
-import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/patch.ts";
-import { toFolder } from "../src/lib/folder.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/comic/comic.ts";
+import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/model/patch.ts";
+import { toFolder } from "../src/lib/files/folder.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;
@@ -199,7 +199,7 @@ import { get } from "svelte/store";
 import {
   project, selectedPageId, isDirty, markClean, addComicIssue, addComicPage, updateComicPage, moveComicPage,
   deleteComicPage, deleteComicIssue, renameComicIssue, deleteCharacter, addCharacter,
-} from "../src/lib/stores.ts";
+} from "../src/lib/app/stores.ts";
 
 test("the comic format has its Timeline and writing view", () => {
   assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: true });
@@ -247,7 +247,7 @@ test("deleting a character removes them from comic pages too", () => {
 
 import {
   addComicPanel, updateComicPanel, moveComicPanel, deleteComicPanel, addComicLine, updateComicLine, moveComicLine, deleteComicLine,
-} from "../src/lib/stores.ts";
+} from "../src/lib/app/stores.ts";
 
 test("writing a page through the stores: panels, lines, speaker joins the cast", () => {
   project.set(blankComic(newId));

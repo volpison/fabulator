@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { platform } from "../lib/platform";
-  import { themesOpen, galleryOpen } from "../lib/stores";
-  import { settings, updateSettings, customThemes } from "../lib/appearance";
-  import { THEMES, type ThemeInfo } from "../lib/themes";
+  import { themesOpen, galleryOpen } from "../lib/app/stores";
+  import { settings, updateSettings, customThemes } from "../lib/appearance/appearance";
+  import { THEMES, type ThemeInfo } from "../lib/appearance/themes";
   import {
     BUILT_IN,
     IMPORTED,
@@ -12,15 +12,15 @@
     countByMode,
     filterThemes,
     type ThemeMode,
-  } from "../lib/themelib";
+  } from "../lib/appearance/themelib";
   import {
     BUILT_IN_IDS,
     importThemeFolder,
     importThemeFromFile,
     removeCollection,
     type FolderImportOutcome,
-  } from "../lib/userthemes";
-  import type { ThemeChoice } from "../lib/settings";
+  } from "../lib/appearance/userthemes";
+  import type { ThemeChoice } from "../lib/appearance/settings";
 
   let mode: ThemeMode = "all";
   let query = "";

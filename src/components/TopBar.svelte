@@ -9,13 +9,13 @@
     reportsOpen,
     gameCheckOpen,
     project,
-  } from "../lib/stores";
-  import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, saveCopyToDevice, loadSample, newProject } from "../lib/persistence";
-  import { recentFiles, clearRecents } from "../lib/recentStore";
-  import { recentLabels } from "../lib/recent";
+  } from "../lib/app/stores";
+  import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, saveCopyToDevice, loadSample, newProject } from "../lib/files/persistence";
+  import { recentFiles, clearRecents } from "../lib/files/recentStore";
+  import { recentLabels } from "../lib/files/recent";
   import { platform } from "../lib/platform";
-  import type { MenuItem } from "../lib/menu";
-  import type { MainView, SidePanel } from "../lib/types";
+  import type { MenuItem } from "../lib/app/menu";
+  import type { MainView, SidePanel } from "../lib/model/types";
   import Menu from "./Menu.svelte";
   import ViewMenu from "./ViewMenu.svelte";
 

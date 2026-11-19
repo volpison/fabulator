@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProjectFor } from "../src/lib/blank.ts";
-import { addElement, addItem, addLink, addNode, addOption, addQuest, addVariable, setRules, updateNode, updateOption } from "../src/lib/gameedit.ts";
-import { analyse, checkGame, countIssues } from "../src/lib/gamecheck.ts";
-import { abilityKey, applyEffects, availableNodes, candidates, chooseOption, emptyState, holds, openExits, playNode } from "../src/lib/gameplay.ts";
-import { layoutGraph } from "../src/lib/gamegraph.ts";
-import type { Project } from "../src/lib/types.ts";
+import { blankProjectFor } from "../src/lib/files/blank.ts";
+import { addElement, addItem, addLink, addNode, addOption, addQuest, addVariable, setRules, updateNode, updateOption } from "../src/lib/game/gameedit.ts";
+import { analyse, checkGame, countIssues } from "../src/lib/game/gamecheck.ts";
+import { abilityKey, applyEffects, availableNodes, candidates, chooseOption, emptyState, holds, openExits, playNode } from "../src/lib/game/gameplay.ts";
+import { layoutGraph } from "../src/lib/game/gamegraph.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const id = (p: string) => `${p}-${++n}`;
