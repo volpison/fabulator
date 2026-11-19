@@ -22,8 +22,9 @@ The two halves share one data model: `src/lib/model/types.ts` (TypeScript) mirro
 ```
 src/                       the web view
   App.svelte, main.ts      start-up, keyboard shortcuts, which dialogs are open
-  components/              Svelte screens and dialogs (TopBar, TimelineView, ManuscriptView,
-                           ComicTimeline, ScreenplayManuscript, ExportDialog, SnapshotsDialog, ...)
+  components/              Svelte screens and dialogs, in folders: shell/ (TopBar, menus, StatusBar, SidePanel...),
+                           novel/, comic/, screenplay/, game/ (the Timeline and Manuscript views of each
+                           mode and their parts), dialogs/ (export, search, replace, snapshots, themes)
   lib/                     everything that is not a screen, in folders (a folder imports only
                            from the folders below it; tests/structure.test.ts checks this)
     model/                 the data model and its pure rules: types.ts (mirrors the Rust models),
