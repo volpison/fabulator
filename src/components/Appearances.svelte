@@ -5,9 +5,9 @@
     mainView,
     linkCharacterToScene,
     linkPlaceToScene,
-  } from "../lib/stores";
-  import { appearanceReport } from "../lib/appearances";
-  import type { EntityType } from "../lib/mentions";
+  } from "../lib/app/stores";
+  import { appearanceReport } from "../lib/model/appearances";
+  import type { EntityType } from "../lib/model/mentions";
 
   export let type: EntityType;
   export let id: string;

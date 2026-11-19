@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { parseQuery, search, findTermRanges, termRangesInBlock, clearSearchCache, KIND_LABEL } from "../src/lib/search.ts";
-import type { Project } from "../src/lib/types.ts";
+import { parseQuery, search, findTermRanges, termRangesInBlock, clearSearchCache, KIND_LABEL } from "../src/lib/tools/search.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 beforeEach(() => clearSearchCache());
 

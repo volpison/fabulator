@@ -11,14 +11,14 @@
     mainView,
     replaceOpen,
     replaceInScenes,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import {
     planReplace,
     DEFAULT_REPLACE_OPTIONS,
     DEFAULT_REPLACE_FIELDS,
     type ReplaceFields,
     type ReplaceOptions,
-  } from "../lib/replace";
+  } from "../lib/tools/replace";
 
   const STORE_KEY = "fabulator.replace.options";
 

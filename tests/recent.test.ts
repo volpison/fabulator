@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanRecents, addRecent, removeRecent, recentLabels, MAX_RECENT } from "../src/lib/recent.ts";
+import { cleanRecents, addRecent, removeRecent, recentLabels, MAX_RECENT } from "../src/lib/files/recent.ts";
 import { toLocation } from "../src/lib/platform/types.ts";
 
 const L = toLocation;

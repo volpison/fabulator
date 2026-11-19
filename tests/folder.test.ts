@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toFolder, fromFolder, splitHeader, slug, PROJECT_FILE, type FolderFile } from "../src/lib/folder.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { htmlToMd } from "../src/lib/mdbody.ts";
+import { toFolder, fromFolder, splitHeader, slug, PROJECT_FILE, type FolderFile } from "../src/lib/files/folder.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { htmlToMd } from "../src/lib/files/mdbody.ts";
 
 const mkProject = () =>
   migrateProject({

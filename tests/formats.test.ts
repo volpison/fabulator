@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProject } from "../src/lib/blank.ts";
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
 import {
   STORY_FORMATS, STORY_FORMAT_IDS, DEFAULT_STORY_FORMAT, isStoryFormatId, formatOf, noun, readStoryFormat,
-} from "../src/lib/formats.ts";
-import { toFolder, fromFolder } from "../src/lib/folder.ts";
+} from "../src/lib/model/formats.ts";
+import { toFolder, fromFolder } from "../src/lib/files/folder.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

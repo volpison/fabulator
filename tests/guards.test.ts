@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isBlockedBrowserKey, allowNativeContextMenu, isTextEditable } from "../src/lib/guards.ts";
+import { isBlockedBrowserKey, allowNativeContextMenu, isTextEditable } from "../src/lib/app/guards.ts";
 
 const k = (key: string, o: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }> = {}) =>
   ({ key, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...o });

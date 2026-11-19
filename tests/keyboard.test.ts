@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { keyboardOpen } from "../src/lib/keyboard.ts";
+import { keyboardOpen } from "../src/lib/app/keyboard.ts";
 
 test("a page that lost about half its height has the keyboard open", () => {
   assert.equal(keyboardOpen(400, 800), true);

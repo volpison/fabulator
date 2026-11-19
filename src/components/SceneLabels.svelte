@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { SCENE_STATUSES, STATUS_LABEL, SCENE_COLORS, cleanStatus } from "../lib/labels";
-  import { updateSceneFields } from "../lib/stores";
-  import type { Scene } from "../lib/types";
+  import { SCENE_STATUSES, STATUS_LABEL, SCENE_COLORS, cleanStatus } from "../lib/model/labels";
+  import { updateSceneFields } from "../lib/app/stores";
+  import type { Scene } from "../lib/model/types";
 
   export let scene: Pick<Scene, "id" | "status" | "color">;
 </script>

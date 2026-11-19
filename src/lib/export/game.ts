@@ -7,10 +7,10 @@
  *   nodes CSV     one row per node (for a spreadsheet: numbers, status, rules, where it leads)
  *   state CSV     one row per flag, number and item, and where each is set and read
  */
-import type { Condition, Effect, GameElement, GameNode, Project } from "../types";
-import { nodesInQuest } from "../game";
-import { contextOf, describeConditions, describeEffects, type RuleContext } from "../gamerules";
-import { nodeLabels, nodeWordCount } from "../gameedit";
+import type { Condition, Effect, GameElement, GameNode, Project } from "../model/types";
+import { nodesInQuest } from "../game/game";
+import { contextOf, describeConditions, describeEffects, type RuleContext } from "../game/gamerules";
+import { nodeLabels, nodeWordCount } from "../game/gameedit";
 import type { Block, Run } from "./html";
 import type { Book, BookChapter, BookScene, ExportOptions } from "./book";
 

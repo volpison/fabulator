@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GALLERY, galleryFamilies } from "../src/lib/gallery.ts";
-import { specToTheme, importThemeText, serializeSpec, slugify, themeIdFor } from "../src/lib/theme-file.ts";
-import { normalizeHex } from "../src/lib/themegen.ts";
-import { THEMES, contrastReport, isPalette, luminance } from "../src/lib/themes.ts";
+import { GALLERY, galleryFamilies } from "../src/lib/appearance/gallery.ts";
+import { specToTheme, importThemeText, serializeSpec, slugify, themeIdFor } from "../src/lib/appearance/theme-file.ts";
+import { normalizeHex } from "../src/lib/appearance/themegen.ts";
+import { THEMES, contrastReport, isPalette, luminance } from "../src/lib/appearance/themes.ts";
 
 test("names, ids and file names are unique and do not clash with built-in themes", () => {
   const names = GALLERY.map((g) => g.spec.name);

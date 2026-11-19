@@ -10,7 +10,7 @@
     updateScreenplayElement,
     moveScreenplayElement,
     deleteScreenplayElement,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import {
     ELEMENT_KINDS,
     ELEMENT_LABEL,
@@ -26,10 +26,10 @@
     sceneWordCount,
     screenplayReadingOrder,
     slugLine,
-  } from "../lib/screenplay";
-  import { characterNamed, replySpeaker } from "../lib/screenplayedit";
-  import { SCENE_STATUSES, STATUS_LABEL, type SceneStatus } from "../lib/labels";
-  import type { ElementKind, ScriptElement, ScriptScene, SlugPlace } from "../lib/types";
+  } from "../lib/screenplay/screenplay";
+  import { characterNamed, replySpeaker } from "../lib/screenplay/screenplayedit";
+  import { SCENE_STATUSES, STATUS_LABEL, type SceneStatus } from "../lib/model/labels";
+  import type { ElementKind, ScriptElement, ScriptScene, SlugPlace } from "../lib/model/types";
 
   $: scenes = $project ? screenplayReadingOrder($project) : [];
   $: scene = $project?.script_scenes.find((s) => s.id === $selectedScriptSceneId) ?? null;

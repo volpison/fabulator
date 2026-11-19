@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { project, selectedSceneId, mainView, sidePanel, sidePanelFocus } from "../lib/stores";
-  import { castGrid, type CastGrid, type CellState } from "../lib/appearances";
+  import { project, selectedSceneId, mainView, sidePanel, sidePanelFocus } from "../lib/app/stores";
+  import { castGrid, type CastGrid, type CellState } from "../lib/model/appearances";
 
   type Density = "compact" | "comfortable" | "spacious";
   const DENSITIES: Record<Density, { label: string; cell: number; box: number; titles: boolean }> = {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildMatcher, replaceInHtml, replaceInPlain, planReplace, applyReplace } from "../src/lib/replace.ts";
-import type { Project } from "../src/lib/types.ts";
+import { buildMatcher, replaceInHtml, replaceInPlain, planReplace, applyReplace } from "../src/lib/tools/replace.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 const re = (find: string, o: Partial<{ matchCase: boolean; wholeWord: boolean }> = {}) =>
   buildMatcher(find, { matchCase: false, wholeWord: false, ...o })!;

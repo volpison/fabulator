@@ -7,7 +7,7 @@ import {
   htmlToPlainText,
   mentionRangesInBlock,
   type Entity,
-} from "../src/lib/mentions.ts";
+} from "../src/lib/model/mentions.ts";
 
 const ent = (id: string, name: string, aliases: string[] = [], type: "character" | "place" = "character"): Entity =>
   entitiesOf({

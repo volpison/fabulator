@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatShortcut, actionableIndexes, stepIndex } from "../src/lib/menu.ts";
+import { formatShortcut, actionableIndexes, stepIndex } from "../src/lib/app/menu.ts";
 
 test("shortcuts: unchanged elsewhere, symbols on macOS", () => {
   assert.equal(formatShortcut("Ctrl+Shift+S", false), "Ctrl+Shift+S");
@@ -26,7 +26,7 @@ test("stepIndex wraps and starts from the right end", () => {
 });
 
 test("hasChildren is true only for non-empty submenus", async () => {
-  const { hasChildren } = await import("../src/lib/menu.ts");
+  const { hasChildren } = await import("../src/lib/app/menu.ts");
   assert.equal(hasChildren({ label: "a" }), false);
   assert.equal(hasChildren({ label: "a", children: [] }), false);
   assert.equal(hasChildren({ label: "a", children: [{ label: "b" }] }), true);

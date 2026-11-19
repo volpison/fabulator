@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   PLOTLINE_COLORS, addPlotline, cleanPlotlineColor, movePlotlineBy, nextPlotlineColor, removePlotline, updatePlotlineIn,
-} from "../src/lib/plotlines.ts";
+} from "../src/lib/model/plotlines.ts";
 
 const pls = () => [
   { id: "a", name: "Main", color: "#3b82f6" },

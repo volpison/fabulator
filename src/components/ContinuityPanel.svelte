@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { project, selectedScene, focusMode, unlinkCharacterFromScene, unlinkPlaceFromScene } from "../lib/stores";
-  import { sceneContinuity, type ContinuityItem } from "../lib/appearances";
+  import { project, selectedScene, focusMode, unlinkCharacterFromScene, unlinkPlaceFromScene } from "../lib/app/stores";
+  import { sceneContinuity, type ContinuityItem } from "../lib/model/appearances";
 
   /** Session-only dismissals: "sceneId:type:id" (the text may name them in a later edit). */
   let dismissed = new Set<string>();

@@ -1,16 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankScreenplay } from "../src/lib/blank.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { search } from "../src/lib/search.ts";
-import { applyReplace, planReplace, DEFAULT_REPLACE_OPTIONS } from "../src/lib/replace.ts";
+import { blankScreenplay } from "../src/lib/files/blank.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { search } from "../src/lib/tools/search.ts";
+import { applyReplace, planReplace, DEFAULT_REPLACE_OPTIONS } from "../src/lib/tools/replace.ts";
 import {
   applyRestore, deletedScenes, deleteScriptSceneKeeping, autoSnapshotScriptScenes, makeScriptSnapshot, snapshotText,
   snapshotWords, scriptSceneToText, snapshotsFor,
-} from "../src/lib/snapshots.ts";
-import { wordStats } from "../src/lib/wordcount.ts";
-import { addScene, updateScene, addElement, updateElement } from "../src/lib/screenplayedit.ts";
-import type { Project } from "../src/lib/types.ts";
+} from "../src/lib/tools/snapshots.ts";
+import { wordStats } from "../src/lib/tools/wordcount.ts";
+import { addScene, updateScene, addElement, updateElement } from "../src/lib/screenplay/screenplayedit.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p = "x") => `${p}-${++n}`;

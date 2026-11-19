@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import {
   planFolderImport, filterThemes, collectionsOf, countByMode, collectionNameFromFolder,
   BUILT_IN, IMPORTED, MAX_FOLDER_THEMES,
-} from "../src/lib/themelib.ts";
-import { importThemeText, specToTheme, serializeSpec, cleanCollection } from "../src/lib/theme-file.ts";
-import { THEMES, contrastReport } from "../src/lib/themes.ts";
+} from "../src/lib/appearance/themelib.ts";
+import { importThemeText, specToTheme, serializeSpec, cleanCollection } from "../src/lib/appearance/theme-file.ts";
+import { THEMES, contrastReport } from "../src/lib/appearance/themes.ts";
 
 const b16 = (name: string, bg: string, fg: string, extra = "") => `scheme: "${name}"
 author: "Tester"

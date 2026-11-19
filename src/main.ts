@@ -1,9 +1,9 @@
 import { mount } from "svelte";
 import App from "./App.svelte";
 import "./app.css";
-import { initAppearance } from "./lib/appearance";
-import { installWebviewGuards } from "./lib/webviewGuards";
-import { watchKeyboard } from "./lib/keyboard";
+import { initAppearance } from "./lib/appearance/appearance";
+import { installWebviewGuards } from "./lib/app/webviewGuards";
+import { watchKeyboard } from "./lib/app/keyboard";
 import { setPlatform } from "./lib/platform";
 import { tauriPlatform } from "./lib/platform/tauri";
 

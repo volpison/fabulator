@@ -9,7 +9,7 @@ Fabulator is a desktop app made of two halves that talk through a small set of c
 - **The web view** (Svelte 5 + TypeScript, inside a Tauri window) shows the screens and owns the *editing rules*: how a scene is added, moved, searched, replaced, exported.
 - **Rust** (Tauri 2 backend) owns the *files*: opening, atomic saving, rotating backups, crash recovery, the Markdown folder format, user themes, and a copy of the current project that it keeps up to date from small patches.
 
-The two halves share one data model: `src/lib/types.ts` (TypeScript) mirrors `src-tauri/src/models/` (Rust), and both carry the same schema version (see [The project file format](file-format.md)).
+The two halves share one data model: `src/lib/model/types.ts` (TypeScript) mirrors `src-tauri/src/models/` (Rust), and both carry the same schema version (see [The project file format](file-format.md)).
 
 ## Stack
 
@@ -24,22 +24,24 @@ src/                       the web view
   App.svelte, main.ts      start-up, keyboard shortcuts, which dialogs are open
   components/              Svelte screens and dialogs (TopBar, TimelineView, ManuscriptView,
                            ComicTimeline, ScreenplayManuscript, ExportDialog, SnapshotsDialog, ...)
-  lib/                     everything that is not a screen
-    types.ts               the data model (mirrors the Rust models)
-    stores.ts              the project and UI state; thin wrappers that apply the pure rules below
-    migrate.ts             upgrades older project files; CURRENT_SCHEMA_VERSION
-    formats.ts             the story formats (novel, comic, screenplay, game) and their words
-    model.ts, comic.ts, screenplay.ts,
-    game.ts, gamerules.ts, gamecheck.ts,
-    gameplay.ts, gamegraph.ts               pure rules per format (ordering, counting, slug lines, checks, playtest, graph layout, ...)
-    comicedit.ts, screenplayedit.ts,
-    gameedit.ts                             pure edit operations per format
-    search.ts, replace.ts, snapshots.ts,    shared tools; each handles all formats
-    wordcount.ts, goals.ts
+  lib/                     everything that is not a screen, in folders (a folder imports only
+                           from the folders below it; tests/structure.test.ts checks this)
+    model/                 the data model and its pure rules: types.ts (mirrors the Rust models),
+                           formats.ts (the story formats and their words), model.ts, labels.ts,
+                           plotlines.ts, storytime.ts, patch.ts (small changes sent to Rust), ...
+    comic/, screenplay/,   pure rules per format (ordering, counting, slug lines, checks, playtest,
+    game/                  graph layout, ...) and pure edit operations (comicedit.ts, ...)
+    tools/                 shared tools; each handles all formats: search, replace, snapshots, diff,
+                           goals, wordcount
     export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails, game (quest bible, CSVs)
     platform/              the Platform layer (see below)
-    patch.ts, mirror.ts    sending small changes to Rust
-    persistence.ts         open, save, recover, folder: the flows that use the Platform
+    files/                 blank.ts (new project), migrate.ts (upgrades older files; CURRENT_SCHEMA_VERSION),
+                           mirror.ts, persistence.ts (open, save, recover, folder: the flows that use the Platform)
+    appearance/            colour themes and appearance settings
+    editor/                writing aids for the text editor (@-mentions, search highlight, typewriter)
+    app/                   the project and UI state (stores.ts: thin wrappers that apply the pure rules),
+                           menus, layout, guards
+  (the exact folder of every file: [Design: front-end folders](frontend-structure.md))
 src-tauri/src/
   main.rs, lib.rs          start-up: the module list and the list of commands the web view can call
   commands/                the Tauri commands, one file per job
@@ -72,8 +74,8 @@ The Rust side is split into one module per concern: `storage/`, `commands/` and 
 
 Features follow one pattern, which is what keeps them testable and easy to find:
 
-1. **Pure rules** in a `src/lib/*.ts` module: functions that take a project and return a new one (or a result). No Svelte, no Tauri, no disk. Example: `screenplayedit.ts` (`addScene`, `moveElement`, `deleteScene`).
-2. **A thin store wrapper** in `stores.ts` that runs the rule on the open project and marks it changed.
+1. **Pure rules** in a `src/lib/` module (in the folder of its mode or of the shared model): functions that take a project and return a new one (or a result). No Svelte, no Tauri, no disk. Example: `screenplay/screenplayedit.ts` (`addScene`, `moveElement`, `deleteScene`).
+2. **A thin store wrapper** in `app/stores.ts` that runs the rule on the open project and marks it changed.
 3. **A component** that shows the result and calls the wrapper.
 4. **Tests** for the pure rules in `tests/`.
 
@@ -109,7 +111,7 @@ These are commands any front end can reuse (`src-tauri/src/storage/` holds the l
 The web view no longer writes separate recovery files; autosave only saves projects that already have a file.
 ## Small changes instead of the whole project
 
-The first send after a (re)start is the whole project; later sends are *patches* (`src/lib/patch.ts`): changed plain fields, plus per list (scenes, chapters, notes…) the items added or changed, the ids removed, and the full id order only when it changed. Typing in one scene sends that scene, not the book. Rust applies the patch to the copy it keeps (`src-tauri/src/patch.rs`, same rules, tested on both sides) via `keep_unsaved_changes`.
+The first send after a (re)start is the whole project; later sends are *patches* (`src/lib/model/patch.ts`): changed plain fields, plus per list (scenes, chapters, notes…) the items added or changed, the ids removed, and the full id order only when it changed. Typing in one scene sends that scene, not the book. Rust applies the patch to the copy it keeps (`src-tauri/src/patch.rs`, same rules, tested on both sides) via `keep_unsaved_changes`.
 
 Safety net: every copy has a revision number. If Rust is not at the revision a patch was made for (restart, discard, a patch that doesn't fit), it drops the copy and answers "send everything"; the web view then sends the whole project. It also re-sends the whole project every 100 patches. Rust still rewrites `live.fabulator.json` on every update (disk cost only; nothing crosses the web view boundary).
 ## Saving from the copy Rust already holds

@@ -3,14 +3,14 @@
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
   import Placeholder from "@tiptap/extension-placeholder";
-  import { MentionHighlight, mentionKey } from "../lib/mentionExtension";
-  import { SearchHighlight, searchKey } from "../lib/searchExtension";
-  import { AtMention, type AtState } from "../lib/atMentionExtension";
-  import { CurrentBlock } from "../lib/currentBlockExtension";
-  import { settings } from "../lib/appearance";
-  import { typewriterScrollTop, typewriterBottomPadding } from "../lib/typewriter";
-  import { buildOptions, tidyNewName, type PickOption } from "../lib/atMention";
-  import type { Entity, EntityType, MentionInfo } from "../lib/mentions";
+  import { MentionHighlight, mentionKey } from "../lib/editor/mentionExtension";
+  import { SearchHighlight, searchKey } from "../lib/editor/searchExtension";
+  import { AtMention, type AtState } from "../lib/editor/atMentionExtension";
+  import { CurrentBlock } from "../lib/editor/currentBlockExtension";
+  import { settings } from "../lib/appearance/appearance";
+  import { typewriterScrollTop, typewriterBottomPadding } from "../lib/editor/typewriter";
+  import { buildOptions, tidyNewName, type PickOption } from "../lib/editor/atMention";
+  import type { Entity, EntityType, MentionInfo } from "../lib/model/mentions";
 
   interface Props {
     content?: string;

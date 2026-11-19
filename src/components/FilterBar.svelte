@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { project, sceneFilter } from "../lib/stores";
+  import { project, sceneFilter } from "../lib/app/stores";
   import {
     SCENE_STATUSES, STATUS_LABEL, SCENE_COLORS, EMPTY_FILTER,
     isFilterActive, matchScene, statusCounts, toggle,
-  } from "../lib/labels";
+  } from "../lib/model/labels";
 
   $: scenes = $project?.scenes ?? [];
   $: counts = statusCounts(scenes);

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import {
   cleanStatus, cleanColor, defaultStatusFor, matchScene, isFilterActive,
   activeFilterCount, statusCounts, toggle, EMPTY_FILTER, colorHex,
-} from "../src/lib/labels.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
+} from "../src/lib/model/labels.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
 
 const scene = (o: object = {}) => ({
   title: "The Wolf", summary: "A boy lies", tags: ["Act I"], status: "draft" as const,

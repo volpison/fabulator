@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProject } from "../src/lib/blank.ts";
-import { migrateProject } from "../src/lib/migrate.ts";
-import { toFolder, fromFolder } from "../src/lib/folder.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
+import { migrateProject } from "../src/lib/files/migrate.ts";
+import { toFolder, fromFolder } from "../src/lib/files/folder.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

@@ -1,0 +1,136 @@
+/** The empty story a new session starts with (and File → New story creates). */
+import { CURRENT_SCHEMA_VERSION, FILE_TYPE, MIN_READER_VERSION } from "./migrate";
+import { DEFAULT_STORY_FORMAT, type StoryFormatId } from "../model/formats";
+import { DEFAULT_SCRIPT_STYLE, newPage } from "../comic/comic";
+import { newScriptScene } from "../screenplay/screenplay";
+import type { Project } from "../model/types";
+
+export function blankProject(newId: (prefix: string) => string): Project {
+  const chapterId = newId("ch");
+  const plotlineId = newId("pl");
+  return {
+    schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: MIN_READER_VERSION,
+    story_format: DEFAULT_STORY_FORMAT,
+    id: newId("proj"),
+    title: "Untitled story",
+    premise: "",
+    genre: "",
+    theme: "",
+    chapters: [{ id: chapterId, title: "Chapter 1", summary: "" }],
+    plotlines: [{ id: plotlineId, name: "Main Plot", color: "#3b82f6" }],
+    scenes: [
+      {
+        id: newId("sc"),
+        title: "Untitled scene",
+        summary: "",
+        content: "",
+        chapter_id: chapterId,
+        order: 0,
+        plotline_id: plotlineId,
+        character_ids: [],
+        place_ids: [],
+        tags: [],
+        status: "idea",
+        color: "",
+        notes: "",
+        todos: [],
+        when: "",
+      },
+    ],
+    issues: [],
+    pages: [],
+    acts: [],
+    script_scenes: [],
+    snapshots: [],
+    characters: [],
+    places: [],
+    abilities: [],
+    notes: [],
+  };
+}
+
+/** The empty comic a new comic starts with: one issue with one page, in the chosen scripting style. */
+export function blankComic(newId: (prefix: string) => string, style = DEFAULT_SCRIPT_STYLE): Project {
+  const issueId = newId("is");
+  const plotlineId = newId("pl");
+  return {
+    schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: MIN_READER_VERSION,
+    story_format: "comic",
+    script_style: style,
+    id: newId("proj"),
+    title: "Untitled comic",
+    premise: "",
+    genre: "",
+    theme: "",
+    chapters: [],
+    scenes: [],
+    issues: [{ id: issueId, title: "Issue 1", summary: "" }],
+    pages: [newPage(newId, issueId, 0, plotlineId)],
+    acts: [],
+    script_scenes: [],
+    plotlines: [{ id: plotlineId, name: "Main Plot", color: "#3b82f6" }],
+    snapshots: [],
+    characters: [],
+    places: [],
+    abilities: [],
+    notes: [],
+  };
+}
+
+/** The empty screenplay a new screenplay starts with: one act with one scene. */
+export function blankScreenplay(newId: (prefix: string) => string): Project {
+  const actId = newId("act");
+  const plotlineId = newId("pl");
+  return {
+    schema_version: CURRENT_SCHEMA_VERSION,
+    file_type: FILE_TYPE,
+    min_reader_version: MIN_READER_VERSION,
+    story_format: "screenplay",
+    id: newId("proj"),
+    title: "Untitled screenplay",
+    premise: "",
+    genre: "",
+    theme: "",
+    chapters: [],
+    scenes: [],
+    issues: [],
+    pages: [],
+    acts: [{ id: actId, title: "Act 1", summary: "" }],
+    script_scenes: [newScriptScene(newId, actId, 0, plotlineId)],
+    plotlines: [{ id: plotlineId, name: "Main Plot", color: "#3b82f6" }],
+    snapshots: [],
+    characters: [],
+    places: [],
+    abilities: [],
+    notes: [],
+  };
+}
+
+/** A new, empty project in the given format. */
+/** The empty game a new game project starts with: one main quest with its first node. */
+export function blankGame(newId: (prefix: string) => string): Project {
+  const questId = newId("q");
+  return {
+    ...blankProject(newId),
+    story_format: "game",
+    chapters: [],
+    scenes: [],
+    game: {
+      quests: [{ id: questId, title: "Main quest", kind: "main", summary: "", plotline_id: "", requires: [] }],
+      nodes: [],
+      variables: [],
+      items: [],
+    },
+  };
+}
+
+export function blankProjectFor(format: StoryFormatId, newId: (prefix: string) => string): Project {
+  if (format === "comic") return blankComic(newId);
+  if (format === "screenplay") return blankScreenplay(newId);
+  if (format === "game") return blankGame(newId);
+  return blankProject(newId);
+}

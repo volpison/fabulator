@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { formatShortcut, hasChildren, stepIndex, type MenuItem } from "../lib/menu";
+  import { formatShortcut, hasChildren, stepIndex, type MenuItem } from "../lib/app/menu";
 
   export let label: string;
   export let items: MenuItem[];

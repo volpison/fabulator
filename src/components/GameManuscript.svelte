@@ -17,13 +17,13 @@
     updateGameLink,
     deleteGameLink,
     setGameRules,
-  } from "../lib/stores";
-  import { ELEMENT_KINDS, ELEMENT_LABEL, nodesInQuest } from "../lib/game";
-  import { gameReadingOrder, nodeLabels, nodeWordCount, replySpeaker } from "../lib/gameedit";
-  import { characterNamed } from "../lib/screenplayedit";
-  import { SCENE_STATUSES, STATUS_LABEL, type SceneStatus } from "../lib/labels";
+  } from "../lib/app/stores";
+  import { ELEMENT_KINDS, ELEMENT_LABEL, nodesInQuest } from "../lib/game/game";
+  import { gameReadingOrder, nodeLabels, nodeWordCount, replySpeaker } from "../lib/game/gameedit";
+  import { characterNamed } from "../lib/screenplay/screenplayedit";
+  import { SCENE_STATUSES, STATUS_LABEL, type SceneStatus } from "../lib/model/labels";
   import RulesEditor from "./RulesEditor.svelte";
-  import type { Condition, Effect, GameElement, GameElementKind, GameNode } from "../lib/types";
+  import type { Condition, Effect, GameElement, GameElementKind, GameNode } from "../lib/model/types";
 
   $: game = $project?.game ?? null;
   $: quests = game?.quests ?? [];

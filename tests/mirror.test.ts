@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProject } from "../src/lib/blank.ts";
-import { parseUnsaved, shouldAskBeforeRestoring, restorePrompt, MIRROR_DEBOUNCE_MS } from "../src/lib/mirror.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
+import { parseUnsaved, shouldAskBeforeRestoring, restorePrompt, MIRROR_DEBOUNCE_MS } from "../src/lib/files/mirror.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

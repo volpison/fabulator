@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import {
   parseThemeFile, importThemeText, specToTheme, themeToSpec, serializeSpec, slugify, themeIdFor,
   THEME_FORMAT, MAX_THEME_FILE_BYTES,
-} from "../src/lib/theme-file.ts";
-import { parseBase16 } from "../src/lib/base16.ts";
-import { THEMES, contrastReport, isPalette } from "../src/lib/themes.ts";
+} from "../src/lib/appearance/theme-file.ts";
+import { parseBase16 } from "../src/lib/appearance/base16.ts";
+import { THEMES, contrastReport, isPalette } from "../src/lib/appearance/themes.ts";
 
 const ok = (r: ReturnType<typeof parseThemeFile>) => {
   assert.ok(r.ok, r.ok ? "" : r.error);

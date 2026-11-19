@@ -1,4 +1,4 @@
-import type { Project } from "../types";
+import type { Project } from "../model/types";
 import { buildBook, sceneCount, suggestedFileName, type ExportOptions } from "./book";
 import { renderMarkdown } from "./markdown";
 import { renderText } from "./text";

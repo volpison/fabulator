@@ -1,8 +1,8 @@
 <script lang="ts">
   import { platform } from "../lib/platform";
-  import { project, reportsOpen, selectedScriptSceneId, mainView } from "../lib/stores";
-  import { characterReport, locationReport, reportCsv, sceneReport, type ReportKind } from "../lib/screenplayreports";
-  import { formatPages } from "../lib/screenplay";
+  import { project, reportsOpen, selectedScriptSceneId, mainView } from "../lib/app/stores";
+  import { characterReport, locationReport, reportCsv, sceneReport, type ReportKind } from "../lib/screenplay/screenplayreports";
+  import { formatPages } from "../lib/screenplay/screenplay";
 
   const tabs: { id: ReportKind; label: string; hint: string }[] = [
     { id: "scenes", label: "Scenes", hint: "Every scene: length and who speaks" },

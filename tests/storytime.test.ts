@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWhen, formatGap, chronology } from "../src/lib/storytime.ts";
+import { parseWhen, formatGap, chronology } from "../src/lib/model/storytime.ts";
 
 const m = (t: string) => parseWhen(t)?.minutes;
 const kind = (t: string) => parseWhen(t)?.kind;
@@ -86,9 +86,9 @@ test("a project with no times has an empty chronology", () => {
   assert.equal(c.unplaced.length, 2);
 });
 
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
-import { toFolder, fromFolder } from "../src/lib/folder.ts";
-import { blankProject } from "../src/lib/blank.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
+import { toFolder, fromFolder } from "../src/lib/files/folder.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
 
 test("a v5 project upgrades with an empty `when`; the text survives the Markdown folder", () => {
   const old = blankProject((p) => p + "-1") as any;

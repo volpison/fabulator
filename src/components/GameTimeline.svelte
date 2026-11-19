@@ -12,15 +12,15 @@
     moveGameNode,
     deleteGameNode,
     setGameRules,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import { platform } from "../lib/platform";
-  import { nodesInQuest } from "../lib/game";
-  import { contextOf, describeConditions, describeEffects } from "../lib/gamerules";
-  import { exitsOf, nodeBadges, nodeIsEmpty, questSummary } from "../lib/gameedit";
+  import { nodesInQuest } from "../lib/game/game";
+  import { contextOf, describeConditions, describeEffects } from "../lib/game/gamerules";
+  import { exitsOf, nodeBadges, nodeIsEmpty, questSummary } from "../lib/game/gameedit";
   import RulesEditor from "./RulesEditor.svelte";
   import GameGraph from "./GameGraph.svelte";
-  import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/labels";
-  import type { Condition, GameNode, QuestKind } from "../lib/types";
+  import { SCENE_COLORS, SCENE_STATUSES, STATUS_LABEL, colorHex, type SceneStatus } from "../lib/model/labels";
+  import type { Condition, GameNode, QuestKind } from "../lib/model/types";
 
   /** Lanes (one row of cards per quest) or the graph of how nodes lead to each other. */
   let layout: "lanes" | "graph" = "lanes";

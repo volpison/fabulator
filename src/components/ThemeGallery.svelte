@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { galleryOpen } from "../lib/stores";
-  import { settings, updateSettings, customThemes } from "../lib/appearance";
-  import { galleryFamilies, type GalleryTheme } from "../lib/gallery";
-  import { specToTheme, themeIdFor } from "../lib/theme-file";
-  import { installGalleryTheme } from "../lib/userthemes";
+  import { galleryOpen } from "../lib/app/stores";
+  import { settings, updateSettings, customThemes } from "../lib/appearance/appearance";
+  import { galleryFamilies, type GalleryTheme } from "../lib/appearance/gallery";
+  import { specToTheme, themeIdFor } from "../lib/appearance/theme-file";
+  import { installGalleryTheme } from "../lib/appearance/userthemes";
 
   const families = galleryFamilies();
   const themes = new Map(

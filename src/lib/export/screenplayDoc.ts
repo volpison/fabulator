@@ -1,6 +1,6 @@
 /** Turns a screenplay project into the plain script every screenplay writer (PDF, Word, Fountain) consumes. */
-import type { Project, ScriptScene } from "../types";
-import { needsContd, screenplayReadingOrder, sceneNumbers, slugLine } from "../screenplay";
+import type { Project, ScriptScene } from "../model/types";
+import { needsContd, screenplayReadingOrder, sceneNumbers, slugLine } from "../screenplay/screenplay";
 import type { ExportOptions } from "./book";
 
 export type DocElement = {

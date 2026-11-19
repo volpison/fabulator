@@ -1,7 +1,7 @@
 // Run with: npm test   (Node's built-in test runner; no extra dependencies)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
+import { migrateProject, CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
 import {
   readingOrder,
   chapterNumber,
@@ -10,7 +10,7 @@ import {
   moveSceneTo,
   sceneDropTarget,
   scenesInChapter,
-} from "../src/lib/model.ts";
+} from "../src/lib/model/model.ts";
 
 const v0 = (scenes: object[]) => ({
   id: "p",

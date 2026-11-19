@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { updateSceneFields } from "../lib/stores";
-  import { parseWhen } from "../lib/storytime";
-  import type { Scene } from "../lib/types";
+  import { updateSceneFields } from "../lib/app/stores";
+  import { parseWhen } from "../lib/model/storytime";
+  import type { Scene } from "../lib/model/types";
 
   export let scene: Pick<Scene, "id" | "when">;
   export let compact = false;

@@ -12,7 +12,7 @@
     updateComicLine,
     moveComicLine,
     deleteComicLine,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
   import { platform } from "../lib/platform";
   import {
     COMIC_STAGES,
@@ -31,8 +31,8 @@
     PANEL_WORD_LIMIT,
     PAGE_PANEL_LIMIT,
     LINE_KINDS,
-  } from "../lib/comic";
-  import type { ComicLine, ComicPanel, ComicStage, LineKind } from "../lib/types";
+  } from "../lib/comic/comic";
+  import type { ComicLine, ComicPanel, ComicStage, LineKind } from "../lib/model/types";
 
   const KIND_LABEL: Record<LineKind, string> = {
     dialogue: "Dialogue",

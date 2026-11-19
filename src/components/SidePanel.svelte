@@ -2,8 +2,8 @@
   import { tick } from "svelte";
   import { platform } from "../lib/platform";
   import Appearances from "./Appearances.svelte";
-  import { clampPanelWidth, PANEL_DEFAULT } from "../lib/layout";
-  import { itemUsage, variableUsage } from "../lib/gamerules";
+  import { clampPanelWidth, PANEL_DEFAULT } from "../lib/app/layout";
+  import { itemUsage, variableUsage } from "../lib/game/gamerules";
   import {
     project,
     sidePanel,
@@ -26,7 +26,7 @@
     updateNote,
     addNote,
     deleteNote,
-  } from "../lib/stores";
+  } from "../lib/app/stores";
 
   // ─── Resizable width (drag the left edge, or focus it and use ←/→; double-click resets) ───
   const WIDTH_KEY = "fabulator.sidePanelWidth";

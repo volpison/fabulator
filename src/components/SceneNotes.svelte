@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { selectedScene, focusMode, updateSceneFields, uid } from "../lib/stores";
-  import type { SceneTodo } from "../lib/types";
-  import { addTodoTo, toggleTodoIn, editTodoIn, removeTodoFrom, clearDone, todoCounts, summaryLine } from "../lib/scenenotes";
+  import { selectedScene, focusMode, updateSceneFields, uid } from "../lib/app/stores";
+  import type { SceneTodo } from "../lib/model/types";
+  import { addTodoTo, toggleTodoIn, editTodoIn, removeTodoFrom, clearDone, todoCounts, summaryLine } from "../lib/model/scenenotes";
 
   const KEY = "fabulator.sceneNotesOpen";
   let open = (() => {

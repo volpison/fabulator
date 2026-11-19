@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { stripJsonc, parseJsonc, resolveColor, tokenColor, parseVscodeTheme, looksLikeVscodeTheme } from "../src/lib/vscode.ts";
-import { importThemeText, specToTheme } from "../src/lib/theme-file.ts";
-import { contrastReport, isPalette } from "../src/lib/themes.ts";
+import { stripJsonc, parseJsonc, resolveColor, tokenColor, parseVscodeTheme, looksLikeVscodeTheme } from "../src/lib/appearance/vscode.ts";
+import { importThemeText, specToTheme } from "../src/lib/appearance/theme-file.ts";
+import { contrastReport, isPalette } from "../src/lib/appearance/themes.ts";
 
 const ok = (r: ReturnType<typeof parseVscodeTheme>) => {
   assert.ok(r.ok, r.ok ? "" : r.error);

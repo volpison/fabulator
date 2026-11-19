@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { htmlToBlocks } from "../src/lib/export/html.ts";
-import { blocksToMd, mdToBlocks, mdToHtml, htmlToMd, parseInline } from "../src/lib/mdbody.ts";
+import { blocksToMd, mdToBlocks, mdToHtml, htmlToMd, parseInline } from "../src/lib/files/mdbody.ts";
 
 /** html -> blocks -> markdown -> html -> blocks must give the same blocks. */
 const roundTrip = (html: string) => {

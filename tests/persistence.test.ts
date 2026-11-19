@@ -2,12 +2,12 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
 import { setPlatform, toLocation } from "../src/lib/platform/index.ts";
-import { recentFiles, clearRecents } from "../src/lib/recentStore.ts";
+import { recentFiles, clearRecents } from "../src/lib/files/recentStore.ts";
 import {
   loadInitialProject, saveCopyToDevice, manualSave, saveNow, ensureSafeToLeave, newProject, loadSample, openProject, startMirror,
-} from "../src/lib/persistence.ts";
-import { project, currentPath, isDirty, markDirty, markClean, saveState, updateSceneTitle } from "../src/lib/stores.ts";
-import { blankProject } from "../src/lib/blank.ts";
+} from "../src/lib/files/persistence.ts";
+import { project, currentPath, isDirty, markDirty, markClean, saveState, updateSceneTitle } from "../src/lib/app/stores.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
 import { createFakePlatform, type Fake } from "./fakePlatform.ts";
 
 let n = 0;
@@ -197,7 +197,7 @@ test("the live mirror sends unsaved work after a pause and clears when saved", a
   stop();
 });
 
-import { openRecent } from "../src/lib/persistence.ts";
+import { openRecent } from "../src/lib/files/persistence.ts";
 
 test("opening or saving a file puts it at the top of the recent list", async () => {
   await loadInitialProject();
@@ -296,7 +296,7 @@ test("typing while a save runs never loses the newer text: the unsaved copy surv
 test("autosave for a story with no file writes nothing (the mirror covers it)", async (t) => {
   fakeBrowserGlobals();
   t.mock.timers.enable({ apis: ["setTimeout"] });
-  const { startAutosave } = await import("../src/lib/persistence.ts");
+  const { startAutosave } = await import("../src/lib/files/persistence.ts");
   await loadInitialProject();
   const stop = startAutosave();
   updateSceneTitle(get(project)!.scenes[0].id, "Typing");
@@ -418,7 +418,7 @@ test("opening another project replaces the held one (a whole project, never a pa
   assert.equal((fake.state.held as any).project.title, "Other");
 });
 
-import { exportFolder } from "../src/lib/persistence.ts";
+import { exportFolder } from "../src/lib/files/persistence.ts";
 
 test("a new comic can be started, saved and reopened with all its pages", async () => {
   fakeBrowserGlobals();

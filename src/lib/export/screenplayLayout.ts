@@ -2,7 +2,7 @@
  * Screenplay page layout in a monospace grid (12 pt Courier, 10 characters an inch): 55 lines a
  * page, columns counted from the left margin. Pure, so it is tested without rendering anything.
  */
-import { LINES_PER_PAGE } from "../screenplay";
+import { LINES_PER_PAGE } from "../screenplay/screenplay";
 import type { DocElement, ScriptDoc } from "./screenplayDoc";
 
 export const ACTION_WIDTH = 60;

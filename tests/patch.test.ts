@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { blankProject } from "../src/lib/blank.ts";
-import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/patch.ts";
-import { createUnsavedSync, FULL_RESYNC_EVERY } from "../src/lib/mirror.ts";
+import { blankProject } from "../src/lib/files/blank.ts";
+import { diffProject, applyPatch, LIST_FIELDS } from "../src/lib/model/patch.ts";
+import { createUnsavedSync, FULL_RESYNC_EVERY } from "../src/lib/files/mirror.ts";
 import { toLocation } from "../src/lib/platform/index.ts";
-import type { Project } from "../src/lib/types.ts";
+import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
 const newId = (p: string) => `${p}-${++n}`;

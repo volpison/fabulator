@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { diffText, countWords } from "../src/lib/diff.ts";
+import { diffText, countWords } from "../src/lib/tools/diff.ts";
 
 const render = (r: ReturnType<typeof diffText>) =>
   r.segments.map((s) => (s.type === "equal" ? s.text : s.type === "add" ? `[+${s.text}]` : `[-${s.text}]`)).join("");

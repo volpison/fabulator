@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { project, currentPath, isDirty, saveState } from "../lib/stores";
+  import { project, currentPath, isDirty, saveState } from "../lib/app/stores";
   import { platform } from "../lib/platform";
   import GoalsPanel from "./GoalsPanel.svelte";
 

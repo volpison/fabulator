@@ -2,9 +2,9 @@
  * An in-memory Platform for tests: a pretend disk, scripted dialog answers, and a
  * record of what the app asked for.
  */
-import { CURRENT_SCHEMA_VERSION } from "../src/lib/migrate.ts";
-import { applyPatch } from "../src/lib/patch.ts";
-import type { Project } from "../src/lib/types.ts";
+import { CURRENT_SCHEMA_VERSION } from "../src/lib/files/migrate.ts";
+import { applyPatch } from "../src/lib/model/patch.ts";
+import type { Project } from "../src/lib/model/types.ts";
 import { DESKTOP_CAPABILITIES } from "../src/lib/platform/capabilities.ts";
 import { toLocation, type Platform, type FolderFile, type ThemeFileData } from "../src/lib/platform/index.ts";
 
