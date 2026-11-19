@@ -1,6 +1,13 @@
 <script lang="ts">
   import { platform } from "../../lib/platform";
-  import { project, selectedScene, selectedPageId, selectedScriptSceneId, selectedNodeId, exportOpen } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import {
+    exportOpen,
+    selectedNodeId,
+    selectedPageId,
+    selectedScene,
+    selectedScriptSceneId,
+  } from "../../lib/app/stores/ui";
   import { COMIC_EXPORT_KINDS, type ComicExportKind } from "../../lib/export/comic";
   import { pageNumber } from "../../lib/comic/comic";
   import { GAME_EXPORT_KINDS, isGameCsv, type GameExportKind } from "../../lib/export/game";

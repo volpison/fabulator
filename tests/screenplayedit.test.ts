@@ -7,11 +7,19 @@ import {
   addAct, updateAct, deleteAct, moveAct, addScene, updateScene, moveScene, deleteScene, removeCastFromScenes,
   sceneIsEmpty, actSummary,
 } from "../src/lib/screenplay/screenplayedit.ts";
+import { addCharacter, addPlace, deleteCharacter, deletePlace } from "../src/lib/app/stores/cast.ts";
+import { isDirty, markClean, project } from "../src/lib/app/stores/core.ts";
 import {
-  project, selectedScriptSceneId, isDirty, markClean, addScreenplayAct, renameScreenplayAct, deleteScreenplayAct,
-  moveScreenplayAct, addScreenplayScene, updateScreenplayScene, moveScreenplayScene, deleteScreenplayScene,
-  deleteCharacter, addCharacter, deletePlace, addPlace,
-} from "../src/lib/app/stores.ts";
+  addScreenplayAct,
+  addScreenplayScene,
+  deleteScreenplayAct,
+  deleteScreenplayScene,
+  moveScreenplayAct,
+  moveScreenplayScene,
+  renameScreenplayAct,
+  updateScreenplayScene,
+} from "../src/lib/app/stores/screenplay.ts";
+import { selectedScriptSceneId } from "../src/lib/app/stores/ui.ts";
 import type { Project } from "../src/lib/model/types.ts";
 
 let n = 0;
@@ -163,8 +171,11 @@ import {
   addElement, updateElement, moveElement, deleteElement, replySpeaker, placeNamed, characterNamed,
 } from "../src/lib/screenplay/screenplayedit.ts";
 import {
-  addScreenplayElement, updateScreenplayElement, moveScreenplayElement, deleteScreenplayElement,
-} from "../src/lib/app/stores.ts";
+  addScreenplayElement,
+  deleteScreenplayElement,
+  moveScreenplayElement,
+  updateScreenplayElement,
+} from "../src/lib/app/stores/screenplay.ts";
 import { needsContd } from "../src/lib/screenplay/screenplay.ts";
 
 function scene(p: Project) { return p.script_scenes[0]; }

@@ -18,19 +18,16 @@ import { DEFAULT_STORY_FORMAT, formatOf, type StoryFormatId } from "../model/for
 import { nodesInQuest } from "../game/game";
 import { MIRROR_DEBOUNCE_MS, createUnsavedSync, parseUnsaved, restorePrompt, shouldAskBeforeRestoring, type UnsavedCopy } from "./mirror";
 import {
-  project,
   currentPath,
   isDirty,
-  revision,
   markClean,
   markDirty,
-  selectedSceneId,
-  selectedPageId,
-  selectedScriptSceneId,
-  selectedNodeId,
+  project,
+  revision,
   saveState,
   uid,
-} from "../app/stores";
+} from "../app/stores/core";
+import { selectedNodeId, selectedPageId, selectedSceneId, selectedScriptSceneId } from "../app/stores/ui";
 
 const FILE_FILTERS = [
   { name: "Fabulator Project", extensions: ["fabulator.json", "json"] },

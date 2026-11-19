@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { project, sceneFilter } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { sceneFilter } from "../../lib/app/stores/ui";
   import {
     SCENE_STATUSES, STATUS_LABEL, SCENE_COLORS, EMPTY_FILTER,
     isFilterActive, matchScene, statusCounts, toggle,

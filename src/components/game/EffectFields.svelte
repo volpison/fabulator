@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { project } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
   import { EFFECT_KINDS, EFFECT_LABEL, blankEffect, contextOf } from "../../lib/game/gamerules";
   import type { Effect } from "../../lib/model/types";
 

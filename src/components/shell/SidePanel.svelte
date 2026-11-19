@@ -5,28 +5,27 @@
   import { clampPanelWidth, PANEL_DEFAULT } from "../../lib/app/layout";
   import { itemUsage, variableUsage } from "../../lib/game/gamerules";
   import {
-    project,
-    sidePanel,
-    sidePanelFocus,
-    updateCharacter,
+    addAbility,
     addCharacter,
-    deleteCharacter,
-    updatePlace,
     addPlace,
+    deleteAbility,
+    deleteCharacter,
     deletePlace,
     updateAbility,
-    addAbility,
-    deleteAbility,
-    addGameVariable,
-    updateGameVariable,
-    deleteGameVariable,
+    updateCharacter,
+    updatePlace,
+  } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
+  import {
     addGameItem,
-    updateGameItem,
+    addGameVariable,
     deleteGameItem,
-    updateNote,
-    addNote,
-    deleteNote,
-  } from "../../lib/app/stores";
+    deleteGameVariable,
+    updateGameItem,
+    updateGameVariable,
+  } from "../../lib/app/stores/game";
+  import { addNote, deleteNote, updateNote } from "../../lib/app/stores/notes";
+  import { sidePanel, sidePanelFocus } from "../../lib/app/stores/ui";
 
   // ─── Resizable width (drag the left edge, or focus it and use ←/→; double-click resets) ───
   const WIDTH_KEY = "fabulator.sidePanelWidth";

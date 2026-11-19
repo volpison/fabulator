@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { project, selectedNodeId, mainView } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, selectedNodeId } from "../../lib/app/stores/ui";
   import { layoutGraph, GRAPH_NODE_H, GRAPH_NODE_W } from "../../lib/game/gamegraph";
   import { nodeLabels } from "../../lib/game/gameedit";
   import { colorHex } from "../../lib/model/labels";

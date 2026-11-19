@@ -1,23 +1,22 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import { addCharacter } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
   import {
-    project,
-    selectedNodeId,
-    mainView,
-    addCharacter,
-    updateGameNode,
     addGameElement,
-    updateGameElement,
-    moveGameElement,
-    deleteGameElement,
-    addGameOption,
-    updateGameOption,
-    deleteGameOption,
     addGameLink,
-    updateGameLink,
+    addGameOption,
+    deleteGameElement,
     deleteGameLink,
+    deleteGameOption,
+    moveGameElement,
     setGameRules,
-  } from "../../lib/app/stores";
+    updateGameElement,
+    updateGameLink,
+    updateGameNode,
+    updateGameOption,
+  } from "../../lib/app/stores/game";
+  import { mainView, selectedNodeId } from "../../lib/app/stores/ui";
   import { ELEMENT_KINDS, ELEMENT_LABEL, nodesInQuest } from "../../lib/game/game";
   import { gameReadingOrder, nodeLabels, nodeWordCount, replySpeaker } from "../../lib/game/gameedit";
   import { characterNamed } from "../../lib/screenplay/screenplayedit";

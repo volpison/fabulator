@@ -1,22 +1,26 @@
 <script lang="ts">
   import {
-    project,
-    selectedScene,
-    selectedSceneId,
-    sceneHighlight,
-    snapshotsOpen,
-    focusMode,
-    updateSceneContent,
-    updateSceneTitle,
-    updateSceneSummary,
-    linkCharacterToScene,
-    unlinkCharacterFromScene,
-    linkPlaceToScene,
-    unlinkPlaceFromScene,
-    moveScene,
     addCharacter,
     addPlace,
-  } from "../../lib/app/stores";
+    linkCharacterToScene,
+    linkPlaceToScene,
+    unlinkCharacterFromScene,
+    unlinkPlaceFromScene,
+  } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
+  import {
+    moveScene,
+    updateSceneContent,
+    updateSceneSummary,
+    updateSceneTitle,
+  } from "../../lib/app/stores/scenes";
+  import {
+    focusMode,
+    sceneHighlight,
+    selectedScene,
+    selectedSceneId,
+    snapshotsOpen,
+  } from "../../lib/app/stores/ui";
   import type { Scene, Character, Place } from "../../lib/model/types";
   import { readingOrder, chapterNumber, sceneDropTarget } from "../../lib/model/model";
   import RichTextEditor from "./RichTextEditor.svelte";

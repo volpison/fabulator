@@ -4,7 +4,7 @@
  * roll-over. The rules live in wordcount.ts / goals.ts.
  */
 import { writable, derived, get } from "svelte/store";
-import { project } from "./stores";
+import { project } from "./stores/core";
 import { wordStats, type WordStats } from "../tools/wordcount";
 import {
   EMPTY_STATE,

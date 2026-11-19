@@ -127,3 +127,27 @@ test("a component never imports a component from another folder", () => {
   }
   assert.deepEqual(bad, [], "components may only import components of their own folder");
 });
+
+// ---- src/lib/app/stores ---------------------------------------------------
+// `stores.ts` was split by what each part is for. `core` is the base; no loops.
+test("the store modules import each other without loops, and core imports none", () => {
+  const dir = "src/lib/app/stores";
+  const names = readdirSync(dir).filter((n) => n.endsWith(".ts")).map((n) => n.slice(0, -3));
+  const deps = new Map<string, string[]>();
+  for (const n of names) {
+    const text = readFileSync(join(dir, n + ".ts"), "utf8");
+    deps.set(n, [...text.matchAll(/from\s+"\.\/(\w+)"/g)].map((m) => m[1]));
+  }
+  assert.deepEqual(deps.get("core"), []);
+  const seen = new Set<string>();
+  const stack: string[] = [];
+  const visit = (n: string) => {
+    assert.ok(!stack.includes(n), `loop: ${[...stack, n].join(" -> ")}`);
+    if (seen.has(n)) return;
+    seen.add(n);
+    stack.push(n);
+    for (const d of deps.get(n) ?? []) visit(d);
+    stack.pop();
+  };
+  names.forEach(visit);
+});

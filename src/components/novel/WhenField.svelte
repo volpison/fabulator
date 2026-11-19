@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { updateSceneFields } from "../../lib/app/stores";
+  import { updateSceneFields } from "../../lib/app/stores/scenes";
   import { parseWhen } from "../../lib/model/storytime";
   import type { Scene } from "../../lib/model/types";
 

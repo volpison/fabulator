@@ -1,11 +1,7 @@
 <script lang="ts">
-  import {
-    project,
-    selectedSceneId,
-    mainView,
-    linkCharacterToScene,
-    linkPlaceToScene,
-  } from "../../lib/app/stores";
+  import { linkCharacterToScene, linkPlaceToScene } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, selectedSceneId } from "../../lib/app/stores/ui";
   import { appearanceReport } from "../../lib/model/appearances";
   import type { EntityType } from "../../lib/model/mentions";
 

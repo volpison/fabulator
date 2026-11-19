@@ -40,8 +40,11 @@ src/                       the web view
                            mirror.ts, persistence.ts (open, save, recover, folder: the flows that use the Platform)
     appearance/            colour themes and appearance settings
     editor/                writing aids for the text editor (@-mentions, search highlight, typewriter)
-    app/                   the project and UI state (stores.ts: thin wrappers that apply the pure rules),
-                           menus, layout, guards
+    app/                   the project and UI state, menus, layout, guards
+      stores/              one file per part of the state, thin wrappers that apply the pure rules:
+                           core (the open project, save state), ui (views, selection, dialogs), edit,
+                           search, scenes, chapters, plotlines, comic, screenplay, game, snapshots,
+                           cast (characters, places, abilities), notes
   (the exact folder of every file: [Design: front-end folders](frontend-structure.md))
 src-tauri/src/
   main.rs, lib.rs          start-up: the module list and the list of commands the web view can call
@@ -76,7 +79,7 @@ The Rust side is split into one module per concern: `storage/`, `commands/` and 
 Features follow one pattern, which is what keeps them testable and easy to find:
 
 1. **Pure rules** in a `src/lib/` module (in the folder of its mode or of the shared model): functions that take a project and return a new one (or a result). No Svelte, no Tauri, no disk. Example: `screenplay/screenplayedit.ts` (`addScene`, `moveElement`, `deleteScene`).
-2. **A thin store wrapper** in `app/stores.ts` that runs the rule on the open project and marks it changed.
+2. **A thin store wrapper** in `app/stores/` (the file of its part: `scenes.ts`, `comic.ts`, ...) that runs the rule on the open project and marks it changed.
 3. **A component** that shows the result and calls the wrapper.
 4. **Tests** for the pure rules in `tests/`.
 

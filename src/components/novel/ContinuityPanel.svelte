@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { project, selectedScene, focusMode, unlinkCharacterFromScene, unlinkPlaceFromScene } from "../../lib/app/stores";
+  import { unlinkCharacterFromScene, unlinkPlaceFromScene } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
+  import { focusMode, selectedScene } from "../../lib/app/stores/ui";
   import { sceneContinuity, type ContinuityItem } from "../../lib/model/appearances";
 
   /** Session-only dismissals: "sceneId:type:id" (the text may name them in a later edit). */

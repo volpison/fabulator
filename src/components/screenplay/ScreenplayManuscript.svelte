@@ -1,16 +1,15 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import { addCharacter } from "../../lib/app/stores/cast";
+  import { project } from "../../lib/app/stores/core";
   import {
-    project,
-    selectedScriptSceneId,
-    mainView,
-    addCharacter,
-    updateScreenplayScene,
     addScreenplayElement,
-    updateScreenplayElement,
-    moveScreenplayElement,
     deleteScreenplayElement,
-  } from "../../lib/app/stores";
+    moveScreenplayElement,
+    updateScreenplayElement,
+    updateScreenplayScene,
+  } from "../../lib/app/stores/screenplay";
+  import { mainView, selectedScriptSceneId } from "../../lib/app/stores/ui";
   import {
     ELEMENT_KINDS,
     ELEMENT_LABEL,

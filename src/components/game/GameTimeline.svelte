@@ -1,18 +1,17 @@
 <script lang="ts">
+  import { project } from "../../lib/app/stores/core";
   import {
-    project,
-    selectedNodeId,
-    mainView,
-    addGameQuest,
-    updateGameQuest,
-    deleteGameQuest,
-    moveGameQuest,
     addGameNode,
-    updateGameNode,
-    moveGameNode,
+    addGameQuest,
     deleteGameNode,
+    deleteGameQuest,
+    moveGameNode,
+    moveGameQuest,
     setGameRules,
-  } from "../../lib/app/stores";
+    updateGameNode,
+    updateGameQuest,
+  } from "../../lib/app/stores/game";
+  import { mainView, selectedNodeId } from "../../lib/app/stores/ui";
   import { platform } from "../../lib/platform";
   import { nodesInQuest } from "../../lib/game/game";
   import { contextOf, describeConditions, describeEffects } from "../../lib/game/gamerules";

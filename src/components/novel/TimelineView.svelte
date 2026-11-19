@@ -4,24 +4,15 @@
   import SceneLabels from "./SceneLabels.svelte";
   import ChronologyView from "./ChronologyView.svelte";
   import PlotlineLabel from "./PlotlineLabel.svelte";
-  import { sceneFilter } from "../../lib/app/stores";
+  import { sceneFilter } from "../../lib/app/stores/ui";
   import { colorHex, isFilterActive, matchScene, STATUS_LABEL, cleanStatus } from "../../lib/model/labels";
   import { formatCount } from "../../lib/tools/wordcount";
   import { platform } from "../../lib/platform";
-  import {
-    project,
-    selectedSceneId,
-    mainView,
-    updateSceneFields,
-    moveScene,
-    addScene,
-    deleteScene,
-    addChapter,
-    updateChapter,
-    moveChapter,
-    deleteChapter,
-    addPlotlineToProject,
-  } from "../../lib/app/stores";
+  import { addChapter, deleteChapter, moveChapter, updateChapter } from "../../lib/app/stores/chapters";
+  import { project } from "../../lib/app/stores/core";
+  import { addPlotlineToProject } from "../../lib/app/stores/plotlines";
+  import { addScene, deleteScene, moveScene, updateSceneFields } from "../../lib/app/stores/scenes";
+  import { mainView, selectedSceneId } from "../../lib/app/stores/ui";
   import type { Project, Scene } from "../../lib/model/types";
   import { scenesInChapter } from "../../lib/model/model";
 

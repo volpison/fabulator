@@ -16,7 +16,7 @@
     type TypewriterMode,
     type ThemeChoice,
   } from "../../lib/appearance/settings";
-  import { focusMode, mainView, galleryOpen, themesOpen } from "../../lib/app/stores";
+  import { focusMode, galleryOpen, mainView, themesOpen } from "../../lib/app/stores/ui";
 
   let open = false;
   let root: HTMLElement | undefined;

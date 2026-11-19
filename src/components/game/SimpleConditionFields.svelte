@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { project } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
   import { CONDITION_KINDS, CONDITION_LABEL, blankCondition, contextOf } from "../../lib/game/gamerules";
   import { COMPARE_OPS } from "../../lib/game/game";
   import type { CompareOp, Condition, SimpleCondition } from "../../lib/model/types";
