@@ -7,7 +7,7 @@ Status: **proposal**, for approval before any file moves. Nothing here changes b
 - `src/lib` holds **60 files side by side** and `src/components` **37**. Only `platform/` and `export/` are in folders.
 - Prefixes do the job a folder should: `comic`, `comicedit`; `game`, `gameedit`, `gamerules`, `gamecheck`, `gameplay`, `gamegraph`, `gamefolder`, `gamesnapshots`; `screenplay`, `screenplayedit`, `screenplayreports`; ten files about themes.
 - The few files that do too much are hard to see in a flat list: `stores.ts` (1,201 lines, 121 exports, three modes' actions under one heading), `TimelineView.svelte` (1,130), `ManuscriptView.svelte` (797), `SidePanel.svelte` (793).
-- Adding a mode today means adding files to two flat folders. The convention is that adding a feature adds files in one place ([Conventions §1](../../CONVENTIONS.md) in the template repository, [Architecture](architecture.md) here).
+- Adding a mode today means adding files to two flat folders. The convention is that adding a feature adds files in one place (see [Architecture](architecture.md)).
 
 ## Rules
 
