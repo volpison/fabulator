@@ -93,3 +93,37 @@ test("src/lib never imports a component", () => {
   const bad = listTs(LIB).filter((f) => /\.\.\/components\//.test(readFileSync(f, "utf8")));
   assert.deepEqual(bad, []);
 });
+
+// ---- src/components -------------------------------------------------------
+// Each component folder is self-contained: only App.svelte puts them together.
+const COMPONENTS = "src/components";
+const COMPONENT_FOLDERS = ["shell", "novel", "comic", "screenplay", "game", "dialogs"];
+
+function listSvelte(dir: string): string[] {
+  const out: string[] = [];
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) out.push(...listSvelte(p));
+    else if (name.endsWith(".svelte")) out.push(p);
+  }
+  return out;
+}
+
+test("src/components has no loose files: every component sits in a known folder", () => {
+  const loose = readdirSync(COMPONENTS).filter((n) => statSync(join(COMPONENTS, n)).isFile());
+  assert.deepEqual(loose, []);
+  assert.deepEqual(readdirSync(COMPONENTS).sort(), [...COMPONENT_FOLDERS].sort());
+});
+
+test("a component never imports a component from another folder", () => {
+  const bad: string[] = [];
+  for (const file of listSvelte(COMPONENTS)) {
+    const folder = file.slice(COMPONENTS.length + 1).split(sep)[0];
+    for (const m of readFileSync(file, "utf8").matchAll(IMPORT)) {
+      const target = normalize(join(file, "..", m[1])).split(sep).join("/");
+      if (!target.startsWith(COMPONENTS + "/")) continue;
+      if (target.slice(COMPONENTS.length + 1).split("/")[0] !== folder) bad.push(`${file} -> ${target}`);
+    }
+  }
+  assert.deepEqual(bad, [], "components may only import components of their own folder");
+});

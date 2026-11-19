@@ -1,6 +1,6 @@
 # Design: folders for the front end
 
-Status: **approved**; step 2 (`src/lib`) is done, the rest follows. Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
+Status: **approved**; steps 2 (`src/lib`) and 3 (`src/components`) are done, the rest follows. Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
 
 ## Why
 
@@ -78,7 +78,7 @@ Every component is imported by one view of one mode (or by `App.svelte`), so mos
 
 1. **This design** (docs only). Say yes, or change any row.
 2. **Move `src/lib`** into the folders above, with a script that rewrites every import (in `src/`, in `tests/`, and the test loader), plus `tests/structure.test.ts`, which fails when a folder imports from a folder above it (the exception above is listed by name). Pure move: the 531 tests and CI's front-end build are the check.
-3. **Move `src/components`** into its folders, with the same kind of script. Pure move. CI's front-end build is the only check for Svelte imports.
+3. **Move `src/components`** into its folders, with the same kind of script. Pure move. CI's front-end build is the only check for Svelte imports. `tests/structure.test.ts` also checks that no component imports a component from another folder.
 4. **Split `stores.ts`** by what each part is for. The sections already exist in the file: the shared state and view flags; Search; Scenes; Plotlines; Chapters; Snapshots; Characters, Places, Abilities and their links to scenes; Notes; and the comic, screenplay and game actions that today sit together under one heading, which become one file each. Importers name the new file (no re-export file). Also removes the `game` ↔ `tools` exception.
 5. **Only if worth it:** split `TimelineView` and `ManuscriptView` by pulling out sub-components (a scene card, a chapter header). Done where a file has a clear "and" in its description, not because it is long: much of their length is style rules.
 
