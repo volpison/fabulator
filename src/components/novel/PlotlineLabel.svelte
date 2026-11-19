@@ -1,7 +1,7 @@
 <script lang="ts">
   import { platform } from "../../lib/platform";
   import { PLOTLINE_COLORS } from "../../lib/model/plotlines";
-  import { updatePlotline, deletePlotline, movePlotline } from "../../lib/app/stores";
+  import { deletePlotline, movePlotline, updatePlotline } from "../../lib/app/stores/plotlines";
   import type { Plotline } from "../../lib/model/types";
 
   export let plotline: Plotline;

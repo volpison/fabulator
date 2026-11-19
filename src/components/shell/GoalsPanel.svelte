@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { project } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
   import { stats, progress, goalState, setGoals, restartTodayCount } from "../../lib/app/goalsStore";
   import { formatCount } from "../../lib/tools/wordcount";
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { platform } from "../../lib/platform";
-  import { themesOpen, galleryOpen } from "../../lib/app/stores";
+  import { galleryOpen, themesOpen } from "../../lib/app/stores/ui";
   import { settings, updateSettings, customThemes } from "../../lib/appearance/appearance";
   import { THEMES, type ThemeInfo } from "../../lib/appearance/themes";
   import {

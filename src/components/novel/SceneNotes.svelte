@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { selectedScene, focusMode, updateSceneFields, uid } from "../../lib/app/stores";
+  import { uid } from "../../lib/app/stores/core";
+  import { updateSceneFields } from "../../lib/app/stores/scenes";
+  import { focusMode, selectedScene } from "../../lib/app/stores/ui";
   import type { SceneTodo } from "../../lib/model/types";
   import { addTodoTo, toggleTodoIn, editTodoIn, removeTodoFrom, clearDone, todoCounts, summaryLine } from "../../lib/model/scenenotes";
 

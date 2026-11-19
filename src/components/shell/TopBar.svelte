@@ -1,15 +1,15 @@
 <script lang="ts">
+  import { project } from "../../lib/app/stores/core";
   import {
-    mainView,
-    sidePanel,
-    searchOpen,
-    snapshotsOpen,
     exportOpen,
+    gameCheckOpen,
+    mainView,
     replaceOpen,
     reportsOpen,
-    gameCheckOpen,
-    project,
-  } from "../../lib/app/stores";
+    searchOpen,
+    sidePanel,
+    snapshotsOpen,
+  } from "../../lib/app/stores/ui";
   import { manualSave, saveAs, openProject, openRecent, openFolder, exportFolder, saveCopyToDevice, loadSample, newProject } from "../../lib/files/persistence";
   import { recentFiles, clearRecents } from "../../lib/files/recentStore";
   import { recentLabels } from "../../lib/files/recent";

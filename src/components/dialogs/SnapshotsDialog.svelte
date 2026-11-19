@@ -1,20 +1,22 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { platform } from "../../lib/platform";
+  import { project } from "../../lib/app/stores/core";
   import {
-    project,
+    deleteSceneSnapshots,
+    deleteSnapshot,
+    restoreSnapshot,
+    takeSnapshot,
+  } from "../../lib/app/stores/snapshots";
+  import {
+    mainView,
+    selectedNodeId,
+    selectedPageId,
     selectedScene,
     selectedSceneId,
-    selectedPageId,
     selectedScriptSceneId,
-    selectedNodeId,
-    mainView,
     snapshotsOpen,
-    takeSnapshot,
-    deleteSnapshot,
-    deleteSceneSnapshots,
-    restoreSnapshot,
-  } from "../../lib/app/stores";
+  } from "../../lib/app/stores/ui";
   import {
     snapshotsFor,
     deletedScenes,

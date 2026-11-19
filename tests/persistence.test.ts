@@ -6,7 +6,15 @@ import { recentFiles, clearRecents } from "../src/lib/files/recentStore.ts";
 import {
   loadInitialProject, saveCopyToDevice, manualSave, saveNow, ensureSafeToLeave, newProject, loadSample, openProject, startMirror,
 } from "../src/lib/files/persistence.ts";
-import { project, currentPath, isDirty, markDirty, markClean, saveState, updateSceneTitle } from "../src/lib/app/stores.ts";
+import {
+  currentPath,
+  isDirty,
+  markClean,
+  markDirty,
+  project,
+  saveState,
+} from "../src/lib/app/stores/core.ts";
+import { updateSceneTitle } from "../src/lib/app/stores/scenes.ts";
 import { blankProject } from "../src/lib/files/blank.ts";
 import { createFakePlatform, type Fake } from "./fakePlatform.ts";
 

@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { platform } from "../../lib/platform";
+  import { project } from "../../lib/app/stores/core";
+  import { replaceInScenes } from "../../lib/app/stores/search";
   import {
-    project,
-    selectedScene,
-    selectedSceneId,
-    selectedPageId,
-    selectedScriptSceneId,
-    selectedNodeId,
     mainView,
     replaceOpen,
-    replaceInScenes,
-  } from "../../lib/app/stores";
+    selectedNodeId,
+    selectedPageId,
+    selectedScene,
+    selectedSceneId,
+    selectedScriptSceneId,
+  } from "../../lib/app/stores/ui";
   import {
     planReplace,
     DEFAULT_REPLACE_OPTIONS,

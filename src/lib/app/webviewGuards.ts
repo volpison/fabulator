@@ -1,6 +1,6 @@
 /** Attach the browser-engine guards (see guards.ts) and protect unsaved work from a reload. */
 import { get } from "svelte/store";
-import { isDirty } from "./stores";
+import { isDirty } from "./stores/core";
 import { allowNativeContextMenu, isBlockedBrowserKey, isTextEditable } from "./guards";
 
 const EDITABLE = 'input, textarea, [contenteditable=""], [contenteditable="true"]';

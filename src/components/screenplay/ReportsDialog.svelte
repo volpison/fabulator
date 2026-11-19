@@ -1,6 +1,7 @@
 <script lang="ts">
   import { platform } from "../../lib/platform";
-  import { project, reportsOpen, selectedScriptSceneId, mainView } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, reportsOpen, selectedScriptSceneId } from "../../lib/app/stores/ui";
   import { characterReport, locationReport, reportCsv, sceneReport, type ReportKind } from "../../lib/screenplay/screenplayreports";
   import { formatPages } from "../../lib/screenplay/screenplay";
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { project, selectedSceneId, mainView } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, selectedSceneId } from "../../lib/app/stores/ui";
   import { chronology } from "../../lib/model/storytime";
   import { STATUS_LABEL, cleanStatus } from "../../lib/model/labels";
   import WhenField from "./WhenField.svelte";

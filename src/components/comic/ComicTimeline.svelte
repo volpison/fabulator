@@ -1,16 +1,15 @@
 <script lang="ts">
   import {
-    project,
-    selectedPageId,
     addComicIssue,
-    renameComicIssue,
-    deleteComicIssue,
     addComicPage,
-    updateComicPage,
-    moveComicPage,
+    deleteComicIssue,
     deleteComicPage,
-    mainView,
-  } from "../../lib/app/stores";
+    moveComicPage,
+    renameComicIssue,
+    updateComicPage,
+  } from "../../lib/app/stores/comic";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, selectedPageId } from "../../lib/app/stores/ui";
   import { platform } from "../../lib/platform";
   import {
     COMIC_STAGES,

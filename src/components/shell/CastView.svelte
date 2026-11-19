@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { project, selectedSceneId, mainView, sidePanel, sidePanelFocus } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { mainView, selectedSceneId, sidePanel, sidePanelFocus } from "../../lib/app/stores/ui";
   import { castGrid, type CastGrid, type CellState } from "../../lib/model/appearances";
 
   type Density = "compact" | "comfortable" | "spacious";

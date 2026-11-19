@@ -196,10 +196,18 @@ test("the Markdown folder header records the format", () => {
 });
 
 import { get } from "svelte/store";
+import { addCharacter, deleteCharacter } from "../src/lib/app/stores/cast.ts";
 import {
-  project, selectedPageId, isDirty, markClean, addComicIssue, addComicPage, updateComicPage, moveComicPage,
-  deleteComicPage, deleteComicIssue, renameComicIssue, deleteCharacter, addCharacter,
-} from "../src/lib/app/stores.ts";
+  addComicIssue,
+  addComicPage,
+  deleteComicIssue,
+  deleteComicPage,
+  moveComicPage,
+  renameComicIssue,
+  updateComicPage,
+} from "../src/lib/app/stores/comic.ts";
+import { isDirty, markClean, project } from "../src/lib/app/stores/core.ts";
+import { selectedPageId } from "../src/lib/app/stores/ui.ts";
 
 test("the comic format has its Timeline and writing view", () => {
   assert.deepEqual(STORY_FORMATS.comic.views, { timeline: true, manuscript: true });
@@ -246,8 +254,15 @@ test("deleting a character removes them from comic pages too", () => {
 });
 
 import {
-  addComicPanel, updateComicPanel, moveComicPanel, deleteComicPanel, addComicLine, updateComicLine, moveComicLine, deleteComicLine,
-} from "../src/lib/app/stores.ts";
+  addComicLine,
+  addComicPanel,
+  deleteComicLine,
+  deleteComicPanel,
+  moveComicLine,
+  moveComicPanel,
+  updateComicLine,
+  updateComicPanel,
+} from "../src/lib/app/stores/comic.ts";
 
 test("writing a page through the stores: panels, lines, speaker joins the cast", () => {
   project.set(blankComic(newId));

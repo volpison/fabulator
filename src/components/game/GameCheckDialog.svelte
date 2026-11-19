@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { project, gameCheckOpen, selectedNodeId, mainView } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { gameCheckOpen, mainView, selectedNodeId } from "../../lib/app/stores/ui";
   import { checkGame, countIssues, type CheckSeverity } from "../../lib/game/gamecheck";
   import { applyEffects, candidates, chooseOption, emptyState, holdsAll, openExits, playNode, type GameState } from "../../lib/game/gameplay";
   import { describeEffects, contextOf } from "../../lib/game/gamerules";

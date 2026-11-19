@@ -1,16 +1,15 @@
 <script lang="ts">
+  import { project } from "../../lib/app/stores/core";
   import {
-    project,
-    selectedScriptSceneId,
-    mainView,
     addScreenplayAct,
-    renameScreenplayAct,
-    deleteScreenplayAct,
     addScreenplayScene,
-    updateScreenplayScene,
-    moveScreenplayScene,
+    deleteScreenplayAct,
     deleteScreenplayScene,
-  } from "../../lib/app/stores";
+    moveScreenplayScene,
+    renameScreenplayAct,
+    updateScreenplayScene,
+  } from "../../lib/app/stores/screenplay";
+  import { mainView, selectedScriptSceneId } from "../../lib/app/stores/ui";
   import { platform } from "../../lib/platform";
   import {
     SLUG_PLACES,

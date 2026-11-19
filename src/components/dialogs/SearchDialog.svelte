@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { project, searchOpen, openSearchHit } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
+  import { openSearchHit } from "../../lib/app/stores/search";
+  import { searchOpen } from "../../lib/app/stores/ui";
   import { search, KIND_LABEL, type SearchKind } from "../../lib/tools/search";
 
   let input: HTMLInputElement | undefined;

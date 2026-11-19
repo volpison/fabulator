@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { galleryOpen } from "../../lib/app/stores";
+  import { galleryOpen } from "../../lib/app/stores/ui";
   import { settings, updateSettings, customThemes } from "../../lib/appearance/appearance";
   import { galleryFamilies, type GalleryTheme } from "../../lib/appearance/gallery";
   import { specToTheme, themeIdFor } from "../../lib/appearance/theme-file";

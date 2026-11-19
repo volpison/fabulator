@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { project } from "../../lib/app/stores";
+  import { project } from "../../lib/app/stores/core";
   import { blankCondition, blankEffect, contextOf, describeConditions, describeEffects } from "../../lib/game/gamerules";
   import SimpleConditionFields from "./SimpleConditionFields.svelte";
   import EffectFields from "./EffectFields.svelte";

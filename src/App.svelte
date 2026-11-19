@@ -1,21 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { error, loading, project } from "./lib/app/stores/core";
   import {
-    project,
-    loading,
-    error,
-    mainView,
-    sidePanel,
-    searchOpen,
-    snapshotsOpen,
     exportOpen,
+    focusMode,
     galleryOpen,
-    themesOpen,
+    gameCheckOpen,
+    mainView,
     replaceOpen,
     reportsOpen,
-    gameCheckOpen,
-    focusMode,
-  } from "./lib/app/stores";
+    searchOpen,
+    sidePanel,
+    snapshotsOpen,
+    themesOpen,
+  } from "./lib/app/stores/ui";
   import {
     loadInitialProject,
     manualSave,
