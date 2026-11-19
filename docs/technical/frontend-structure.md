@@ -23,7 +23,7 @@ Status: **approved**; steps 2 (`src/lib`), 3 (`src/components`) and 4 (`stores.t
 
 | Folder | What it is for | Files |
 |---|---|---|
-| `model/` | The project data and the pure rules over it, for every mode | `types`, `formats`, `model`, `labels`, `plotlines`, `scenenotes`, `storytime`, `appearances`, `mentions`, `patch` |
+| `model/` | The project data and the pure rules over it, for every mode | `types`, `textcount`, `formats`, `model`, `labels`, `plotlines`, `scenenotes`, `storytime`, `appearances`, `mentions`, `patch` |
 | `comic/` | Comic: pages, panels, lettering | `comic`, `comicedit` |
 | `screenplay/` | Screenplay: acts, scenes, elements, reports | `screenplay`, `screenplayedit`, `screenplayreports` |
 | `game/` | Game Prototyping: quests, nodes, rules, check, playtest, graph | `game`, `gameedit`, `gamerules`, `gamecheck`, `gameplay`, `gamegraph`, `gamesnapshots` |
@@ -55,7 +55,7 @@ model → nothing else in the app
 
 Read it as layers, top to bottom: `files` and `editor` on top; then `app`; then `tools`; then the modes and `export`; then `model` and `platform`.
 
-**One known exception.** `game/gameedit.ts` imports `countWordsInText` from `tools/wordcount.ts`, while `tools` imports `game`, a loop between two folders (no loop between files). The move keeps it and the structure test lists it as allowed. Step 5 removes it by giving the plain text-counting helper a home in `model/`.
+**No exceptions.** A first version had one loop between `game` and `tools`, because `game/gameedit.ts` needed the word-counting rule. The rule (what counts as a word) now lives in `model/textcount.ts`, and `tools/wordcount.ts` builds scene, chapter and project totals on it.
 
 Three files were placed to avoid loops that a first sketch had: `mentions` and `patch` in `model/` (used by `model/appearances` and by `platform/types`), and `gamefolder` in `files/` next to `folder` (it uses `export/`).
 
@@ -77,10 +77,10 @@ Every component is imported by one view of one mode (or by `App.svelte`), so mos
 ## Steps (each its own pull request)
 
 1. **This design** (docs only). Say yes, or change any row.
-2. **Move `src/lib`** into the folders above, with a script that rewrites every import (in `src/`, in `tests/`, and the test loader), plus `tests/structure.test.ts`, which fails when a folder imports from a folder above it (the exception above is listed by name). Pure move: the 531 tests and CI's front-end build are the check.
+2. **Move `src/lib`** into the folders above, with a script that rewrites every import (in `src/`, in `tests/`, and the test loader), plus `tests/structure.test.ts`, which fails when a folder imports from a folder above it (no exceptions). Pure move: the 531 tests and CI's front-end build are the check.
 3. **Move `src/components`** into its folders, with the same kind of script. Pure move. CI's front-end build is the only check for Svelte imports. `tests/structure.test.ts` also checks that no component imports a component from another folder.
 4. **Split `stores.ts`** (done) into `app/stores/`: `core` (the open project, save state), `ui` (views, selection, dialogs, filter), `edit` (apply a pure edit with auto snapshots), `search`, `scenes`, `chapters`, `plotlines`, `comic`, `screenplay`, `game`, `snapshots`, `cast` (characters, places, abilities and their links to scenes) and `notes`. Every function moved as it was (same lines, same names); importers name the new file (no re-export file). `core` imports no sibling and the modules have no loops (a test checks both).
-5. **Small follow-up:** give `countWordsInText` a home in `model/`, which removes the `game` ↔ `tools` exception above.
+5. **Small follow-up** (done): `countWordsInText` moved to `model/textcount.ts`, which removed the `game` ↔ `tools` exception. The structure test has no exceptions list any more.
 6. **Only if worth it:** split `TimelineView` and `ManuscriptView` by pulling out sub-components (a scene card, a chapter header). Done where a file has a clear "and" in its description, not because it is long: much of their length is style rules.
 
 Each step updates [Architecture](architecture.md) and, where a file is named, the other docs, in the same pull request.

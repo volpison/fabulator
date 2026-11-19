@@ -33,7 +33,7 @@ src/                       the web view
     comic/, screenplay/,   pure rules per format (ordering, counting, slug lines, checks, playtest,
     game/                  graph layout, ...) and pure edit operations (comicedit.ts, ...)
     tools/                 shared tools; each handles all formats: search, replace, snapshots, diff,
-                           goals, wordcount
+                           goals, wordcount (what a word is: model/textcount.ts)
     export/                writers: Word, EPUB, Markdown, text, PDF, Fountain, comic script, thumbnails, game (quest bible, CSVs)
     platform/              the Platform layer (see below)
     files/                 blank.ts (new project), migrate.ts (upgrades older files; CURRENT_SCHEMA_VERSION),

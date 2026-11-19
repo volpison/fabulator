@@ -1,24 +1,12 @@
 /**
  * Word counts for scenes, chapters and the whole project. Pure (no
- * Svelte/Tauri), unit-tested.
- *
- * A word is a run of letters/digits, optionally joined by an apostrophe or
- * hyphen: "don't", "well-known", "1,000" and "3.14" each count once;
- * "word—word" is two. Unicode-aware, so accents and non-Latin scripts count.
+ * Svelte/Tauri), unit-tested. What counts as a word is in model/textcount.ts;
  * HTML tags are not words, and neither are the gaps between paragraphs.
  */
 import type { ComicPage, Project, Scene } from "../model/types";
 import { htmlToPlainText } from "../model/mentions";
+import { countWordsInText } from "../model/textcount";
 import { sceneWordCount } from "../screenplay/screenplay";
-
-const WORD = /\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}]+(?:['’\u2010-][\p{L}\p{N}]+)*/gu;
-
-export function countWordsInText(text: string): number {
-  if (!text) return 0;
-  let n = 0;
-  for (const _ of text.matchAll(WORD)) n++;
-  return n;
-}
 
 /** Words in a scene's stored text (HTML or legacy plain text). */
 export function wordsOfHtml(html: string): number {
