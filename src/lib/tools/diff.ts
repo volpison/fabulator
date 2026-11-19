@@ -7,7 +7,7 @@
  * as one removal plus one addition (still correct, just coarser).
  */
 
-import { countWordsInText } from "./wordcount";
+import { countWordsInText } from "../model/textcount";
 
 export type DiffSegment = { type: "equal" | "add" | "del"; text: string };
 

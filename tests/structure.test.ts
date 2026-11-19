@@ -22,8 +22,6 @@ const ALLOWED: Record<string, string[]> = {
   model: [],
 };
 
-// Known loop, removed when `countWordsInText` moves into model/ (design step 4).
-const EXCEPTIONS = new Set(["game/gameedit.ts -> tools/wordcount.ts"]);
 
 function listTs(dir: string): string[] {
   const out: string[] = [];
@@ -69,7 +67,6 @@ test("a folder in src/lib imports only from the folders below it", () => {
     const a = folderOf(from);
     const b = folderOf(to);
     if (a === b || ALLOWED[a]?.includes(b)) continue;
-    if (EXCEPTIONS.has(`${from} -> ${to.replace(/\.ts$/, "")}.ts`)) continue;
     bad.push(`${from} -> ${to}`);
   }
   assert.deepEqual(bad, [], "folder imports that break the layers (see docs/technical/frontend-structure.md)");

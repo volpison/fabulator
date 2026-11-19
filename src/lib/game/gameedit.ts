@@ -7,7 +7,7 @@ import type {
   ChoiceOption, Condition, Game, GameElement, GameElementKind, GameItem, GameLink, GameNode, GameVariable, Project, Quest, QuestKind,
 } from "../model/types";
 import { SCENE_STATUSES, cleanColor } from "../model/labels";
-import { countWordsInText } from "../tools/wordcount";
+import { countWordsInText } from "../model/textcount";
 import { ELEMENT_KINDS, cleanConditions, cleanEffects, emptyGame, nodesInQuest } from "./game";
 
 export type NewId = (prefix: string) => string;

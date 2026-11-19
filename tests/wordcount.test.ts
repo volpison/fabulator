@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { countWordsInText, wordsOfHtml, sceneWords, wordStats, clearWordCache } from "../src/lib/tools/wordcount.ts";
+import { wordsOfHtml, sceneWords, wordStats, clearWordCache } from "../src/lib/tools/wordcount.ts";
+import { countWordsInText } from "../src/lib/model/textcount.ts";
 import type { Project } from "../src/lib/model/types.ts";
 
 test("what counts as a word", () => {
