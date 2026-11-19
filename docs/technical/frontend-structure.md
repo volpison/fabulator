@@ -1,6 +1,6 @@
 # Design: folders for the front end
 
-Status: **approved**; steps 2 (`src/lib`), 3 (`src/components`) and 4 (`stores.ts`) are done. Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
+Status: **approved**; steps 2 to 5 are done, and the first of the big views (step 6). Nothing here changes behaviour. It does for `src/` what the Rust split did for `src-tauri/`: each file answers "what is this for?" in one sentence, and the folder it sits in says which part of the app it belongs to.
 
 ## Why
 
@@ -81,7 +81,7 @@ Every component is imported by one view of one mode (or by `App.svelte`), so mos
 3. **Move `src/components`** into its folders, with the same kind of script. Pure move. CI's front-end build is the only check for Svelte imports. `tests/structure.test.ts` also checks that no component imports a component from another folder.
 4. **Split `stores.ts`** (done) into `app/stores/`: `core` (the open project, save state), `ui` (views, selection, dialogs, filter), `edit` (apply a pure edit with auto snapshots), `search`, `scenes`, `chapters`, `plotlines`, `comic`, `screenplay`, `game`, `snapshots`, `cast` (characters, places, abilities and their links to scenes) and `notes`. Every function moved as it was (same lines, same names); importers name the new file (no re-export file). `core` imports no sibling and the modules have no loops (a test checks both).
 5. **Small follow-up** (done): `countWordsInText` moved to `model/textcount.ts`, which removed the `game` ↔ `tools` exception. The structure test has no exceptions list any more.
-6. **Only if worth it:** split `TimelineView` and `ManuscriptView` by pulling out sub-components (a scene card, a chapter header). Done where a file has a clear "and" in its description, not because it is long: much of their length is style rules.
+6. **Big views** (looked at; one done). `SidePanel` did two jobs (the frame, and the contents of five tabs), so each tab became a component in `components/shell/sidepanel/` (`CharactersTab`, `PlacesTab`, `AbilitiesTab`, `StateTab`, `NotesTab`); the list helpers went to `lib/model/traits.ts`. `ManuscriptView` could give a `SceneList` and a `SceneLinks` but gains less, so it waits. `TimelineView` stays whole: its chapter headers, cards and cells share one drag-and-drop state, and half of its length is style rules.
 
 Each step updates [Architecture](architecture.md) and, where a file is named, the other docs, in the same pull request.
 
